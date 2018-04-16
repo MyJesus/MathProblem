@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:drawable="@drawable/dog_left1"
+        android:duration="@integer/dog_animation_duration_short" />
+
+    <item
+        android:drawable="@drawable/dog_left2"
+        android:duration="@integer/dog_animation_duration" />
+
+    <item
+        android:drawable="@drawable/dog_left4"
+        android:duration="@integer/dog_animation_duration_long" />
+
+    <item
+        android:drawable="@drawable/dog_left7"
+        android:duration="@integer/dog_animation_duration_long" />
+
+    <item
+        android:drawable="@drawable/dog_left10"
+        android:duration="@integer/dog_animation_duration_long" />
+
+    <item
+        android:drawable="@drawable/dog_left13"
+        android:duration="@integer/dog_animation_duration_long" />
+
+    <item
+        android:drawable="@drawable/dog_left16"
+        android:duration="@integer/dog_animation_duration_long" />
+
+    <item
+        android:drawable="@drawable/dog_left19"
+        android:duration="@integer/dog_animation_duration_long" />
+
+    <item
+        android:drawable="@drawable/dog_left22"
+        android:duration="@integer/dog_animation_duration_long" />
+
+</animation-list>

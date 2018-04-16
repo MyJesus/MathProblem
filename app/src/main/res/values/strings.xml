@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">应用题指导</string>
+    <string name="problem_guide">应用题指导</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="back">返回</string>
+    <string name="empty_content">暂无数据</string>
+    <string name="problem_method">应用题技巧</string>
+
+    <string name="favorite_video_count">已收藏%d个视频</string>
+    <string name="downloaded_video_count">已下载%d个视频</string>
+    <string name="downloading_video_count">正在下载%d个视频</string>
+
+    <string-array name="chinese_number">
+        <item>一</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+    </string-array>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="correct_answer">正确答案  %s</string>
+    <string name="submit">提交</string>
+    <string name="exercise_again">再练一次</string>
+
+    <string name="dialog_not_finish_exercise">还有未作答的题目，确定要提交吗？</string>
+    <string name="continue_exercise">继续作答</string>
+    <string name="download">下载</string>
+    <string name="draft_paper">草稿纸</string>
+    <string name="first_grade">一年级</string>
+    <string name="correct_rate">正确率</string>
+    <string name="use_time">用时</string>
+    <string name="pause">暂停</string>
+    <string name="downloaded">已下载</string>
+    <string name="downloading">下载中</string>
+    <string name="my_favorites">我的收藏</string>
+    <string name="video_name">视频名称</string>
+    <string name="favorite_time">收藏时间</string>
+    <string name="all_checked">全选</string>
+
+</resources>

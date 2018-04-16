@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:minHeight="?android:attr/actionBarSize"
+        android:splitMotionEvents="false" >
+        
+	    <TextView
+	        android:id="@+id/question_detail_back"
+	        android:layout_width="50dp"
+	        android:layout_height="match_parent"
+	        android:background="@drawable/question_detail_back_selector"/>
+        
+	</LinearLayout>
+	
+    <WebView
+        android:id="@+id/question_webview"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"/>
+  
+
+</LinearLayout>

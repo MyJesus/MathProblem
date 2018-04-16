@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <integer name="duration">350</integer>
+    <integer name="duration_long">500</integer>
+    <integer name="loading_duration">200</integer>
+
+    <integer name="cat_animation_duration">2000</integer>
+
+    <integer name="dog_animation_duration_short">300</integer>
+    <integer name="dog_animation_duration">600</integer>
+    <integer name="dog_animation_duration_long">900</integer>
+
+    <integer name="player_controller_animation_duration">300</integer>
+
+</resources>

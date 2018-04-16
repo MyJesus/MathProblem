@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/main_bg"
+    tools:context="com.readboy.mathproblem.exercise.ExerciseActivity">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:background="@drawable/study_bg" />
+
+    <TextView
+        android:id="@+id/project_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="66dp"
+        android:layout_marginTop="25dp"
+        android:textColor="@android:color/white"
+        android:textSize="29sp"
+        tools:text="求总数的应用题" />
+
+    <!--装饰物-->
+    <ImageView
+        android:id="@+id/cat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="155dp"
+        android:layout_marginTop="92dp"
+        android:background="@drawable/cat_animation" />
+
+    <com.readboy.mathproblem.widget.Dog
+        android:id="@+id/dog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginRight="180dp"
+        android:layout_marginTop="87dp"
+        android:background="@drawable/dog_animation_left" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="14dp"
+        android:src="@drawable/exercise_progress_bg" />
+
+    <TextView
+        android:id="@+id/exercise_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="43dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="96dp"
+        android:gravity="center"
+        android:textSize="32sp"
+        tools:text="10/23" />
+
+    <ImageButton
+        android:id="@+id/previous"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="23dp"
+        android:layout_marginTop="374dp"
+        android:background="@drawable/arrow_left" />
+
+    <ImageButton
+        android:id="@+id/next"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginRight="25dp"
+        android:layout_marginTop="374dp"
+        android:background="@drawable/arrow_right" />
+
+    <TextView
+        android:id="@+id/open_draft_paper"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginRight="64dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/draft_paper_btn"
+        android:gravity="center"
+        android:text="@string/draft_paper"
+        android:textSize="24sp" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/exercise_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="41dp"
+        android:layout_marginLeft="63dp"
+        android:layout_marginRight="66dp"
+        android:layout_marginTop="210dp" />
+
+    <TextView
+        android:id="@+id/exercise_submit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|bottom"
+        android:layout_marginBottom="41dp"
+        android:layout_marginRight="86dp"
+        android:background="@drawable/dialog_button_bg"
+        android:gravity="center"
+        android:text="@string/submit"
+        android:textSize="24sp" />
+
+    <include layout="@layout/progress_bar_view" />
+
+    <com.readboy.mathproblem.note.DraftPaperView
+        android:id="@+id/draft_paper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black_aa"
+        android:visibility="gone" />
+
+
+</FrameLayout>

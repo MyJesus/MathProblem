@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:drawable="@drawable/ic_voice_playing1"
+        android:duration="@integer/duration_long" />
+
+    <item
+        android:drawable="@drawable/ic_voice_playing2"
+        android:duration="@integer/duration_long" />
+
+    <item
+        android:drawable="@drawable/ic_voice_playing3"
+        android:duration="@integer/duration_long" />
+
+</animation-list>

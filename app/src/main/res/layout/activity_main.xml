@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/main_bg"
+    tools:context="com.readboy.mathproblem.MainActivity">
+
+    <ImageView
+        android:id="@+id/cat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="24dp"
+        android:src="@drawable/ic_cat"
+        android:visibility="gone" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/project_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="78dp"
+        android:layout_marginStart="62dp"
+        android:layout_marginTop="112dp"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:visibility="gone" />
+
+    <CheckBox
+        android:id="@+id/grade_name_cb"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:layout_marginStart="46dp"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/bg_grade_selector"
+        android:button="@null"
+        android:checked="false"
+        android:drawableLeft="@drawable/grade_selector_button_selector"
+        android:drawablePadding="5dp"
+        android:gravity="center_vertical"
+        android:paddingLeft="5dp"
+        android:textSize="25sp"
+        android:textStyle="bold" />
+
+    <ImageButton
+        android:id="@+id/try_again"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_try_again" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/grade_list"
+        android:layout_width="158dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="46dp"
+        android:layout_marginTop="100dp"
+        android:background="@drawable/grade_selector_list_bg"
+        android:overScrollMode="never"
+        android:padding="5dp"
+        android:visibility="gone" />
+
+    <include layout="@layout/progress_bar_view" />
+
+    <ImageView
+        android:id="@+id/cat_hands"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="106dp"
+        android:background="@drawable/cat_hands1"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/favorite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="152dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/ic_favorite_selector" />
+
+    <ImageButton
+        android:id="@+id/download"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="48dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/ic_download_selector" />
+
+    <LinearLayout
+        android:id="@+id/guide_selected_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="18dp"
+        android:orientation="horizontal">
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            android:id="@+id/problem_guide_selected"
+            style="@style/problem_button_style.selected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/problem_guide" />
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            android:id="@+id/problem_method_normal"
+            style="@style/problem_button_style.normal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="52dp"
+            android:text="@string/problem_method" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/method_selected_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="18dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            android:id="@+id/problem_guide_normal"
+            style="@style/problem_button_style.normal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:text="@string/problem_guide" />
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            android:id="@+id/problem_method_selected"
+            style="@style/problem_button_style.selected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="52dp"
+            android:text="@string/problem_method" />
+
+    </LinearLayout>
+
+</FrameLayout>

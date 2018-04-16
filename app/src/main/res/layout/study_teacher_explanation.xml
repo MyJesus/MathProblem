@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/teacher_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginBottom="20dp"
+    android:layout_marginLeft="64dp"
+    android:layout_marginRight="86dp"
+    android:layout_marginTop="195dp"
+    android:orientation="horizontal">
+
+    <com.readboy.mathproblem.widget.SmallPlayerView
+        android:id="@+id/small_player_view"
+        android:layout_width="348dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:layout_marginLeft="49dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:paddingTop="30dp" />
+
+    <ImageView
+        android:id="@+id/teacher_explanation_divider"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="36dp"
+        android:layout_marginTop="5dp"
+        android:src="@drawable/study_teacher_explanation_divider" />
+
+    <com.readboy.mathproblem.notetool.NoteScrollView
+        android:id="@+id/note_scroll_view"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="20dp"
+        android:layout_marginTop="30dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:paddingLeft="18dp"
+        android:scrollbarAlwaysDrawVerticalTrack="false"
+        android:scrollbarSize="0dp"
+        android:scrollbarStyle="outsideInset"
+        android:scrollbarThumbVertical="@color/brown">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <WebView
+                android:id="@+id/explain_web_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <ProgressBar
+                android:id="@+id/web_progress"
+                style="@style/Widget.AppCompat.ProgressBar"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="200dp"
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/voice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_voice_selector" />
+
+            <ImageButton
+                android:id="@+id/voice_loading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_voice_loading_animation"
+                android:clickable="true"
+                android:visibility="gone" />
+
+            <com.readboy.mathproblem.notetool.NoteDrawView
+                android:id="@+id/note_draw_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="visible" />
+        </FrameLayout>
+    </com.readboy.mathproblem.notetool.NoteScrollView>
+
+</LinearLayout>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/scroll_bar_style.vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/exercise_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="15dp"
+            android:textColor="@android:color/black"
+            android:textSize="27sp"
+            tools:text="果盘里有5个苹果，被曹欣吃掉了3个，还剩几个？" />
+
+        <RadioGroup
+            android:id="@+id/choices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/choice_a"
+                style="@style/exercise_choices_style"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:button="@drawable/ic_choice_a_selector"
+                tools:text="A  厨房里有3个鸡蛋，\n打碎了2个，还剩几个？" />
+
+            <RadioButton
+                android:id="@+id/choice_b"
+                style="@style/exercise_choices_style"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:button="@drawable/ic_choice_b_selector"
+                tools:text="B  厨房里有3个鸡蛋，打\n碎了2个，还剩几个？" />
+
+            <RadioButton
+                android:id="@+id/choice_c"
+                style="@style/exercise_choices_style"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:button="@drawable/ic_choice_c_selector"
+                tools:text="C  厨房里有3个鸡蛋，打\n碎了2个，还剩几个？" />
+
+            <RadioButton
+                android:id="@+id/choice_d"
+                style="@style/exercise_choices_style"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:button="@drawable/ic_choice_d_selector"
+                tools:text="D  厨房里有3个鸡蛋，打\n碎了2个，还剩几个？" />
+
+        </RadioGroup>
+
+        <LinearLayout
+            android:id="@+id/exercise_solution_parent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="46dp"
+                android:src="@drawable/line_vertical_gray" />
+
+            <TextView
+                android:id="@+id/exercise_answer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="34dp"
+                android:drawableLeft="@drawable/ic_correct_answer"
+                android:drawablePadding="25dp"
+                android:text="正确答案  B"
+                android:textColor="#34ca35"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="37dp"
+                android:drawableLeft="@drawable/ic_solution"
+                android:drawablePadding="25dp"
+                android:text="解析"
+                android:textColor="#F8AD2D"
+                android:textSize="24sp" />
+
+            <com.readboy.mathproblem.js.BaseWebView
+                android:id="@+id/exercise_solution_web_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:id="@+id/exercise_solution"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="22sp"
+                android:textColor="#666666"
+                android:visibility="gone"
+                tools:text="5－3＝2（个）" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

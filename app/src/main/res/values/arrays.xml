@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="grade_name_group">
+        <item>一年级</item>
+        <item>二年级</item>
+        <item>三年级</item>
+        <item>四年级</item>
+        <item>五年级</item>
+        <item>六年级</item>
+    </string-array>
+
+    <string-array name="choice_index">
+        <item>"A&#160;&#160;"</item>
+        <item>B&#160;&#160;</item>
+        <item>C&#160;&#160;</item>
+        <item>D&#160;&#160;</item>
+    </string-array>
+
+</resources>

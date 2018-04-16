@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/study_bg2">
+
+    <!--drawer menu-->
+    <!--<FrameLayout-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content">-->
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="48dp"
+        android:layout_marginTop="17dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/drawer_layout_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ic_menu_selector"
+            android:padding="5dp" />
+
+        <TextView
+            android:id="@+id/project_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="25dp"
+            android:maxLines="1"
+            android:ellipsize="marquee"
+            android:singleLine="true"
+            android:paddingBottom="5dp"
+            android:paddingTop="5dp"
+            android:textColor="#fffcf2"
+            android:textSize="28sp"
+            tools:text="入驻 “新零售技术实验室”" />
+    </LinearLayout>
+
+    <!--</FrameLayout>-->
+
+    <!--名师指导-->
+    <LinearLayout
+        android:id="@+id/teacher_selected_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="67dp"
+        android:orientation="horizontal">
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            style="@style/problem_button_style.selected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="名师辅导" />
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            android:id="@+id/example_explanation_normal"
+            style="@style/problem_button_style.normal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="70dp"
+            android:text="例题讲解" />
+
+    </LinearLayout>
+
+    <!--列题讲解-->
+    <LinearLayout
+        android:id="@+id/example_selected_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="67dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            android:id="@+id/teacher_explanation_normal"
+            style="@style/problem_button_style.normal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="名师辅导" />
+
+        <com.readboy.mathproblem.widget.StrokeTextView
+            style="@style/problem_button_style.selected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="70dp"
+            android:text="例题讲解" />
+
+    </LinearLayout>
+
+    <!--装饰物-->
+    <ImageView
+        android:id="@+id/cat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="155dp"
+        android:layout_marginTop="92dp"
+        android:background="@drawable/cat_animation" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="416dp"
+        android:layout_marginTop="102dp"
+        android:src="@drawable/grass_left" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginRight="406dp"
+        android:layout_marginTop="102dp"
+        android:src="@drawable/grass_right" />
+
+    <com.readboy.mathproblem.widget.Dog
+        android:id="@+id/dog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="1000dp"
+        android:layout_marginTop="87dp"
+        android:background="@drawable/dog_animation_left" />
+
+    <!--<fragment-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:layout_marginLeft="64dp"-->
+    <!--android:layout_marginRight="62dp"-->
+    <!--android:layout_marginTop="144dp"-->
+    <!--android:visibility="gone" />-->
+
+    <!--名师指导内容-->
+    <include layout="@layout/study_teacher_explanation" />
+
+    <!--例题讲解内容-->
+    <include layout="@layout/study_example_explanation" />
+
+    <!--笔记面板-->
+    <include layout="@layout/note_menu_panel" />
+
+    <ImageButton
+        android:id="@+id/previous"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="23dp"
+        android:layout_marginTop="374dp"
+        android:background="@drawable/arrow_left"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/next"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginRight="25dp"
+        android:layout_marginTop="374dp"
+        android:background="@drawable/arrow_right"
+        android:visibility="gone" />
+
+    <!--草稿纸-->
+    <com.readboy.mathproblem.note.DraftPaperView
+        android:id="@+id/draft_paper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black_aa"
+        android:visibility="gone" />
+
+    <include layout="@layout/progress_bar_view" />
+
+</FrameLayout>

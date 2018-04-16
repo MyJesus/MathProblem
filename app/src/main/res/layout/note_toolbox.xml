@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/palette_toolbox_parent"
+    android:layout_width="462dp"
+    android:layout_height="326dp"
+    android:layout_gravity="right"
+    android:background="@drawable/note_box_bk">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/note_tool_seekbar"
+        android:layout_alignEnd="@+id/note_tool_seekbar"
+        android:layout_alignStart="@+id/note_tool_seekbar"
+        android:layout_alignTop="@+id/note_tool_seekbar"
+        android:paddingEnd="15dp"
+        android:paddingStart="15dp"
+        android:src="@drawable/note_seek_bar_bk" />
+
+    <SeekBar
+        android:id="@+id/note_tool_seekbar"
+        android:layout_width="293dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="38dp"
+        android:layout_marginTop="27dp"
+        android:max="100"
+        android:progress="50"
+        android:splitTrack="false"
+        android:minHeight="16dp"
+        android:maxHeight="16dp"
+        android:progressDrawable="@drawable/note_seek_bar"
+        android:thumb="@drawable/note_seekbar_thumb" />
+
+    <com.readboy.mathproblem.notetool.PenDemoView
+        android:id="@+id/note_tool_demo_point"
+        android:layout_width="53dp"
+        android:layout_height="54dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="24dp"
+        android:layout_toRightOf="@id/note_tool_seekbar"
+        android:background="@drawable/note_pen_color_bk" />
+
+    <com.readboy.mathproblem.notetool.PenDemoView
+        android:id="@+id/note_tool_demo_line"
+        android:layout_width="358dp"
+        android:layout_height="60dp"
+        android:layout_alignLeft="@id/note_tool_seekbar"
+        android:layout_below="@id/note_tool_seekbar"
+        android:layout_marginLeft="6dp"
+        android:layout_marginTop="11dp" />
+
+    <RadioGroup
+        android:id="@+id/note_color_radiogroup1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/note_tool_seekbar"
+        android:layout_below="@+id/note_tool_demo_line"
+        android:layout_marginLeft="-12dp"
+        android:layout_marginTop="18dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/note_btn_color1"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color1" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color2"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color2" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color3"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color3" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color4"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color4" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color5"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color5" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color6"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color6" />
+    </RadioGroup>
+
+    <RadioGroup
+        android:id="@+id/note_color_radiogroup2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/note_color_radiogroup1"
+        android:layout_below="@+id/note_color_radiogroup1"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/note_btn_color7"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color7" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color8"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color8" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color9"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color9" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color10"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color10" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color11"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color11" />
+
+        <RadioButton
+            android:id="@+id/note_btn_color12"
+            style="@style/note_tool_color_radio_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_btn_color12" />
+    </RadioGroup>
+
+</RelativeLayout>

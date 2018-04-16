@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="82dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <CheckBox
+        android:id="@+id/video_select"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/video_checked_box_style"/>
+
+    <ImageView
+        android:id="@+id/video_thumbnail"
+        android:layout_width="102dp"
+        android:layout_height="64dp"
+        android:layout_marginLeft="15dp"
+        android:scaleType="fitXY"
+        android:background="@drawable/video_thumbnail"
+        tools:src="@drawable/video_thumbnail" />
+
+    <TextView
+        android:id="@+id/small_player_video_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="10dp"
+        android:layout_weight="1"
+        android:textColor="#282828"
+        android:textSize="22sp"
+        tools:text="一年级上册-认识图形" />
+
+    <TextView
+        android:id="@+id/video_favorite_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="40dp"
+        android:textColor="@color/gray"
+        android:textSize="18sp"
+        tools:text="2017-8-25 16:40" />
+
+</LinearLayout>

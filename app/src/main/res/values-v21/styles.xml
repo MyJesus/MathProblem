@@ -1,0 +1,141 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="@android:style/Theme.Holo.NoActionBar.Fullscreen">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:textSize">24sp</item>
+        <!-- <item name="android:windowBackground">@android:color/black</item> --><!-- 背景透明 -->
+        <!--<item name="android:alertDialogTheme">@android:style/Theme.Material.Light.Dialog.Alert</item>-->
+        <item name="android:alertDialogTheme">@android:style/Theme.Holo.Light.Dialog.NoActionBar</item>
+        <item name="android:textAppearance">@style/TextAppearance.Button</item>
+        <item name="android:buttonStyle">@style/Widget.Button</item>
+        <item name="android:checkboxStyle">@style/CustomCheckbox</item>
+    </style>
+
+    <style name="MainTheme" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:screenOrientation">sensorLandscape</item>
+        <item name="android:configChanges">orientation</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:alertDialogTheme">@android:style/Theme.Material.Light.Dialog.Alert</item>
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <style name="TransparentDialog" parent="@style/Theme.AppCompat.Dialog">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+    <style name="GradeDialog" parent="@android:style/Theme.Dialog">
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0</item>
+    </style>
+
+    <style name="FullscreenDialog" parent="@android:style/Theme.Material.Dialog.NoActionBar" />
+
+    <style name="note_tool_color_radio_style">
+        <item name="android:button">@null</item>
+    </style>
+
+    <style name="palette_menu_style">
+        <item name="android:layout_marginLeft">44dp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/colorPrimary</item>
+    </style>
+
+    <style name="dialog_button_style">
+        <item name="android:background">@drawable/dialog_button_bg</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    android:background="@null"
+    android:button="@drawable/video_select_selector"
+
+    <style name="video_checked_box_style">
+        <item name="android:background">@null</item>
+        <item name="android:button">@drawable/video_select_selector</item>
+        <item name="android:padding">9dp</item>
+    </style>
+
+    <style name="video_name_style">
+        <item name="android:textColor">#282828</item>
+        <item name="android:textSize">22sp</item>
+    </style>
+
+    <style name="note_menu_btn_style">
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:button">@null</item>
+    </style>
+
+    <style name="exercise_choices_style">
+        <item name="android:textSize">25sp</item>
+        <item name="android:paddingLeft">28dp</item>
+        <item name="android:button">@drawable/ic_answer_selector</item>
+        <item name="android:background">@null</item>
+        <item name="android:layout_marginTop">27dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:textColor">#222222</item>
+    </style>
+
+    <style name="example_checkbox_style">
+        <item name="android:background">@null</item>
+        <item name="android:button">@drawable/expand_selector</item>
+        <item name="android:paddingLeft">27dp</item>
+        <item name="android:textColor">#f8ad2d</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="problem_button_style">
+        <item name="android:textSize">26sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="problem_button_style.normal">
+        <item name="android:background">@drawable/problem_selector_bg_normal</item>
+        <item name="android:textColor">#eefff0</item>
+        <item name="strokeColor">#0066cc</item>
+    </style>
+
+    <style name="problem_button_style.selected">
+        <item name="android:background">@drawable/problem_selector_bg_selected2</item>
+        <item name="android:textColor">#ffefbc</item>
+        <item name="strokeColor">#b35000</item>
+    </style>
+
+    <style name="project_video_status_style">
+        <item name="android:visibility">gone</item>
+        <item name="android:layout_gravity">right|bottom</item>
+        <item name="android:layout_marginRight">20dp</item>
+        <item name="android:layout_marginBottom">41dp</item>
+    </style>
+
+    <style name="scroll_bar_style">
+        <item name="android:scrollbarStyle">insideInset</item>
+        <item name="android:scrollbarSize">3dp</item>
+    </style>
+
+    <style name="scroll_bar_style.vertical">
+        <item name="android:scrollbars">vertical</item>
+        <item name="android:scrollbarThumbVertical">@drawable/scrollbar_vertical_thumb</item>
+    </style>
+
+</resources>

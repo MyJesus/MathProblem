@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center"
+    tools:background="#aa000000"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ProgressBar
+            android:id="@android:id/progress"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dip"
+            android:indeterminateDrawable="@drawable/progress_rotate"
+            android:max="10000" />
+
+        <TextView
+            android:id="@+id/message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="精彩即将呈现"
+            android:textSize="28sp"
+            tools:textColor="@android:color/black" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/netspeed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:textSize="28sp"
+        tools:text="350kb/s"
+        tools:textColor="@android:color/black" />
+
+    <Button
+        android:id="@+id/progress_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="9dp"
+        android:textSize="32sp"
+        android:background="@drawable/btn_video_cancel_loading"
+        android:textColor="@android:color/holo_blue_light" />
+
+
+</LinearLayout>

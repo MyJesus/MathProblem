@@ -1,0 +1,84 @@
+<resources>
+
+    <!-- Base application theme. -->
+
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+
+    <style name="TextAppearance.Button" parent="@android:style/TextAppearance.Widget.Button">
+        <item name="android:textSize">@dimen/title_bar_button_textsize</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+
+    <style name="TextAppearance.Blue" parent="@android:style/TextAppearance">
+        <item name="android:textSize">@dimen/videonum_info_textsize</item>
+        <item name="android:textColor">@color/color_videonum_info</item>
+    </style>
+
+    <style name="TextAppearance.Videoname" parent="@android:style/TextAppearance">
+        <item name="android:textSize">@dimen/list_item_video_name_textsize</item>
+        <item name="android:textColor">@color/color_video_name</item>
+    </style>
+
+    <style name="TextAppearance.Videotime" parent="@android:style/TextAppearance">
+        <item name="android:textSize">@dimen/list_item_video_info_textsize</item>
+        <item name="android:textColor">@color/color_video_time</item>
+    </style>
+
+    <style name="TextAppearance.Videocurrenttime" parent="@android:style/TextAppearance">
+        <item name="android:textSize">@dimen/video_play_time_textsize</item>
+        <item name="android:textColor">@color/color_video_currenttime</item>
+    </style>
+
+    <style name="TextAppearance.Videototaltime" parent="@android:style/TextAppearance">
+        <item name="android:textSize">@dimen/video_play_time_textsize</item>
+        <item name="android:textColor">@color/color_video_totaltime</item>
+    </style>
+
+    <style name="Widget.Button" parent="@android:style/Widget.Button">
+        <item name="android:background">@drawable/btn_custom_background</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:textAppearance">@style/TextAppearance.Button</item>
+
+        <item name="android:gravity">center_vertical|center_horizontal</item>
+    </style>
+
+    <style name="CustomCheckbox" parent="@android:style/Widget.CompoundButton.CheckBox">
+        <item name="android:button">@drawable/checkbox_style</item>
+    </style>
+
+    <style name="MyFloatWindowSeekBar">
+        <item name="android:indeterminateOnly">false</item>
+        <item name="android:progressDrawable">@drawable/seekbar_progress_floating</item>
+        <item name="android:indeterminateDrawable">@drawable/seekbar_progress_floating</item>
+        <item name="android:minHeight">20dip</item>
+        <item name="android:maxHeight">20dip</item>
+        <item name="android:thumb">@null</item>
+        <item name="android:thumbOffset">8dip</item>
+        <item name="android:focusable">true</item>
+        <item name="android:mirrorForRtl">true</item>
+    </style>
+
+    <style name="CustomDialog" parent="@android:style/Theme.Material.Dialog.NoActionBar">
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <item name="android:windowSoftInputMode">stateUnspecified|adjustPan</item>
+    </style>
+
+    <style name="CustomProgressDialog" parent="@style/CustomDialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+</resources>

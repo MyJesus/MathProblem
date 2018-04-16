@@ -1,0 +1,96 @@
+#  Copyright (C) 2015 The Android Open Source Project
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# Keep enough data for stack traces
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable,*Annotation*,Signature,Exceptions,Call
+
+-dontshrink
+#-dontobfuscate
+#-ignorewarnings
+#-optimizationpasses 5
+#-dontusemixedcaseclassnames
+#-verbose
+
+# Keep classes and methods that have the guava @VisibleForTesting annotation
+-keep @com.google.common.annotations.VisibleForTesting class *
+-keepclassmembers class * {
+  @com.google.common.annotations.VisibleForTesting *;
+}
+
+# Keep methods that have the @VisibleForAnimation annotation
+#-keep interface com.android.messaging.annotation.VisibleForAnimation
+#-keepclassmembers class * {
+#  @com.android.messaging.annotation.VisibleForAnimation *;
+#}
+
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.content.ContentProvider
+-keep public class * extends android.app.backup.BackupAgentHelper
+-keep public class * extends android.preference.Preference
+-keep public class * extends android.support.v4.app.Fragment
+
+-keep class android.support.*.*
+-keep class android.support.v4.** { *; }
+#-keep class android.support.v4.*.* { *; }
+-keep class android.support.v7.* { *; }
+-keep class android.support.v7.*.* { *; }
+-keep class com.android.volley.** { *;}
+
+# Keep lib
+-dontwarn retrofit.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class retrofit2.OkhttpCall
+#-keep class * implements retrofit2.call
+-keep class * extends retrofit2.Call { *;}
+-keep class retrofit2.** { *;}
+-keep interface retrofit2.** { *;}
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** {*;}
+-keep class okio.**
+-keep interface okio.** {*;}
+-keep class com.google.gson.** { *;}
+-keep interface com.google.gson.** { *;}
+-keep class retrofit2.converter.gson.** {*;}
+-keep class com.squareup.** { *;}
+-keep class cn.dreamtobe.filedownloader.** { *;}
+-keep class com.fasterxml.jackson.** { *;}
+
+#-keep class sun.misc.Unsafe {*;}
+
+
+# Keep the Jni
+-keep class com.readboy.watch.speech.NativeApi
+
+-keep class com.readboy.watch.speech.network.Asr2Service {*;}
+-keep class com.readboy.watch.speech.network.AsrService {*;}
+-keep class com.readboy.watch.speech.network.ContactService {*;}
+-keep class com.readboy.watch.speech.network.ContactsService { *;}
+-keep class com.readboy.watch.speech.network.NluService {*;}
+-keep class com.readboy.watch.speech.network.TtsService {*;}
+
+-keep class com.readboy.watch.speech.network.** { *;}
+
+# Keep the static fields of referenced inner classes of auto-generated R classes, in case we
+# access those fields by reflection (e.g. EmojiMarkup)
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
+
+
+proguard.config=${sdk.dir}\tools\proguard\proguard-android.txt:proguard-project.txt

@@ -1,0 +1,76 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=gb2312">
+    <style>
+        body{
+            font-size:25px;
+            color:#000;
+            font-weight:400;
+        }
+        p{
+            line-height:40px;
+            height:40px;
+        }
+    </style>
+    <script type="text/javascript">
+        function javacalljs(){
+             document.getElementById("content").innerHTML =
+                 "<br\>JAVA调用了JS的无参函数";
+        }
+
+        function javacalljswith(arg){
+             document.getElementById("content").innerHTML =
+                 ("<br\>"+arg);
+        }
+    </script>
+
+    <script type='text/javascript'
+            src='file:///android_asset/js/MathJax.js?config=TeX-AMS-MML_HTMLorMML'>
+    </script>
+    <script type='text/x-mathjax-config'>MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'],
+    ['\\\\(','\\\\)']]},'HTML-CSS': { preferredFont: 'TeX', availableFonts: ['TeX'], EqnChunk:
+    80,EqnChunkDelay: 40, scale: 100},jax: ['input/TeX', 'output/HTML-CSS']});
+    </script>
+    <script type='text/x-mathjax-config'>
+        MathJax.Hub.Register.MessageHook('TeX Jax - parse error', function (data) {});
+    </script>
+</head>
+<body onselect="return false">
+HTML 内容显示 <br/>
+<h1>
+    <div id="content">内容显示</div>
+</h1>
+
+<p>（1）甲种相机：</p>
+<p>2006年比2005年增长23－15＝8万台</p>
+<p>2007年比2006年增长30－23＝7万台</p>
+<p>2008年比2007年增长40－30＝10万台</p>
+<p>乙种相机：</p>
+<p>2006年比2005年增长18－10＝8万台</p>
+<p>2007年比2006年增长25－18＝7万台</p>
+<p>2008年比2007年增长45－25＝15万台</p>
+<p>（2）45÷40＝
+    <tex data-latex="\dfrac {9} {8}"></tex>
+</p>
+<p>（3）（15＋23＋30＋40）÷4＝27（万台）。</p>
+
+<br/>
+<input type="button" value="点击调用java代码" onclick="window.android.startFunction()"/>
+<br/>
+<input type="button" value="点击调用java代码并传递参数"
+       onclick="window.android.startFunction('http://blog.csdn.net/Leejizhou')"/>
+
+<script type="text/javascript">
+        var i=0;
+        var dom=document.getElementsByTagName('tex')
+        for(i;i<dom.length;i++){
+            var src=dom[i].getAttribute('data-latex');
+            dom[i].innerHTML='$'+src+'$';
+        }
+    window.onload=function(){
+        MathJax.Hub.Queue(['Typeset', MathJax.Hub]);
+    }
+
+</script>
+</body>
+</html>

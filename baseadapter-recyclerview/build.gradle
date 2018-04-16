@@ -1,0 +1,48 @@
+apply plugin: 'com.android.library'
+//apply plugin: 'com.novoda.bintray-release'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion '25.0.3'
+
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+    }
+
+//    task makeJar(type: Copy, dependsOn:['build']){
+//        from('build/intermediates/bundles/default/')
+//        into('build/outputs/jar')
+//        include('classes.jar')
+//        rename('classes.jar', 'myclass.jar')
+//    }
+
+    task copyJar(type: Copy){
+        delete 'build/outputs/jar/baseadapter-recyclerview.jar'
+        delete 'build/outputs/jar/classes.jar'
+        copy{
+            from('build/intermediates/bundles/default/classes.jar'){
+            }
+            into('build/outputs/jar/')
+        }
+        into('build/outputs/jar')
+        rename{ String fileName ->
+            fileName.replace('classes.jar', 'cla.jar')
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:recyclerview-v7:25.3.1'
+}
+
+

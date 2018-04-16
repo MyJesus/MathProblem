@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:gravity="center"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_small_video_selector"
+        android:text="1" />
+
+    <TextView
+        android:id="@+id/small_player_video_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="9dp"
+        android:textColor="@color/small_video_name"
+        android:textSize="21sp"
+        tools:text="探秘“行程”之路__行程问题·钟表问题\n就得啦是假的" />
+
+    <RadioButton
+        android:layout_width="37dp"
+        android:layout_height="37dp"
+        android:button="@drawable/ring_red"/>
+
+
+</LinearLayout>

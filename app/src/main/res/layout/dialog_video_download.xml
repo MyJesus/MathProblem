@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="1010dp"
+    android:layout_height="602dp"
+    android:layout_gravity="center"
+    android:background="@drawable/dialog_download_bg">
+
+    <LinearLayout
+        android:id="@+id/location_selected_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="51dp"
+        android:layout_marginTop="28dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/dialog_download_menu_selected"
+            android:gravity="center"
+            android:text="@string/downloaded"
+            android:textColor="@color/blue" />
+
+        <Button
+            android:id="@+id/download_btn_unselected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="7dp"
+            android:background="@drawable/dialog_download_menu_normal"
+            android:gravity="center"
+            android:text="@string/downloading"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/download_selected_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="51dp"
+        android:layout_marginTop="28dp"
+        android:visibility="gone"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/location_btn_unselected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@drawable/dialog_download_menu_normal"
+            android:gravity="center"
+            android:text="@string/downloaded"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="7dp"
+            android:background="@drawable/dialog_download_menu_selected"
+            android:gravity="center"
+            android:text="@string/downloading"
+            android:textColor="@color/blue" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/video_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="114dp"
+        android:layout_marginTop="38dp"
+        android:text="@string/downloaded_video_count"
+        android:textSize="20sp" />
+
+    <ImageButton
+        android:id="@+id/dialog_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="18dp"
+        android:layout_marginTop="11dp"
+        android:background="@drawable/dialog_close" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/video_location_list"
+        android:layout_width="match_parent"
+        android:layout_height="373dp"
+        android:layout_marginLeft="55dp"
+        android:layout_marginRight="55dp"
+        android:layout_marginTop="123dp" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/video_download_list"
+        android:layout_width="match_parent"
+        android:layout_height="373dp"
+        android:layout_marginLeft="55dp"
+        android:layout_marginRight="55dp"
+        android:layout_marginTop="123dp"
+        android:visibility="gone" />
+
+    <include layout="@layout/dialog_video_footer" />
+
+</FrameLayout>

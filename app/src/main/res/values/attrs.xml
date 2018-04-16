@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="StrokeTextView">
+        <attr name="strokeColor" format="color" />
+        <attr name="strokeWidth" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="PlayerController">
+        <attr name="state_paused" format="boolean" />
+        <attr name="state_workability" format="boolean" />
+    </declare-styleable>
+
+</resources>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="478dp"
+    android:layout_height="292dp"
+    android:layout_gravity="center"
+    android:background="@drawable/dialog_common_bg">
+
+    <TextView
+        android:id="@+id/dialog_content"
+        android:layout_width="match_parent"
+        android:layout_height="145dp"
+        android:layout_marginTop="52dp"
+        android:gravity="center"
+        android:textColor="@color/black_light"
+        android:textSize="26sp"
+        tools:text="This is dialog content" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="45dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/dialog_button_left"
+            style="@style/dialog_button_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/confirm" />
+
+        <Button
+            android:id="@+id/dialog_button_right"
+            style="@style/dialog_button_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="45dp"
+            android:text="@string/cancel" />
+
+    </LinearLayout>
+
+
+</FrameLayout>

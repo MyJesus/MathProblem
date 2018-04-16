@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="66dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <!--android:ellipsize="marquee"-->
+    <!--android:scrollHorizontally="true"-->
+    <!--android:focusableInTouchMode="true"-->
+    <!--android:focusable="true"-->
+    <!--android:marqueeRepeatLimit="marquee_forever"-->
+    <TextView
+        android:id="@+id/project_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_weight="1"
+        android:maxLines="1"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        android:textColor="@color/project_name_selector"
+        android:textSize="21sp"
+        tools:text="第一课 加减法算术题" />
+
+    <TextView
+        android:id="@+id/project_score"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="21dp"
+        android:background="@drawable/bg_exercise_score_selector"
+        android:paddingLeft="17dp"
+        android:paddingTop="8dp"
+        android:textColor="@color/project_score_selector"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        tools:text="5" />
+
+</LinearLayout>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="1010dp"
+    android:layout_height="602dp"
+    android:layout_gravity="center"
+    android:background="@drawable/dialog_favorites_bg">
+
+    <com.readboy.mathproblem.widget.StrokeTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="39dp"
+        android:layout_marginTop="24dp"
+        android:text="@string/my_favorites"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        app:strokeColor="#e28b0c"
+        app:strokeWidth="1dp" />
+
+    <TextView
+        android:id="@+id/video_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="114dp"
+        android:layout_marginTop="38dp"
+        android:textSize="20sp"
+        tools:text="已收藏3个视频" />
+
+    <ImageButton
+        android:id="@+id/dialog_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="18dp"
+        android:layout_marginTop="11dp"
+        android:background="@drawable/dialog_close" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="110dp"
+        android:layout_marginTop="99dp"
+        android:text="@string/video_name"
+        android:textColor="@color/orange"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginRight="182dp"
+        android:layout_marginTop="99dp"
+        android:text="@string/favorite_time"
+        android:textColor="@color/orange"
+        android:textSize="16sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginLeft="55dp"
+        android:layout_marginRight="55dp"
+        android:layout_marginTop="124dp"
+        android:background="@color/video_divider_color" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/favorite_list"
+        android:layout_width="match_parent"
+        android:layout_height="373dp"
+        android:layout_marginLeft="55dp"
+        android:layout_marginRight="55dp"
+        android:layout_marginTop="125dp" />
+
+    <include layout="@layout/dialog_video_footer" />
+
+</FrameLayout>

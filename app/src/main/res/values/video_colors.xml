@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="color_white_text">#FFFFFF</color>
+
+    <color name="color_btn_ripple">#00ffffff</color>
+
+    <color name="color_videonum_info">#00c4e9</color>
+
+    <color name="color_video_name">#ffffff</color>
+    <color name="color_video_time">#bbbbbb</color>
+
+    <color name="color_video_currenttime">#000000</color>
+    <color name="color_video_totaltime">#000000</color>
+
+    <color name="play_controller">#cdffffff</color>
+
+
+    <color name="black_66">#a0000000</color>
+
+</resources>

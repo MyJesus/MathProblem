@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/note_panel"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="right|bottom"
+    android:layout_marginBottom="110dp">
+
+    <LinearLayout
+        android:id="@+id/note_menu_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/note_bg"
+        android:orientation="vertical"
+        android:layout_gravity="right"
+        android:paddingBottom="69dp"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageButton
+            android:id="@+id/note_menu_save"
+            style="@style/note_menu_btn_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            android:background="@drawable/note_save_selector" />
+
+        <ImageView
+            android:id="@+id/note_menu_clear"
+            style="@style/note_menu_btn_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/note_clear_selector" />
+
+        <RadioGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/note_menu_eraser"
+                style="@style/note_menu_btn_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/note_eraser_selector" />
+
+            <RadioButton
+                android:id="@+id/note_menu_pen"
+                style="@style/note_menu_btn_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/note_pen_selector" />
+
+            <RadioButton
+                android:id="@+id/note_menu_hand"
+                style="@style/note_menu_btn_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/note_hand_selector"
+                android:checked="true" />
+        </RadioGroup>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/note_menu_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/note_btn"
+        android:focusable="true"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:text="做标记"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+</FrameLayout>
