@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/load_status_view_parent"
+    android:background="#3f000000"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:clickable="true">
+
+    <ProgressBar
+        android:id="@+id/load_status_view_progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"/>
+
+    <TextView
+        android:id="@+id/load_status_view_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:textSize="25sp"
+        android:textColor="#ffffff"
+        android:text="@string/player_load_status_view_text_loading"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp">
+        <TextView
+            android:id="@+id/load_status_view_btn_continue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:visibility="visible"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:textColor="@drawable/player_btn_text_selector"
+            android:text="@string/player_load_status_view_btn_load"
+            android:background="@drawable/player_btn_bg_selector"/>
+        <TextView
+            android:id="@+id/load_status_view_btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:textColor="@drawable/player_btn_text_selector"
+            android:text="@string/player_load_status_view_btn_cancel"
+            android:background="@drawable/player_btn_bg_selector"/>
+    </LinearLayout>
+
+</LinearLayout>

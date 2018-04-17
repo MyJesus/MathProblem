@@ -10,15 +10,17 @@ public class VideoInfoEntity {
 
     /**
      * msg : success
-     * data : [{"videoUri":"/download/ZhiShiDian/video/语文/声母的分类XXYW002_知识点讲解.mp4","name":"声母的分类","id":16338120,"fileSize":21333486,"duration":363.99,"thumbnailUrl":"http://contres.readboy.com/video_resource/wkt/thumbnail/ed/c8/93/edc8931bc33a39d66c20bc4973fa604e.jpg"}]
-     * "data": [{
-     * "videoUri": "/download/ZhiShiDian/video/语文/声母的分类XXYW002_知识点讲解.mp4",
-     * "name": "声母的分类",
-     * "id": 16338120,
-     * "fileSize": 21333486,
-     * "duration": 363.99,
-     * "thumbnailUrl": "http://contres.readboy.com/video_resource/wkt/thumbnail/ed/c8/93/edc8931bc33a39d66c20bc4973fa604e.jpg"
-     * }]
+     * "data": [
+     * {
+     * "videoUri": "/download/mp4qpsp/神奇数学动物园_差倍问题.mp4",
+     * "name": "应用秘笈展览馆__典型应用题·神奇数学动物园\u2014\u2014差倍问题",
+     * "vid": "404b068d841a4054bb80de7340376ccc",
+     * "thumbnail": null,
+     * "fileSize": 38547267,
+     * "duration": 426.82,
+     * "id": 486738110
+     * }
+     * ],
      * ok : 1
      */
 
@@ -52,16 +54,18 @@ public class VideoInfoEntity {
 
     public static class VideoInfo {
         /**
-         * videoUri : /download/ZhiShiDian/video/语文/声母的分类XXYW002_知识点讲解.mp4
-         * name : 声母的分类
-         * id : 16338120
-         * fileSize : 21333486
-         * duration : 363.99
-         * thumbnailUrl : http://contres.readboy.com/video_resource/wkt/thumbnail/ed/c8/93/edc8931bc33a39d66c20bc4973fa604e.jpg
+         * "videoUri": "/download/mp4qpsp/神奇数学动物园_差倍问题.mp4",
+         * "name": "应用秘笈展览馆__典型应用题·神奇数学动物园\u2014\u2014差倍问题",
+         * "vid": "404b068d841a4054bb80de7340376ccc",
+         * "thumbnail": null,
+         * "fileSize": 38547267,
+         * "duration": 426.82,
+         * "id": 486738110
          */
 
         private String videoUri;
         private String name;
+        private String vid;
         private int id;
         private int fileSize;
         private double duration;
@@ -82,6 +86,14 @@ public class VideoInfoEntity {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getVid() {
+            return vid;
+        }
+
+        public void setVid(String vid) {
+            this.vid = vid;
         }
 
         public int getId() {
@@ -117,7 +129,6 @@ public class VideoInfoEntity {
         }
 
         /**
-         *
          * @return 可能为空，因为没有经过鉴权。
          */
         public String getUrl() {
@@ -133,6 +144,7 @@ public class VideoInfoEntity {
             return "VideoInfo:{" +
                     "videoUri='" + videoUri + '\'' +
                     ", name='" + name + '\'' +
+                    ", vid='" + vid + '\'' +
                     ", id=" + id + '\'' +
                     ", fileSize=" + fileSize + '\'' +
                     ", duration=" + duration + '\'' +

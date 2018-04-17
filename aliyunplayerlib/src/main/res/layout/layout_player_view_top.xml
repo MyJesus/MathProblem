@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/player_top_bg"
+    android:clickable="true"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/video_player_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="41dp"
+        android:textSize="25sp"
+        android:textColor="#ffffff"
+        android:text=""
+        android:maxLines="1"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:drawablePadding="22dp"
+        android:drawableLeft="@drawable/player_btn_back_selector"/>
+
+</LinearLayout>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/player_bottom_bg"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:orientation="horizontal">
+
+    <ImageButton
+        android:id="@+id/video_player_play_pause"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:background="@drawable/player_btn_play_selector"/>
+
+    <SeekBar
+        android:id="@+id/video_player_seekbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:maxHeight="7dp"
+        android:minHeight="7dp"
+        android:layout_marginLeft="20dp"
+        android:progressDrawable="@drawable/player_seekbar_progress"
+        android:thumbOffset="2dp"
+        android:thumb="@drawable/player_seekbar_thumb"/>
+
+    <TextView
+        android:id="@+id/video_player_progress_current_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:textColor="#ffffff"
+        android:textSize="20sp"
+        android:text="00:00"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#ffffff"
+        android:textSize="20sp"
+        android:text="/"/>
+    <TextView
+        android:id="@+id/video_player_progress_duration_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="20dp"
+        android:textColor="#ffffff"
+        android:textSize="20sp"
+        android:text="00:00"/>
+
+    <!--<TextView
+        android:id="@+id/video_player_quality"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:textColor="#ffffff"
+        android:textSize="20sp"
+        android:text="标清"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:visibility="gone"
+        android:background="@drawable/player_load_status_view_btn_bg"/>-->
+
+</LinearLayout>
