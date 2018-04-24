@@ -1,4 +1,4 @@
-package com.readboy.mathproblem.video.movie;
+package com.readboy.mathproblem.aliplayer;
 
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -31,8 +30,6 @@ import android.provider.MediaStore.Video;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.telephony.PhoneStateListener;
@@ -47,14 +44,14 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.aliyun.vodplayer.media.IAliyunVodPlayer;
+import com.readboy.aliyunplayerlib.view.AliPlayerView;
+import com.readboy.aliyunplayerlib.view.PlayerCompleteViewDefault;
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.activity.StudyActivity;
 import com.readboy.mathproblem.application.MathApplication;
@@ -62,41 +59,37 @@ import com.readboy.mathproblem.application.SubjectType;
 import com.readboy.mathproblem.bean.ProjectParcelable;
 import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
+import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.ToastUtils;
+import com.readboy.mathproblem.video.db.VideoDatabaseInfo;
+import com.readboy.mathproblem.video.db.VideoInfoDatabaseProxy;
 import com.readboy.mathproblem.video.dreamplayer.RequestPermissionsActivity;
-import com.readboy.mathproblem.video.fragment.PlayerFragment;
+import com.readboy.mathproblem.video.movie.MediaButtonIntentReceiver;
+import com.readboy.mathproblem.video.movie.VideoExtraNames;
+import com.readboy.mathproblem.video.movie.VideoMessage;
 import com.readboy.mathproblem.video.proxy.VideoProxy;
-import com.readboy.mathproblem.video.tools.FloatListAdapter;
+import com.readboy.mathproblem.video.resource.IVideoResource;
+import com.readboy.mathproblem.video.resource.VidVideoResource;
 import com.readboy.mathproblem.video.tools.MyTrafficStatus;
 import com.readboy.mathproblem.video.tools.UriProxy;
 import com.readboy.mathproblem.video.tools.Utils;
 import com.readboy.mathproblem.video.tools.WakeUtil;
 import com.readboy.mathproblem.video.view.CustomProgressDialog;
-import com.readboy.mathproblem.video.db.VideoDatabaseInfo;
-import com.readboy.mathproblem.video.db.VideoInfoDatabaseProxy;
 import com.readboy.mathproblem.widget.LineItemDecoration;
 import com.readboy.recyclerview.CommonAdapter;
 import com.readboy.recyclerview.MultiItemTypeAdapter;
 import com.readboy.recyclerview.base.ViewHolder;
-import com.readboy.video.EmptyVideoPlayerListener;
-import com.readboy.video.ErrorType;
-import com.readboy.video.proxy.HttpGetProxy;
-import com.readboy.video.view.VideoView;
 
 import java.io.File;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import static com.readboy.mathproblem.video.proxy.MovieFile.saveVideoInfo;
 import static com.readboy.mathproblem.video.tools.NetWorkAnalyst.getNetworkType;
 
-import static com.readboy.mathproblem.video.proxy.VideoProxy.VIDEO_URI_SCHEME;
-
-public class MovieActivity extends FragmentActivity implements VideoExtraNames, OnClickListener,
-        OnSeekBarChangeListener, HttpGetProxy.OnErrorHttpStatusCodeListener {
+public class AliPlayerActivity extends FragmentActivity implements VideoExtraNames, OnClickListener {
 
     public static final String DREAM_PLAYER_SHADER = "DreamPlayerShader";
     public static final String ACTION_APPSWITCH = "com.readboy.switchapp";
@@ -105,7 +98,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     private static final int BRIGHT_CONTROL_FACTOR = 600;
 
     private static final int MAX_DIRDEPTH = 15;
-    private static final String TAG = "oubin_MovieActivity";
+    private static final String TAG = "oubin_AliPlayerActivity";
 
     public static boolean onStopped = false;
 
@@ -114,14 +107,11 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     private boolean mInTouchSeekBar = false;
     private boolean mInHiding = false;
     private boolean mInShowing = false;
+    private boolean mRmvbPauseByUser;
     private boolean mPlayOnce = false;
     private boolean mPlayPrepared = false;
-    private boolean mPlayRmvb = false;
-    private boolean mRmvbPauseByUser = false;
-    private boolean mRmvbPlaying = false;
     private boolean mButtonCanClick = true;
     private boolean mUserThinkNetworkAvailable = true;
-    private boolean needAuth = false;
     private boolean hasRegisterReceiver = false;
     private int mFinishType;
     private boolean isAdjustVoiceOrBrightness;
@@ -148,62 +138,42 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
 
     private float downX = 0, moveX;
     private float downY = 0, moveY;
-    private long startTime = 0;
-    private long endTime = 0;
     private int mPosition = -1;
-    long size = 0;
 
-    //	private String mVid = null;
-    private String mPath = null;
+    //    private String mPath = null;
+    private IVideoResource mVideoResource;
+//    private VideoInfoEntity.VideoInfo mCurrentVideoInfo;
 
-    private View mTop;
-    private View mBottom;
-    private View mFloatLstVw = null;
-    private View mPlay;
-    private View mPause;
-    private TextView mTimeCurrent;
-    private TextView mTimeTotal;
     private TextView percentTextView = null;
-    private SeekBar mSeekBar;
     private ImageView mGestureController = null;
-    private View mFavoriteBtn;
-    /**
-     * selected = true代表已下载，或正在下载。
-     */
-    private View mDownloadBtn;
-    private TextView mVideoName;
-    private View mExerciseBtn;
+
+    private AliPlayerView mPlayerView;
+    private PlayerBottomView mBottomView;
+    private PlayerTopView mTopView;
+    private PlayerCompleteViewDefault mCompleteView;
 
     //视频列表相关
 //    private LinearLayout mVideoListParent;
     private RecyclerView mVideoRv;
     private CommonAdapter mVideoAdapter;
-    /**
-     *
-     */
-    private int mSaveVideoState = VideoView.STATE_IDLE;
 
-    private PlayerFragment mFragment = null;
-    private VideoPlayerListener mVideoPlayerListener;
     /**
      * 视频是否 正在重新缓存中
      */
     private boolean isBuffering = false;
     private VideoDatabaseInfo mVideoDbInfo = new VideoDatabaseInfo();
-    private HttpGetProxy proxy;
-    private HeartThread mHearThread = null;
+    //    private HeartThread mHearThread = null;
     CustomProgressDialog mPD = null;
     AlertDialog mNetworkDialog = null;
-
-    private FloatListAdapter mFloatLstAdapter = null;
 
     private AudioManager audioManager;
     private RemoteControlClient mRemoteControlClient = null;
 
     private MyTrafficStatus mTrafficStatus = null;
 
-    private int[] playsizeBackgroudIDs;
-    private final ArrayList<String> mVideoPathList = new ArrayList<>();
+    //    private final ArrayList<String> mVideoPathList = new ArrayList<>();
+//    private final ArrayList<VideoInfoEntity.VideoInfo> mVideoResourceList = new ArrayList<>();
+    private final ArrayList<IVideoResource> mVideoResourceList = new ArrayList<>();
     private boolean hasRequestAudioFocus = false;
 
     /**
@@ -212,13 +182,14 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
         @Override
         public void onCallStateChanged(int state, String incomingNumber) {
-            if (state == TelephonyManager.CALL_STATE_RINGING) {  // 响铃
-                if (mFragment != null) {
-                    mFragment.pause();
-                }
-            } else if (state == TelephonyManager.CALL_STATE_OFFHOOK) {  //  接听
+            if (state == TelephonyManager.CALL_STATE_RINGING) {
+                // 响铃
+                mPlayerView.onPause();
+            } else if (state == TelephonyManager.CALL_STATE_OFFHOOK) {
+                //  接听
 
-            } else if (state == TelephonyManager.CALL_STATE_IDLE) {  // 空闲
+            } else if (state == TelephonyManager.CALL_STATE_IDLE) {
+                // 空闲
 
             }
         }
@@ -249,22 +220,14 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 case Intent.ACTION_MEDIA_REMOVED:
                 case Intent.ACTION_MEDIA_EJECT:
                 case Intent.ACTION_MEDIA_UNMOUNTED:
-                    if (mPath != null) {
-                        if (mPath.startsWith("/storage/emulated/0") || mPath.startsWith("storage/emulated/0")) {
-                            if (mVideoPathList.size() > 0) {
-                                String path;
-                                for (int i = mVideoPathList.size() - 1; i >= 0; i--) {
-                                    path = mVideoPathList.get(i);
-                                    if (!(path.startsWith("/storage/emulated/0") || path.startsWith("storage/emulated/0"))) {
-                                        mVideoPathList.remove(path);
-                                    }
-                                }
-                            }
+                    if (mVideoResource != null) {
+                        String path = mVideoResource.getVideoUri().getPath();
+                        if (path.startsWith("/storage/emulated/0") || path.startsWith("storage/emulated/0")) {
                         } else {
-                            if (!finishOnce && mPath.contains(intent.getData().getPath())) {
+                            if (!finishOnce && path.contains(intent.getData().getPath())) {
                                 Log.e(TAG, "card removed.");
                                 finishOnce = true;
-                                Toast.makeText(MovieActivity.this, "正在播放的文件不存在！", Toast.LENGTH_LONG).show();
+                                Toast.makeText(AliPlayerActivity.this, "正在播放的文件不存在！", Toast.LENGTH_LONG).show();
                                 finish();
                             }
 
@@ -284,12 +247,10 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 case Intent.ACTION_CAMERA_BUTTON:
                 case "com.android.intent.action.CAMERA_BUTTON":
                     Log.e(TAG, "camera come");
-                    if (mFragment != null) {
-                        mFragment.stopPlayback();
-                        unregisterReceiver();
+                    mPlayerView.onDestroy();
+                    unregisterReceiver();
 //                        System.exit(0);
-                        finishMyself();
-                    }
+                    finishMyself();
                     break;
                 case Intent.ACTION_CLOSE_SYSTEM_DIALOGS:
                     String reason = intent.getStringExtra(SYSTEM_DIALOG_REASON_KEY);
@@ -333,45 +294,36 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message message) {
-            if (onStopped && mFragment == null) {
+//            Log.e(TAG, "handleMessage: message = " + message.what);
+            if (onStopped) {
                 return;
             }
             switch (message.what) {
                 case VideoMessage.READY:
                     Log.e(TAG, "VideoMessage.READY, mIsPlayUrl = " + mIsPlayUrl
                             + ", mUserThinkNetworkAvailable = " + mUserThinkNetworkAvailable);
-                    if (!mIsPlayUrl || mUserThinkNetworkAvailable) {
+                    if (mUserThinkNetworkAvailable) {
                         updatePlay();
                     }
                     break;
                 case VideoMessage.HEART:
 //                    Log.e(TAG, "handleMessage: VideoMessage.HEART.");
                     //Vimatio rmvb can't recevie media completion message, so we send finish by ourself.
-                    if (mPlayPrepared && mPlayRmvb && mFragment != null) {
-                        if (mFragment.isPlaying() && mFragment.getDuration() - mFragment.getCurrentPosition() < 2000) {
-                            mHandler.sendEmptyMessage(VideoMessage.FINISHED);
-                        }
-                        if (mRmvbPlaying) {
-                            if (!mFragment.isPlaying() && !mRmvbPauseByUser && !onStopped) {
-                                mPlay.setVisibility(View.GONE);
-                                mPause.setVisibility(View.VISIBLE);
-                            }
-                        }
-                        mRmvbPlaying = mFragment.isPlaying();
-                    }
+//                    if (mPlayPrepared) {
+//                        if (mPlayerView.isPlaying() && mFragment.getDuration() - mFragment.getCurrentPosition() < 2000) {
+//                            mHandler.sendEmptyMessage(VideoMessage.FINISHED);
+//                        }
+//                        if (!mFragment.isPlaying() && !mRmvbPauseByUser && !onStopped) {
+//                        }
+//                    }
 //                    Log.e(TAG, "handleMessage: mInTouchSeekBar = " + mInTouchSeekBar
 //                            + ", mRmvbPauseByUser = " + mRmvbPauseByUser);
-                    if (!mInTouchSeekBar && !mRmvbPauseByUser) {
-                        updateController();
-                    }
-                    if (mRmvbPauseByUser && mFragment != null) {
-//					mFragment.pause();
-                    }
-//                    Log.e(TAG, "handleMessage: mNetWorkSpeedShow = " + mNetWorkSpeedShow
-//                            + ", trafficStatus = " + mTrafficStatus);
+//                    if (!mInTouchSeekBar && !mRmvbPauseByUser) {
+//                        updateController();
+//                    }
                     if (mNetWorkSpeedShow && mTrafficStatus != null) {
                         if (mPD != null) {
-                            String speeds = mTrafficStatus.getRxSpeed(MovieActivity.this);
+                            String speeds = mTrafficStatus.getRxSpeed(AliPlayerActivity.this);
 //                            Log.e(TAG, "handleMessage: speeds = " + speeds);
                             if (speeds != null) {
                                 mPD.setMessage(speeds);
@@ -380,35 +332,25 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                     }
                     break;
                 case VideoMessage.FINISHED:
-                    if (mFragment != null) {
-                        Log.e(TAG, "handleMessage: mPlayer state = " + mFragment.getPlayerState());
-                        save(mPath, mFragment.getDuration(), mFragment.getDuration());
-                    }
-
-                    mPlayRmvb = false;
+                    saveCurrentPosition();
                     Log.e(TAG, "handleMessage: play once = " + mPlayOnce + ", mIndex = " + mIndex
-                            + ", size = " + mVideoPathList.size());
-                    if (mPlayOnce || mIndex >= mVideoPathList.size() - 1) {
+                            + ", size = " + mVideoResourceList.size());
+                    if (mPlayOnce || mIndex >= mVideoResourceList.size() - 1) {
 //                        finishMyself();
                         Log.d(TAG, " -------- Pause unnormal, VideoMessage.FINISHED ");
                         finish();
                     } else {
-                        mPath = getNextMediaPath(true);
+                        mVideoResource = getNextMediaPath(true);
                         mPosition = 0;
-                        mFragment.seekTo(mPosition);
+                        mPlayerView.seekTo(mPosition);
                         mHandler.sendEmptyMessage(VideoMessage.READY);
                     }
                     break;
                 case VideoMessage.NOOP:
-                    if (mFragment != null) {
-                        if (mFragment.isPlaying()) {
-                            if (mFloatLstAdapter == null || !mFloatLstAdapter.getActive()) {
-                                showController(false);
-                            } else {
-                                mFloatLstAdapter.setActive(false);
-                                hideControllerDelayed();
-                            }
-                        }
+                    if (mPlayerView.isPlaying()) {
+                        showController(false);
+                    } else {
+                        Log.e(TAG, "handleMessage: no playing");
                     }
                     break;
                 case VideoMessage.ERROR:
@@ -416,7 +358,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                     if (onStopped) {
                         return;
                     }
-                    Toast.makeText(MovieActivity.this, (String) message.obj, Toast.LENGTH_LONG).show();
+                    Toast.makeText(AliPlayerActivity.this, (String) message.obj, Toast.LENGTH_LONG).show();
                     finish();
                     break;
                 default:
@@ -431,27 +373,18 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         @Override
         public void onAnimationStart(Animation animation) {
             if (mInShowing) {
-                mTop.setVisibility(View.VISIBLE);
-                mBottom.setVisibility(View.VISIBLE);
-                Log.e(TAG, "onAnimationStart: video list size = " + mVideoPathList.size());
+                mTopView.setVisibility(View.VISIBLE);
+                mBottomView.setVisibility(View.VISIBLE);
                 mVideoRv.setVisibility(View.VISIBLE);
-                if (mVideoPathList.size() > 1) {
-//                    mVideoListParent.setVisibility(View.VISIBLE);
-                }
-//				mFloatLstVw.setVisibility(View.VISIBLE);
             }
         }
 
         @Override
         public void onAnimationEnd(Animation animation) {
             if (mInHiding) {
-                mTop.setVisibility(View.GONE);
-                mBottom.setVisibility(View.GONE);
+                mTopView.setVisibility(View.GONE);
+                mBottomView.setVisibility(View.GONE);
                 mVideoRv.setVisibility(View.GONE);
-//                mVideoListParent.setVisibility(View.GONE);
-                if (mFloatLstVw != null) {
-                    mFloatLstVw.setVisibility(View.GONE);
-                }
                 mInHiding = false;
             }
             if (mInShowing) {
@@ -483,34 +416,25 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
 //		Vitamio.isInitialized(getApplicationContext());
         isInit = true;
 
-        SharedPreferences sharePreference = getSharedPreferences(MovieActivity.DREAM_PLAYER_SHADER, Context.MODE_PRIVATE);
-        boolean floatshow = sharePreference.getBoolean(FloatingWindowService.FLOATWIN_SHOW, false);
-        Log.e(TAG, "---- onCreate floatshow: " + floatshow);
-        if (floatshow) {
-            sendBroadcast(new Intent("android.intent.action.floatviewclose"));
-        }
-
         mRemoteControlClient = MediaButtonIntentReceiver.registerMediaButton(this);
 
-        setContentView(R.layout.player_view);
+        setContentView(R.layout.activity_ali_player_view);
         registerReceiver();
-
         assignView();
-        initClickEvent();
+//        initClickEvent();
 
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        Log.d(TAG, "-------- MovieActivity onCreate intent: " + getIntent());
         if (permission) {
             if (!parseIntent(getIntent())) {
                 return;
             }
             initMovieActivity();
+            mHandler.sendEmptyMessage(VideoMessage.READY);
         }
 
         TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         tm.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
 
-        mHandler.sendEmptyMessage(VideoMessage.READY);
     }
 
     private void initWindow() {
@@ -574,31 +498,20 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     }
 
     private void assignView() {
-        mTop = findViewById(R.id.player_top);
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            View mPlayerSizePort = findViewById(R.id.playsize_port);
-            mPlayerSizePort.setVisibility(View.GONE);
-        }
+        mTopView = new PlayerTopView(this);
+        mTopView.setUnitOnClickListener(this);
+        mBottomView = new PlayerBottomView(this);
+        mBottomView.setUnitClickListener(this);
+        mCompleteView = new PlayerCompleteViewDefault(this);
+        mCompleteView.getContinueView().setOnClickListener(this);
+        mCompleteView.getCancelView().setOnClickListener(this);
+        mPlayerView = (AliPlayerView) findViewById(R.id.ali_player_view);
+        mPlayerView.init(mTopView, mBottomView, mCompleteView);
+        //保持屏幕常亮，一般播放界面建议设置常亮，特殊情况自行考虑。选用
+        mPlayerView.setKeepScreenOn(true);
 
-        playsizeBackgroudIDs = new int[]{
-                R.drawable.btn_playsize_full_portrait_selector,
-                R.drawable.btn_palysize_width_portrait_selector
-        };
-
-        mSeekBar = (SeekBar) findViewById(R.id.seek_bar);
-        mSeekBar.setOnSeekBarChangeListener(this);
-        mPlay = findViewById(R.id.play);
-        mPause = findViewById(R.id.pause);
-        mTimeCurrent = (TextView) findViewById(R.id.current_time);
-        mTimeTotal = (TextView) findViewById(R.id.total_time);
-        mBottom = findViewById(R.id.player_control_bar);
-
-        mFavoriteBtn = findViewById(R.id.favorite);
-        mFavoriteBtn.setOnClickListener(this);
-        mDownloadBtn = findViewById(R.id.download);
-        mDownloadBtn.setOnClickListener(this);
-        mVideoName = (TextView) findViewById(R.id.player_video_name);
-        mExerciseBtn = findViewById(R.id.exercise);
+        //打开阿里打印，即阿里播放器底层相关的打印，前期测试阶段建议打开。已改到Application中设置了。选用
+        mPlayerView.enableNativeLog();
 
         mGestureController = (ImageView) findViewById(R.id.voice_or_bright);
         percentTextView = (TextView) findViewById(R.id.percent);
@@ -616,11 +529,11 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         mVideoRv = (RecyclerView) findViewById(R.id.small_player_video_list);
         mVideoRv.setLayoutManager(new LinearLayoutManager(this));
         mVideoRv.addItemDecoration(new LineItemDecoration(LinearLayout.VERTICAL, 1, Color.GRAY));
-        mVideoAdapter = new CommonAdapter<String>(this, R.layout.item_video_player, mVideoPathList) {
+        mVideoAdapter = new CommonAdapter<IVideoResource>(this, R.layout.item_video_player, mVideoResourceList) {
             @Override
-            protected void convert(ViewHolder holder, String s, int position) {
+            protected void convert(ViewHolder holder, IVideoResource resource, int position) {
                 TextView textView = (TextView) holder.itemView.findViewById(R.id.player_video_name);
-                textView.setText(FileUtils.getFileNameWithoutExtension(mVideoPathList.get(position)));
+                textView.setText(resource.getVideoName());
                 if (mIndex == position) {
                     textView.setSelected(true);
                     textView.setMarqueeRepeatLimit(-1);
@@ -643,15 +556,13 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 }
 
                 showProgressDialog();
-                if (mFragment != null) {
-                    save(mPath, mFragment.getCurrentPosition(), mFragment.getDuration());
-                }
+                saveCurrentPosition();
                 videoViewPauseOrStop();
                 mIndex = position;
-                mPath = mVideoPathList.get(mIndex);
+                mVideoResource = mVideoResourceList.get(mIndex);
                 mPosition = 0;
 //                mFragment.seekTo(0);
-                updateStatus(mPath);
+                updateCurrentVideoResource(mVideoResource);
                 mRmvbPauseByUser = false;
                 mHandler.sendEmptyMessage(VideoMessage.READY);
                 hideControllerDelayed();
@@ -667,7 +578,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     }
 
     private void initClickEvent() {
-        int[] resIds = {R.id.back, R.id.play, R.id.pause, R.id.exercise, R.id.fullscreen, R.id.video_list_switch};
+        int[] resIds = {R.id.player_back, R.id.player_player, R.id.player_pause, R.id.player_exercise, R.id.fullscreen, R.id.player_video_list_switch};
         for (int resId : resIds) {
             View v = findViewById(resId);
             if (v != null) {
@@ -695,6 +606,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        //TODO 关闭权限重新进入，需要重新初始化。
         Log.d(TAG, "---- onNewIntent intent: " + intent);
         if (intent != null) {
             String newPath = intent.getStringExtra("path");
@@ -724,8 +636,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 }
             }
 
-            Log.d(TAG, "---- onNewIntent newPath: " + newPath + ", mPath: " + mPath);
-            if (newPath != null && !newPath.equals(mPath)) {
+            if (newPath != null && !newPath.equals("")) {
                 Log.d(TAG, "---- onNewIntent newPath: " + newPath);
                 parseIntent(intent);
                 initMovieActivity();
@@ -740,14 +651,8 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         if (pathList == null) {
             return;
         }
-        mVideoPathList.clear();
-        mVideoPathList.addAll(pathList);
         mVideoAdapter.notifyDataSetChanged();
 //        mVideoRv.post(() -> ViewUtils.setSelectedPosition(mIndex, R.id.player_video_name, mVideoRv));
-        if (mVideoPathList.size() <= 1) {
-            Log.e(TAG, "updateVideoPath: videoPathList size = " + mVideoPathList.size());
-//            mVideoListParent.setVisibility(View.GONE);
-        }
     }
 
     @Override
@@ -761,49 +666,6 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         sScreenRight = point.x * 3 / 4;
         sScreenHeight = point.y;
 
-//        LayoutParams paramsTimeCurrent = (LayoutParams) mTimeCurrent.getLayoutParams();
-//        LayoutParams paramsTimeTotal = (LayoutParams) mTimeTotal.getLayoutParams();
-//        LayoutParams paramsSeekbar = (LayoutParams) mSeekBar.getLayoutParams();
-//        android.view.ViewGroup.LayoutParams paramsTopLayout = mTop.getLayoutParams();
-//
-//        View mPlaysize = findViewById(R.id.playsize);
-//        View mPlaysizePort = findViewById(R.id.playsize_port);
-//        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-//            paramsTimeCurrent.removeRule(RelativeLayout.BELOW);
-//            paramsTimeTotal.removeRule(RelativeLayout.BELOW);
-//            paramsTimeTotal.rightMargin = (int) getResources().getDimension(R.dimen.player_total_time_l_margin_right);
-//
-//            paramsSeekbar.addRule(RelativeLayout.LEFT_OF, mTimeTotal.getId());
-//            paramsSeekbar.addRule(RelativeLayout.RIGHT_OF, mTimeCurrent.getId());
-//            paramsSeekbar.removeRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-//
-//            paramsTopLayout.height = (int) getResources().getDimension(R.dimen.player_top_height_landscape);
-//
-//            mPlaysize.setVisibility(View.VISIBLE);
-//            mPlaysizePort.setVisibility(View.GONE);
-//        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-//            paramsTimeCurrent.addRule(RelativeLayout.BELOW, mSeekBar.getId());
-//            paramsTimeTotal.addRule(RelativeLayout.BELOW, mSeekBar.getId());
-//            paramsTimeTotal.rightMargin = (int) getResources().getDimension(R.dimen.player_total_time_p_margin_right);
-//
-//            paramsSeekbar.removeRule(RelativeLayout.LEFT_OF);
-//            paramsSeekbar.addRule(RelativeLayout.RIGHT_OF, R.id.back);
-//            paramsSeekbar.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-//
-//            paramsTopLayout.height = (int) getResources().getDimension(R.dimen.player_top_height_portrait);
-//
-//            mPlaysize.setVisibility(View.GONE);
-//            mPlaysizePort.setVisibility(View.VISIBLE);
-//        }
-//        if (mFragment != null) {
-//            mFragment.setLayout();
-//        }
-//
-//        mSeekBar.setLayoutParams(paramsSeekbar);
-//        mTimeCurrent.setLayoutParams(paramsTimeCurrent);
-//        mTimeTotal.setLayoutParams(paramsTimeTotal);
-//        mTop.setLayoutParams(paramsTopLayout);
-        Log.i("", " onConfigurationChanged mFragment: " + mFragment);
     }
 
     @Override
@@ -816,13 +678,13 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
 
         hideControllerDelayed();
         WakeUtil.acquireCpuWakeLock(this);
-        if (mHearThread != null) {
-            Log.e(TAG, "onResume: pause hear thread.");
-            mHearThread.pause();
-            mHearThread = null;
-        }
-        mHearThread = new HeartThread(mHandler);
-        mHearThread.start();
+//        if (mHearThread != null) {
+        Log.e(TAG, "onResume: pause hear thread.");
+//            mHearThread.pause();
+//            mHearThread = null;
+//        }
+//        mHearThread = new HeartThread(mHandler);
+//        mHearThread.start();
         if (!mUserThinkNetworkAvailable && mIsPlayUrl) {
             handleNetwork();
         }
@@ -832,12 +694,9 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         if (mIsPlayUrl) {
             mTrafficStatus = new MyTrafficStatus(this);
         }
-        if (mFragment != null) {
-//            mButtonCanClick = mFragment.isInPlaybackState();
-            Log.e(TAG, "onResume: mButtonCanClick = " + mButtonCanClick + ", state = " + mFragment.getPlayerState());
-            if (!mButtonCanClick) {
+        Log.e(TAG, "onResume: mButtonCanClick = " + mButtonCanClick + ", state = " + mPlayerView.getPlayerState());
+        if (!mButtonCanClick) {
 //                showProgressDialog();
-            }
         }
         Log.d(TAG, "-------- onResume ");
     }
@@ -848,14 +707,10 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         Log.e(TAG, "onPause: ");
         cancelAutoHide();
         onStopped = true;
-        if (mFragment != null && isSaveState()) {
-            mPosition = Math.max(0, mFragment.getCurrentPosition() - 1200);
+        if (isSaveState()) {
+            mPosition = (int) Math.max(0, mPlayerView.getCurrentPosition() - 1200);
             Log.e(TAG, "onPause: mPosition = " + mPosition);
-            mDuration = mFragment.getDuration();
-        }
-
-        if (mFragment != null) {
-            mSaveVideoState = mFragment.getPlayerState();
+            mDuration = mPlayerView.getDuration();
         }
 
         videoViewPause();
@@ -864,12 +719,12 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         dismissProgressDialog();
         mButtonCanClick = true;
 
-        mHearThread.pause();
-        mHearThread = null;
+//        mHearThread.pause();
+//        mHearThread = null;
         Log.d(TAG, "-------- onPause mPosition: " + mPosition + ", string: " + Utils.formatTime(mPosition));
 
         WakeUtil.releaseCpuLock();
-        save(mPath, mPosition, mDuration);
+        saveCurrentPosition();
 
         disappearView();
         if (mIsPlayUrl) {
@@ -888,10 +743,6 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
             unregisterReceiver();
         }
 
-        if (proxy != null) {
-            proxy.stopProxy();
-        }
-
         dismissProgressDialog();
         cancelAutoHide();
 
@@ -904,10 +755,23 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
             MediaButtonIntentReceiver.unregisterMediaButton(this, mRemoteControlClient);
         }
 
+        TelephonyManager manager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+        manager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE);
+        mPhoneStateListener = null;
+
         if (mExit) {
 //            Log.e(TAG, "-------- System.exit(0) ");
 //            System.exit(0);
         }
+
+        if (mPlayerView != null) {
+            mPlayerView.setKeepScreenOn(false);
+            mPlayerView.onDestroy();
+            mPlayerView = null;
+        }
+        mTopView = null;
+        mBottomView = null;
+        mCompleteView = null;
 
         MathApplication.refWatch(this);
     }
@@ -949,7 +813,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         }
     }
 
-    public void hideControllerDelayed() {
+    private void hideControllerDelayed() {
         Log.e(TAG, "hideControllerDelayed: ");
         mHandler.removeMessages(VideoMessage.NOOP);
         mHandler.sendMessageDelayed(mHandler.obtainMessage(VideoMessage.NOOP), HIDE_CONTROLLER_DELAY_DURATION);
@@ -960,66 +824,34 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         mHandler.removeMessages(VideoMessage.NOOP);
     }
 
-    public void changeVideoLayout(View view) {
-        mVideoLayout++;
-        if (mVideoLayout >= 2) {
-            mVideoLayout = 0;
-        }
-
-        switch (mVideoLayout) {
-            case 0:
-                //初始状态
-                mVideoLayout = VideoView.VIDEO_LAYOUT_ORIGIN;
-                break;
-            case 1:
-                //
-                mVideoLayout = VideoView.VIDEO_LAYOUT_SCALE;
-                break;
-            default:
-                Log.e(TAG, "changeVideoLayout: default = " + mVideoLayout);
-                break;
-        }
-        Log.i(TAG, "-------- mVideoLayout: " + mVideoLayout);
-        if (mFragment != null) {
-            mFragment.setLayout(mVideoLayout);
-        }
-        ((ImageButton) view).setImageResource(playsizeBackgroudIDs[mVideoLayout]);
-        hideControllerDelayed();
-    }
-
-    public String getNextMediaPath(boolean increase) {
+    public IVideoResource getNextMediaPath(boolean increase) {
         if (increase) {
-            if (++mIndex >= mVideoPathList.size()) {
+            if (++mIndex >= mVideoResourceList.size()) {
                 mIndex = 0;
             }
         } else {
             if (--mIndex < 0) {
-                mIndex = mVideoPathList.size() - 1;
+                mIndex = mVideoResourceList.size() - 1;
             }
         }
-        if (mFloatLstAdapter != null) {
-            mFloatLstAdapter.setSelIdx(mIndex);
-        }
         Log.i(TAG, "-------- getNextMediaPath index: " + mIndex);
-        String path = mVideoPathList.get(mIndex);
-        updateStatus(path);
-        return path;
+        IVideoResource resource = mVideoResourceList.get(mIndex);
+        return resource;
     }
 
     @Override
     public void onClick(View v) {
         Log.e(TAG, "onClick: v = " + v.getId());
         if (mInHiding) {
-            mTop.clearAnimation();
-            mBottom.clearAnimation();
+            mTopView.clearAnimation();
+            mBottomView.clearAnimation();
             mVideoRv.clearAnimation();
             mInHiding = false;
         }
         hideControllerDelayed();
         switch (v.getId()) {
-            case R.id.back:
+            case R.id.player_back:
                 mPlayPrepared = false;
-                mPlayRmvb = false;
                 finishMyself();
                 break;
             case R.id.next:
@@ -1028,14 +860,14 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
             case R.id.prev:
 //                previous();
                 break;
-            case R.id.play:
+            case R.id.player_player:
                 Log.e(TAG, "onClick: play mButtonCanClick = " + mButtonCanClick);
                 if (mButtonCanClick) {
                     videoViewStart();
                 }
                 hideControllerDelayed();
                 break;
-            case R.id.pause:
+            case R.id.player_pause:
                 Log.e(TAG, "onClick: pause mButtonCanClick = " + mButtonCanClick);
                 if (mButtonCanClick) {
                     videoViewPause();
@@ -1046,39 +878,8 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 showController(!isControllerShowing());
                 hideControllerDelayed();
                 break;
-            case R.id.exercise:
+            case R.id.player_exercise:
                 gotoExerciseActivity();
-                break;
-            case R.id.favorite:
-                Log.e(TAG, "onClick: favorite isChecked = " + mFavoriteBtn.isSelected());
-                if (mFavoriteBtn.isSelected()) {
-                    if (VideoProxy.unFavoriteVideo(getContentResolver(), mPath)) {
-                        mFavoriteBtn.setSelected(false);
-                        ToastUtils.showShort(this, "取消收藏成功");
-                    } else {
-                        ToastUtils.show(this, "取消收藏失败！");
-                    }
-                } else {
-                    if (VideoProxy.favoriteVideo(getContentResolver(), mPath)) {
-                        ToastUtils.showShort(this, "收藏成功");
-                        mFavoriteBtn.setSelected(true);
-                    } else {
-                        ToastUtils.showShort(this, "收藏失败");
-                    }
-                }
-                break;
-            case R.id.download:
-                Log.e(TAG, "onClick: filename = " + FileUtils.getFileName(mPath));
-                if (mIsPlayUrl) {
-                    if (mDownloadBtn.isSelected() && VideoProxy.isDownloading(mPath)) {
-                        ToastUtils.show(this, "正在下载中");
-                    }
-                    VideoProxy.downloadVideoWithUrl(this, mPath);
-                    ToastUtils.showShort(this, "已添加到下载队列");
-                    mDownloadBtn.setSelected(true);
-                } else {
-                    ToastUtils.show(this, "已下载");
-                }
                 break;
             case R.id.fullscreen:
                 if (mFinishType == TYPE_GOTO) {
@@ -1087,7 +888,17 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                     finishMyself();
                 }
                 break;
-            case R.id.video_list_switch:
+            case R.id.player_complete_btn_cancel:
+                finishMyself();
+                break;
+            case R.id.player_complete_btn_continue:
+                mIndex = 0;
+                if (mVideoResourceList.size() > 1) {
+                    mVideoResource = mVideoResourceList.get(mIndex);
+                }
+                updatePlay();
+                break;
+            case R.id.player_video_list_switch:
                 if (mVideoRv.getVisibility() == View.VISIBLE) {
                     hideVideoList();
                 } else {
@@ -1110,59 +921,16 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         mVideoRv.setVisibility(View.GONE);
     }
 
-    private void showFloatWindow() {
-        if (Build.VERSION.SDK_INT > 22) {
-            if (!Settings.canDrawOverlays(this)) {
-                Intent intentss = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
-                intentss.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(intentss);
-                return;
-            }
-        }
-        if (!mWinToFloat && mPath != null) {
-            mWinToFloat = true;
-            Intent intent = new Intent();
-            intent.setAction("android.intent.action.MAIN");
-            intent.addCategory("android.intent.category.HOME");
-            startActivity(intent);
-
-            Intent service = new Intent(getApplicationContext(), FloatingWindowService.class);
-            service.putExtra("path", mPath);
-            service.putExtra("position", mFragment.getCurrentPosition());
-            service.putStringArrayListExtra("medialist", mVideoPathList);
-            service.putExtra("isUrl", mIsPlayUrl);
-
-            service.putExtra("databasepath", mVideoDbInfo.mDataPath);
-            service.putExtra("databasename", mVideoDbInfo.mDataName);
-            service.putExtra("cachepath", mVideoDbInfo.mCachePath);
-
-            getApplicationContext().startService(service);
-            if (mFragment != null) {
-                if (mFragment.isPlaying()) {
-                    mPosition = mFragment.getCurrentPosition();
-                }
-                mFragment.pause();
-                mFragment.stopPlayback();
-//						mVideoView = null;
-            }
-            mExit = false;
-            finishMyself();
-            Log.e(TAG, " -------- go to floatwindow ");
-        }
-    }
-
     private void previous() {
         if (!mButtonCanClick) {
             return;
         }
-        if (mFragment != null) {
-            save(mPath, mFragment.getCurrentPosition(), mFragment.getDuration());
-        }
+        saveCurrentPosition();
 
         if (mIndex > 0) {
-            mPath = getNextMediaPath(false);
+            mVideoResource = getNextMediaPath(false);
             mPosition = 0;
-            mFragment.seekTo(mPosition);
+            mPlayerView.seekTo(mPosition);
             mRmvbPauseByUser = false;
             mHandler.sendEmptyMessage(VideoMessage.READY);
             cancelAutoHide();
@@ -1175,13 +943,11 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         if (!mButtonCanClick) {
             return;
         }
-        if (mFragment != null) {
-            save(mPath, mFragment.getCurrentPosition(), mFragment.getDuration());
-        }
-        if (mIndex < mVideoPathList.size() - 1) {
-            mPath = getNextMediaPath(true);
+        saveCurrentPosition();
+        if (mIndex < mVideoResourceList.size() - 1) {
+            mVideoResource = getNextMediaPath(true);
             mPosition = 0;
-            mFragment.seekTo(mPosition);
+            mPlayerView.seekTo(mPosition);
             mRmvbPauseByUser = false;
             mHandler.sendEmptyMessage(VideoMessage.READY);
             cancelAutoHide();
@@ -1197,6 +963,17 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
      */
     public void showController(boolean isShow) {
         Log.e(TAG, "showController() called with: isShow = " + isShow + "");
+        if (isControllerShowing()) {
+            if (isShow) {
+                hideControllerDelayed();
+                return;
+            }
+        } else {
+            if (!isShow) {
+                Log.d(TAG, "showController: is hided.");
+                return;
+            }
+        }
         if (isShow) {
             if (!mInShowing && !mInHiding && !isControllerShowing()) {
                 //显示
@@ -1205,8 +982,8 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 Animation ani3 = AnimationUtils.loadAnimation(this, R.anim.push_right);
                 ani1.setAnimationListener(mDismissAnimListener);
                 mInShowing = true;
-                mTop.startAnimation(ani1);
-                mBottom.startAnimation(ani2);
+                mTopView.startAnimation(ani1);
+                mBottomView.startAnimation(ani2);
                 mVideoRv.startAnimation(ani3);
             }
         } else {
@@ -1218,14 +995,9 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 Animation animation3 = AnimationUtils.loadAnimation(this, R.anim.pull_right);
                 ani1.setAnimationListener(mDismissAnimListener);
                 mInHiding = true;
-                mTop.startAnimation(ani1);
-                mBottom.startAnimation(ani2);
+                mTopView.startAnimation(ani1);
+                mBottomView.startAnimation(ani2);
                 mVideoRv.startAnimation(animation3);
-
-                if (mFloatLstVw != null && mFloatLstVw.getVisibility() != View.GONE) {
-                    Animation ani3 = AnimationUtils.loadAnimation(this, R.anim.slip_righ_to_left_mis);
-                    mFloatLstVw.startAnimation(ani3);
-                }
 
             }
         }
@@ -1251,71 +1023,25 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     }
 
     public boolean isControllerShowing() {
-        return mTop.getVisibility() == View.VISIBLE || mBottom.getVisibility() == View.VISIBLE;
-    }
-
-    /**
-     * 下面是哪个都为seebar监听的相关函数
-     */
-    @Override
-    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        if (fromUser) {
-            mTimeCurrent.setText(Utils.formatTime(seekBar.getProgress()));
-//			Log.i(TAG, "---- onProgressChanged mInTouchSeekBar: "+mInTouchSeekBar+", seekBar.getProgress(): "+seekBar.getProgress());
-        }
-    }
-
-    @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
-        mInTouchSeekBar = true;
-        cancelAutoHide();
-        Log.d(TAG, "---- onStartTrackingTouch seekBar.getProgress: " + Utils.formatTime(seekBar.getProgress()));
-    }
-
-    @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
-        Log.e(TAG, "onStopTrackingTouch: isPlayUrl = " + mIsPlayUrl);
-        mInTouchSeekBar = false;
-        if (!onStopped) {
-            mRmvbPauseByUser = false;
-//            hideControllerDelayed();
-        }
-        if (mFragment != null) {
-            Log.e(TAG, "onStopTrackingTouch: seek to " + seekBar.getProgress());
-            mFragment.seekTo(seekBar.getProgress());
-            if (seekBar.getProgress() > mFragment.getDuration() - 1000) {
-                if (mIsPlayUrl) {
-                    ToastUtils.show(this, "进度条已经最后了", Toast.LENGTH_SHORT);
-                    mHandler.sendEmptyMessage(VideoMessage.FINISHED);
-                }
-            }
-            if (mIsPlayUrl) {
-                showProgressDialog();
-            }
-        }
-        Log.d(TAG, "---- onStopTrackingTouch seekBar.getProgress: " + Utils.formatTime(seekBar.getProgress()));
+        return mTopView.getVisibility() == View.VISIBLE || mBottomView.getVisibility() == View.VISIBLE;
     }
 
     private void showProgressDialog() {
-        Log.e(TAG, "showProgressDialog: ");
+//        Log.e(TAG, "showProgressDialog: ");
 //        cancelAutoHide();
-        if (mNetworkDialog != null && mNetworkDialog.isShowing()) {
-            Log.e(TAG, "showProgressDialog: network dialog showing");
-            return;
-        }
-
-        createProgressDialog();
-//        if (mPD.isShowing()){
+//        if (mNetworkDialog != null && mNetworkDialog.isShowing()) {
+//            Log.e(TAG, "showProgressDialog: network dialog showing");
 //            return;
 //        }
-        mPD.show();
-        mPD.setCancelClickListener(v -> {
-            mFragment.stopPlayback();
-            mPlayPrepared = false;
-            mPlayRmvb = false;
-            finishMyself();
-        });
-        mNetWorkSpeedShow = true;
+//
+//        createProgressDialog();
+//        mPD.show();
+//        mPD.setCancelClickListener(v -> {
+//            mPlayerView.onStop();
+//            mPlayPrepared = false;
+//            finishMyself();
+//        });
+//        mNetWorkSpeedShow = true;
     }
 
     private void dismissProgressDialog() {
@@ -1338,10 +1064,10 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                Log.e(TAG, "onTouchEvent: action down.");
                 isAdjustVoiceOrBrightness = false;
                 downX = event.getX();
                 downY = event.getY();
-                startTime = System.currentTimeMillis();
                 break;
             case MotionEvent.ACTION_MOVE:
                 moveX = event.getX();
@@ -1388,27 +1114,11 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                         }
                     }
                 }
-
-                if (isControllerShowing()) {
-                    if (downX > sScreenRight && mVideoPathList.size() > 1 && mFloatLstVw != null) {
-                        if (downX - moveX > 10) {
-                            if (mFloatLstVw.getVisibility() != View.VISIBLE) {
-                                Animation ani3 = AnimationUtils.loadAnimation(this, R.anim.slip_righ_to_left_show);
-                                mFloatLstVw.startAnimation(ani3);
-                                mFloatLstVw.setVisibility(View.VISIBLE);
-                                mFloatLstAdapter.setActive(true);
-                            }
-
-                        }
-                    }
-                }
                 break;
             case MotionEvent.ACTION_UP:
-                //时间很短的话就显示下面的控制栏
-                endTime = System.currentTimeMillis();
+                Log.e(TAG, "onTouchEvent: isAdjustVoiceOrBrightness = " + isAdjustVoiceOrBrightness);
                 if (!isAdjustVoiceOrBrightness) {
                     showController(!isControllerShowing());
-                    hideControllerDelayed();
                 }
                 disappearView();
                 break;
@@ -1429,15 +1139,12 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
 
     public void prepare() {
         Log.e(TAG, "prepare: ");
-        if (mFragment != null) {
-            mSeekBar.setMax((int) mFragment.getDuration());
-            mButtonCanClick = true;
-            mPlayPrepared = true;
-            isBuffering = false;
-            requestAudioFocusTransient();
-            Log.e(TAG, "prepare: seek to " + mPosition);
+        mButtonCanClick = true;
+        mPlayPrepared = true;
+        isBuffering = false;
+        requestAudioFocusTransient();
+        Log.e(TAG, "prepare: seek to " + mPosition);
 //            mFragment.seekTo(mPosition);
-        }
         Log.d(TAG, "-------- prepare mPosition: " + mPosition);
     }
 
@@ -1448,7 +1155,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     public boolean onError(MediaPlayer mp, int what, int extra) {
         Log.e(TAG, "onError: what = " + what + ", extra = " + extra);
         Log.e(TAG, "onError: before mPosition = " + mPosition);
-        mPosition = mFragment.getCurrentPosition();
+        mPosition = (int) mPlayerView.getCurrentPosition();
         Log.e(TAG, "onError: after mPosition = " + mPosition);
         dismissProgressDialog();
         mButtonCanClick = true;
@@ -1467,11 +1174,6 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     public void handleNetwork() {
         int networkType = getNetworkType(this);
         Log.e(TAG, "handleNetwork: networkType = " + networkType);
-        int state = VideoView.STATE_IDLE;
-        if (mFragment != null) {
-            state = mFragment.getPlayerState();
-        }
-        Log.e(TAG, "handleNetwork: mPlayState = " + state);
         mUserThinkNetworkAvailable = networkType == ConnectivityManager.TYPE_WIFI;
         if (mNetworkType == networkType) {
             return;
@@ -1482,8 +1184,8 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         }
         switch (networkType) {
             case -1: //无网络
-                if (mFragment != null && isSaveState()) {
-                    mPosition = mFragment.getCurrentPosition();
+                if (isSaveState()) {
+                    mPosition = (int) mPlayerView.getCurrentPosition();
                     Log.e(TAG, "handleNetwork: mPosition = " + mPosition);
                 }
                 videoViewPause();
@@ -1498,14 +1200,11 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
 //                videoViewStart();
                 mRmvbPauseByUser = false;
                 mHandler.sendEmptyMessage(VideoMessage.READY);
-                Log.e(TAG, "handleNetwork: playing = " + mFragment.isInPlaybackState());
                 break;
             default:
                 //非wifi，使用流量提示
-                if (mFragment != null) {
-                    mFragment.pause();
-                    mPosition = mFragment.getCurrentPosition();
-                }
+                mPlayerView.onPause();
+                mPosition = (int) mPlayerView.getCurrentPosition();
                 showNotUseWifiWarningDialog();
                 break;
         }
@@ -1525,19 +1224,13 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
             public void onClick(DialogInterface dialog, int which) {
                 mUserThinkNetworkAvailable = true;
                 if (preNetworkType == -1) {
-                    if (proxy != null && mFragment != null) {
-                        mFragment.setPlayPath(proxy.getLocalURL(), mVideoDbInfo);
-                        Log.e(TAG, "DialogInterface onClick: seek to " + mPosition);
-                        mFragment.seekTo(mPosition);
-                        mFragment.pause();
-                    }
+                    playVideo();
+                    Log.e(TAG, "DialogInterface onClick: seek to " + mPosition);
                 }
                 if (!mPlayPrepared) {
                     mHandler.sendEmptyMessage(VideoMessage.READY);
                 } else {
-                    if (mFragment != null) {
-                        mFragment.start();
-                    }
+
                 }
             }
         });
@@ -1560,12 +1253,16 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         mNetworkDialog.show();
     }
 
+    private void saveCurrentPosition() {
+        if (mPlayerView != null) {
+            save(mVideoResource.getVideoName(), mPlayerView.getCurrentPosition(), mPlayerView.getDuration());
+        }
+    }
+
     private void save(String path, long curPos, long duration) {
         long size = 0;
         if (mIsPlayUrl) {
-            if (proxy != null) {
-                size = proxy.getFileSize();
-            }
+
         } else {
 //			saveMoviePlayInfo(path, curPos, duration);
             if (path != null) {
@@ -1586,11 +1283,11 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         if (mMediaProvider == null) {
             return videoUri;
         }
-        String[] VIDEO_PROJECTION = new String[]{Video.Media.DATA};
+        String[] videoProjection = new String[]{Video.Media.DATA};
 
 		/* valueAt video file */
         try {
-            c = mMediaProvider.query(videoUri, VIDEO_PROJECTION, null, null, null);
+            c = mMediaProvider.query(videoUri, videoProjection, null, null, null);
             if (c != null) {
                 try {
                     while (c.moveToNext()) {
@@ -1647,10 +1344,9 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
      * 优选播放path（本地视频），在选择url（网络视频），次之medialist内容
      */
     private boolean parseIntent(Intent intent) {
-        Uri uri = intent.getData();
         mIsPlayUrl = false;
         mFinishType = intent.getIntExtra(EXTRA_FINISH_TYPE, TYPE_SET_RESULT);
-
+        String mPath;
         mPath = intent.getStringExtra(VideoExtraNames.EXTRA_PATH);
         if (TextUtils.isEmpty(mPath)) {
             mPath = intent.getStringExtra(VideoExtraNames.EXTRA_URL);
@@ -1658,13 +1354,26 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         Log.e(TAG, "PATH:" + mPath);
         boolean exerciseEnable = intent.getBooleanExtra(VideoExtraNames.EXTRA_EXERCISE_ENABLE, false);
         if (exerciseEnable) {
-            mExerciseBtn.setVisibility(View.VISIBLE);
+            mTopView.setViewVisibility(R.id.player_exercise, View.VISIBLE);
         } else {
-            mExerciseBtn.setVisibility(View.GONE);
+            mTopView.setViewVisibility(R.id.player_exercise, View.GONE);
         }
         mUrlConfig = intent.getIntExtra(VideoExtraNames.EXTRA_URL_CONFIG, 0);
         mPosition = intent.getIntExtra(VideoExtraNames.EXTRA_SEEK_POSITION, 0);
         mIndex = intent.getIntExtra(VideoExtraNames.EXTRA_INDEX, 0);
+
+//        boolean result = parsePathList(intent);
+        parseVideoInfoList(intent);
+
+//        updateStatus(mPath);
+        Log.e(TAG, "parseIntent: paths = " + Arrays.toString(mVideoResourceList.toArray()));
+        Log.e(TAG, "parseIntent: mPath = " + mPath + ", \nmIndex = " + mIndex + ", \nisPlayUrl = " + mIsPlayUrl);
+        return true;
+    }
+
+    private boolean parsePathList(Intent intent) {
+        String mPath = null;
+        Uri uri = intent.getData();
         ArrayList<String> pathList = intent.getStringArrayListExtra(VideoExtraNames.EXTRA_MEDIA_LIST);
         if (pathList == null) {
             pathList = new ArrayList<>();
@@ -1693,7 +1402,8 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         } else if (uri != null) {
             if (uri.toString().startsWith("file://")) {
                 mPath = uri.getPath();
-            } else {    //"content://"
+            } else {
+                //"content://"
 //				mPath = uriParse(uri).getPath();
                 mPath = UriProxy.getPath(this, uri);
             }
@@ -1702,12 +1412,24 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
             mPlayOnce = true;
             result = true;
         }
-
+        Log.e(TAG, "parsePathList: " + Arrays.toString(pathList.toArray()));
         updateVideoPath(pathList);
-        updateStatus(mPath);
-        Log.e(TAG, "parseIntent: paths = " + Arrays.toString(mVideoPathList.toArray()));
-        Log.e(TAG, "parseIntent: mPath = " + mPath + ", \nmIndex = " + mIndex + ", \nisPlayUrl = " + mIsPlayUrl);
         return result;
+    }
+
+    private void parseVideoInfoList(Intent intent) {
+        ArrayList<VideoInfoEntity.VideoInfo> videoInfos =
+                intent.getParcelableArrayListExtra(VideoExtraNames.EXTRA_VIDEO_INFO_LIST);
+        mVideoResourceList.clear();
+        if (videoInfos != null) {
+            for (VideoInfoEntity.VideoInfo videoInfo : videoInfos) {
+                mVideoResourceList.add(new VidVideoResource(videoInfo));
+            }
+        }
+        if (mVideoResourceList.size() > 0) {
+            mIndex = Math.min(mIndex, mVideoResourceList.size() - 1);
+            updateCurrentVideoResource(mVideoResourceList.get(mIndex));
+        }
     }
 
     private void parseFileNameList(Intent intent) {
@@ -1717,101 +1439,39 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     /**
      * 更新因path修改，影响的其他状态
      */
-    private void updateStatus(String path) {
-        if (TextUtils.isEmpty(path)) {
+    private void updateCurrentVideoResource(IVideoResource resource) {
+        if (resource == null) {
             mIndex = -1;
             return;
         }
-        mIsPlayUrl = !TextUtils.isEmpty(mPath) && mPath.contains("http:");
-        Uri uri = Uri.parse(path);
-        mPath = path;
-        if (VIDEO_URI_SCHEME.equals(uri.getScheme())) {
-            Log.e(TAG, "updateStatus: is uri : " + path);
-            if (!VideoProxy.isDownloaded(FileUtils.getFileName(mPath))) {
-                mIsPlayUrl = true;
-            }
-        }
-        Log.e(TAG, "updateStatus: mPath = " + mPath);
-        if (!mIsPlayUrl) {
-//			findViewById(R.id.floatwindow).setVisibility(View.VISIBLE);
-            Log.e(TAG, "updateStatus: clear videoDbInfo cache path.");
-            //不支持本地，网络混合视频播放列表，注释掉代码。
-//            mVideoDbInfo.mCachePath = null;
-        } else {
-            mVideoDbInfo.mType = VideoInfoDatabaseProxy.TYPE_URL;
-        }
-        updateFavoriteAndDownload();
+        mVideoResource = resource;
+        mIsPlayUrl = false;
 
+        Log.e(TAG, "updateCurrentVideoResource: current = " + mVideoResource.toString());
+        updateFavoriteAndDownload();
     }
 
     /**
      * 更新播放控制条中的收藏和下载
      */
     private void updateFavoriteAndDownload() {
-        if (TextUtils.isEmpty(mPath)) {
-            return;
-        }
-        Log.e(TAG, "updateFavoriteAndDownload: mIsPlayUrl = " + mIsPlayUrl);
-        if (!mIsPlayUrl || VideoProxy.isDownloading(mPath)) {
-            //代表是本地视频，或者正在下载中。
-            mDownloadBtn.setSelected(true);
-        } else {
-            mDownloadBtn.setSelected(false);
-        }
-        if (VideoProxy.isFavorite(getContentResolver(), FileUtils.getFileName(mPath))) {
-            mFavoriteBtn.setSelected(true);
-        } else {
-            mFavoriteBtn.setSelected(false);
-        }
+        mBottomView.setVideoResource(mVideoResource);
     }
 
+    /**
+     * updateSeekBar
+     */
     private void updateController() {
-        if (mFragment != null) {
-            mTimeCurrent.setText(Utils.formatTime(mFragment.getCurrentPosition()));
-            mTimeTotal.setText("/" + Utils.formatTime(mFragment.getDuration()));
-            mSeekBar.setProgress((int) mFragment.getCurrentPosition());
-            if (mIsPlayUrl) {
-                float percent = mFragment.getBufferPercentage() * 0.01f;
-//			Log.i(TAG, " percent: "+percent+", mBufSize: "+mBufSize+", size: "+size);
-                mSeekBar.setSecondaryProgress((int) (percent * mFragment.getDuration()));
-            }
 
-            if (mFragment.isPlaying()) {
-                mPlay.setVisibility(View.GONE);
-                mPause.setVisibility(View.VISIBLE);
-            } else {
-                mPlay.setVisibility(View.VISIBLE);
-                mPause.setVisibility(View.GONE);
-            }
-
-//            ((ImageButton) findViewById(R.id.playsize)).setImageResource(playsizeBackgroudIDs[mVideoLayout]);
-//            ((ImageButton) findViewById(R.id.playsize_port)).setImageResource(playsizeBackgroudIDs[mVideoLayout]);
-        }
     }
 
     private void updatePlay() {
-        Log.e(TAG, "updatePlay() called path = " + mPath + ", mPosition = " + mPosition);
+        Log.e(TAG, "updatePlay() called resource = " + mVideoResource + ", mPosition = " + mPosition);
         mPlayPrepared = false;
 
-        if (mPath == null) {
+        if (mVideoResource == null) {
             return;
         }
-
-        if (mPath.split("/").length > MAX_DIRDEPTH) {    //文件夹深度超过MAX_DIRDEPTH不播放
-            mHandler.sendEmptyMessage(VideoMessage.TOO_DEEP);
-            return;
-        }
-
-        mPlayRmvb = mPath.endsWith(".rmvb");
-
-//        boolean isProxy = false;
-//        boolean proxyflag = false;
-//
-//        if (!mIsPlayUrl) {
-//            proxyflag = isEncryption(this, mPath);
-//        }
-//        Log.i("", "---- proxyflag: " + proxyflag);
-//        isProxy = proxyflag || mUrlConfig != 0;
 
         Log.e(TAG, "updatePlay: mButtonCanClick = false.");
         mButtonCanClick = false;
@@ -1822,34 +1482,20 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
             }
         }
 
-//		new AsynVideoSetDataSource().execute(isProxy);
+        mTopView.setVideoName(mVideoResource.getVideoName());
 
-        mVideoName.setText(Utils.getVideoName(mPath));
-
-        Uri uri = Uri.parse(mPath);
-        Log.e(TAG, "updatePlay: scheme = " + uri.getScheme());
-        if (VIDEO_URI_SCHEME.equals(uri.getScheme())
-                || (mIsPlayUrl && !VideoProxy.isValid(mPath))) {
-            String path = uri.getPath();
-            Log.e(TAG, "updatePlay: is url : " + mPath + ", path = " + path);
-            if (TextUtils.isEmpty(path)) {
-                path = uri.getEncodedPath();
+        if (mVideoResource instanceof VidVideoResource) {
+            if (checkNetwork()) {
+                mVideoResource.play(mPlayerView, mPosition);
+                mBottomView.setFavoriteVisibility(View.VISIBLE);
             }
-            playVideoAndAuth(path);
-            mFavoriteBtn.setVisibility(View.VISIBLE);
         } else {
-            if (mIsPlayUrl && !checkNetwork()) {
-                Log.e(TAG, "updatePlay: not internet.");
-                mButtonCanClick = true;
-                return;
-            }
-            mFragment.setPlayPath(mPath, mVideoDbInfo);
+            mVideoResource.play(mPlayerView, mPosition);
             updateStatusCauseUri();
-            mFavoriteBtn.setVisibility(View.GONE);
+            mBottomView.setFavoriteVisibility(View.GONE);
         }
 
         showController(true);
-        hideControllerDelayed();
         Log.e(TAG, "updatePlay: mIndex = " + mIndex);
         mVideoAdapter.notifyDataSetChanged();
     }
@@ -1857,7 +1503,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     /**
      * 监听是否有网络。
      *
-     * @return 是否有网络。
+     * @return 是否有网络。无网返回false
      */
     private boolean checkNetwork() {
         if (!NetworkUtils.isConnected(this)) {
@@ -1890,7 +1536,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                     Log.e(TAG, "playVideoAndAuth: not internet.");
                     return;
                 }
-                mFragment.setPlayPath(uri, mVideoDbInfo);
+                mPlayerView.playWithUrl(uri);
                 updateStatusCauseUri();
             }
 
@@ -1899,9 +1545,9 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 Log.e(TAG, "onError: t = " + throwable, throwable);
                 if (FileUtils.getAvailableSize(getCacheDir().getPath())
                         < 50 * 1024 * 1024) {
-                    ToastUtils.showShort(MovieActivity.this, "播放错误：存储空间不足。");
-                }else {
-                    ToastUtils.showShort(MovieActivity.this, "无法获取视频资源");
+                    ToastUtils.showShort(AliPlayerActivity.this, "播放错误：存储空间不足。");
+                } else {
+                    ToastUtils.showShort(AliPlayerActivity.this, "无法获取视频资源");
                 }
                 mButtonCanClick = true;
             }
@@ -1934,7 +1580,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 percentTextView.setText((int) (percent * 100) + "%");
             }
         } else {
-            Log.i(TAG, "没有初始化imageview和textview");
+            Log.e(TAG, "没有初始化imageview和textview");
         }
     }
 
@@ -1970,11 +1616,9 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     }
 
     /**
-     * 设置路径，videoView内部异步加载，并播放。
-     *
-     * @param uri
+     * 播放视频
      */
-    private void playVideo(String uri) {
+    private void playVideo() {
 
     }
 
@@ -1984,29 +1628,18 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
      * 其他则暂停。
      */
     private void videoViewPauseOrStop() {
-        if (mFragment != null) {
-            int state = mFragment.getPlayerState();
-            if (state == VideoView.STATE_PREPARING) {
-                videoViewStop();
-            } else {
-                videoViewPause();
-            }
+        if (mPlayerView.isPreparing()) {
+            videoViewStop();
+        } else {
+            videoViewPause();
         }
     }
 
-    //TODO: 当黑屏时，启动视频会有问题，视频会播放，但是不会更新进度。
     private void videoViewPause() {
         Log.e(TAG, "videoViewPause: ");
         mRmvbPauseByUser = true;
-
-        if (mFragment != null) {
-            int state = mFragment.getPlayerState();
-            Log.e(TAG, "videoViewPause: state = " + state);
-            mFragment.pause();
-            hideControllerDelayed();
-        }
-        mPlay.setVisibility(View.VISIBLE);
-        mPause.setVisibility(View.GONE);
+        mPlayerView.onPause();
+        hideControllerDelayed();
         abandonAudioFocus();
     }
 
@@ -2014,54 +1647,34 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         Log.e(TAG, "videoViewPause: ");
         mRmvbPauseByUser = true;
 
-        if (mFragment != null) {
-            int state = mFragment.getPlayerState();
-            Log.e(TAG, "videoViewPause: state = " + state);
-            mFragment.stopPlayback();
-            hideControllerDelayed();
-        }
-        mPlay.setVisibility(View.VISIBLE);
-        mPause.setVisibility(View.GONE);
+        mPlayerView.onStop();
+        hideControllerDelayed();
         abandonAudioFocus();
     }
 
     private void videoViewStart() {
         mRmvbPauseByUser = false;
-        int state = mFragment.getPlayerState();
-        Log.e(TAG, "videoViewStart: state = " + state);
-        if (state == VideoView.STATE_ERROR
-                || state == VideoView.STATE_STOPPED
-                || state == VideoView.STATE_IDLE) {
+        if (isIdleState()) {
             updatePlay();
-        } else if (mFragment != null && !mFragment.isPlaying()) {
-            Log.i(TAG, " MovieActivity videoViewStart mFragment start");
+        } else if (!mPlayerView.isPlaying()) {
+            Log.i(TAG, " videoViewStart mFragment start");
             requestAudioFocusTransient();
-            if (mFragment.start()) {
-//                cancelAutoHide();
-                hideControllerDelayed();
-                mPlay.setVisibility(View.GONE);
-                mPause.setVisibility(View.VISIBLE);
-            } else {
-                Log.e(TAG, "videoViewStart: start play fail, update play.");
-                updatePlay();
-            }
+            mPlayerView.onResume();
+            hideControllerDelayed();
+
         } else {
-            //TODO：为什么会出现null?
-            if (mFragment == null) {
-                Log.e(TAG, "videoViewStart: mFragment = null");
-            }
         }
     }
 
     private void finishMyself() {
         Intent intent = new Intent("com.readboy.mathproblem.video.playinfo");
         Log.e(TAG, "-------- finishMyself ");
-        if (mFragment != null && !onStopped) {
-            Log.e(TAG, "finishMyself: mPosition = " + mPosition + ", getCurrentPosition = " + mFragment.getCurrentPosition());
-            mPosition = mFragment.getCurrentPosition();
-            mDuration = mFragment.getDuration();
+        if (!onStopped) {
+            Log.e(TAG, "finishMyself: mPosition = " + mPosition + ", getCurrentPosition = " + mPlayerView.getCurrentPosition());
+            mPosition = (int) mPlayerView.getCurrentPosition();
+            mDuration = mPlayerView.getDuration();
             Log.e(TAG, "finishMyself: position = " + mPosition + ", mIndex = " + mIndex);
-            intent.putExtra(EXTRA_PATH, mPath);
+            intent.putExtra(EXTRA_VIDEO_RESOURCE, mVideoResource);
             intent.putExtra(EXTRA_SEEK_POSITION, mPosition);
             intent.putExtra(EXTRA_DURATION, mDuration);
             intent.putExtra(EXTRA_INDEX, mIndex);
@@ -2091,8 +1704,7 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
                 id,
                 wrapper.getType().ordinal(),
                 wrapper.getGrade());
-        mPosition = mFragment.getCurrentPosition();
-        mDuration = mFragment.getDuration();
+        updatePosition();
         parcelable.setVideoIndex(mIndex);
         parcelable.setSeekPosition(mPosition);
         intent.putExtra(ProjectParcelable.EXTRA_PROJECT_PARCELABLE, parcelable);
@@ -2104,20 +1716,6 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
     }
 
     private void initMovieActivity() {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        if (mFragment != null) {
-            transaction.remove(mFragment);
-        }
-//		if (mIsPlayUrl) {
-        mFragment = new PlayerFragment();
-        mVideoPlayerListener = new VideoPlayerListener();
-//		} else {
-//			mFragment = new VitamioFragment();
-//		}
-        transaction.add(R.id.video_container, mFragment);
-        transaction.commit();
-        mFragment.addVideoPlayerListener(mVideoPlayerListener);
     }
 
     private void gotoExerciseActivity() {
@@ -2142,26 +1740,10 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         VideoProxy.gotoExerciseActivity(this);
     }
 
-    @Override
-    public void onErrorCode(int httpStatusCode) {
-        Log.e(TAG, "onErrorCode() called with: httpStatusCode = " + httpStatusCode + "");
-        Message msg = Message.obtain();
-        msg.what = VideoMessage.ERROR;
-        switch (httpStatusCode) {
-            case HttpURLConnection.HTTP_NOT_FOUND:
-                msg.obj = "访问的网址未找到";
-                break;
-            default:
-                msg.obj = "网络错误:" + httpStatusCode;
-                break;
-        }
-        mHandler.sendMessage(msg);
-    }
-
     private int requestAudioFocusTransient() {
-//        Log.d(TAG, "requestAudioFocusTransient: ");
+        Log.d(TAG, "requestAudioFocusTransient: ");
         if (hasRequestAudioFocus) {
-//            Log.e(TAG, "requestAudioFocusTransient: has not request audio focus.");
+            Log.e(TAG, "requestAudioFocusTransient: has not request audio focus.");
             return AudioManager.AUDIOFOCUS_REQUEST_FAILED;
         }
         AudioManager sAudioManager =
@@ -2187,9 +1769,9 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
      * @return 是否抢焦点成功，如果为{@link AudioManager#AUDIOFOCUS_GAIN}代表抢焦点成功，反之。
      */
     private int abandonAudioFocus() {
-//        Log.d(TAG, "abandonAudioFocus: abandon audio focus");
+        Log.d(TAG, "abandonAudioFocus: abandon audio focus");
         if (!hasRequestAudioFocus) {
-//            Log.e(TAG, "abandonAudioFocus: has not request audio focus.");
+            Log.e(TAG, "abandonAudioFocus: has not request audio focus.");
             return AudioManager.AUDIOFOCUS_REQUEST_FAILED;
         }
         AudioManager sAudioManager =
@@ -2226,142 +1808,30 @@ public class MovieActivity extends FragmentActivity implements VideoExtraNames, 
         }
     };
 
-    private class VideoPlayerListener extends EmptyVideoPlayerListener {
-
-        @Override
-        public void onInit() {
-            super.onInit();
-            Log.e(TAG, "onInit: ");
-            showProgressDialog();
-            mFragment.seekTo(mPosition);
-        }
-
-        @Override
-        public void onPrepared() {
-            super.onPrepared();
-            Log.e(TAG, "onPrepared: ");
-        }
-
-        @Override
-        public void onPlaying() {
-            super.onPlaying();
-            int state = mFragment.getPlayerState();
-            Log.e(TAG, "onPlaying: state = " + state);
-//            dismissProgressDialog();
-            if (!isBuffering) {
-                dismissProgressDialog();
-                hideControllerDelayed();
-            }
-            if (onStopped) {
-                Log.e(TAG, "onPlaying: pause video.");
-                videoViewPause();
-            }
-        }
-
-        @Override
-        public void onPaused() {
-            super.onPaused();
-            Log.e(TAG, "video onPaused: ");
-            updateController();
-            dismissProgressDialog();
-            hideControllerDelayed();
-        }
-
-        @Override
-        public void onStopped() {
-            super.onStopped();
-            Log.e(TAG, "video onStopped: ");
-            dismissProgressDialog();
-            updateController();
-            mButtonCanClick = true;
-        }
-
-        @Override
-        public void onBufferingStart() {
-            super.onBufferingStart();
-            Log.e(TAG, "onBufferingStart: ");
-            isBuffering = true;
-            showProgressDialog();
-        }
-
-        @Override
-        public void onBufferingEnd() {
-            super.onBufferingEnd();
-            Log.e(TAG, "onBufferingEnd: thread = " + Thread.currentThread().getName());
-            isBuffering = false;
-            dismissProgressDialog();
-        }
-
-        @Override
-        public void onError(String error, ErrorType errorType) {
-            super.onError(error, errorType);
-            Log.e(TAG, "onError() called with: error = " + error + ", errorType = " + errorType + "");
-            Log.e(TAG, "onError: before mPosition = " + mPosition);
-            ToastUtils.showShort(MovieActivity.this, error);
-            mPosition = mFragment.getCurrentPosition();
-            Log.e(TAG, "onError: after mPosition = " + mPosition);
-            dismissProgressDialog();
-            mButtonCanClick = true;
-        }
+    private void updatePosition() {
+        mPosition = (int) mPlayerView.getCurrentPosition();
+        mDuration = mPlayerView.getDuration();
     }
 
     /**
      * 是否需要保护现场，恢复播放进度。
      */
     private boolean isSaveState() {
-        int state = mFragment.getPlayerState();
+        IAliyunVodPlayer.PlayerState state = mPlayerView.getPlayerState();
         Log.e(TAG, "isSaveState: state = " + state);
-        return state != VideoView.STATE_IDLE && state != VideoView.STATE_STOPPED
-                && state != VideoView.STATE_PLAYBACK_COMPLETED;
+        return state != IAliyunVodPlayer.PlayerState.Idle
+                && state != IAliyunVodPlayer.PlayerState.Stopped
+                && state != IAliyunVodPlayer.PlayerState.Completed;
     }
 
-//	private class AsynVideoSetDataSource extends AsyncTask<Boolean, Void, String> {
-//
-//		@Override
-//		protected String doInBackground(Boolean... params) {
-//			if (proxy != null) {
-//				proxy.stopProxy();
-//			}
-//			boolean isProxy = params[0];
-//			String back = null;
-//			if (isProxy) {
-//				Log.d(TAG, "-------- doInBackground 走代理服务器  mIsPlayUrl："+mIsPlayUrl);
-//				if(proxy != null) {
-//					proxy.stopProxy();
-//				}
-//				if (mIsPlayUrl) {
-//					String md5 = Md5Utils.getMd5(mPath);
-//					String cachepath = MovieFile.getCachePath(MovieActivity.this, mVideoDbInfo.mCachePath, md5);
-//					proxy = new HttpGetProxy(MovieActivity.this, mPath, cachepath, md5, mIsPlayUrl, MovieActivity.this);
-//					mVideoDbInfo.mCacheName = md5;
-//					mVideoDbInfo.mCacheFilePath = cachepath;
-//					Log.i(TAG, "-------- cachepath: "+cachepath);
-//				} else {
-//					proxy = new HttpGetProxy(MovieActivity.this, mPath, null);
-//				}
-//				back = proxy.getLocalURL();
-//			} else {
-//				Log.e(TAG, "-------- doInBackground 不走代理服务器 mIsPlayUrl： "+mIsPlayUrl);
-//				back = mPath;
-//			}
-//			return back;
-//		}
-//
-//		@Override
-//		protected void onPostExecute(String result) {
-//			super.onPostExecute(result);
-//			Log.d(TAG, " ---- AsynVideoSetDataSource: onPostExecute result: "+result+", mPostion: "+mPosition);
-//			if (result != null && mFragment!=null) {
-//				if (mPosition > 0) {
-//					mFragment.seekTo(mPosition);
-//				}
-//				mFragment.setPlayPath(result,VideoDatabaseInfo info);
-//				if (mVideoDbInfo.mType != VideoInfoDatabaseProxy.TYPE_MICRO) {
-//					mVideoDbInfo.mDependency = mPath;
-//				}
-//			}
-//		}
-//
-//	}
+    private boolean isIdleState() {
+        IAliyunVodPlayer.PlayerState state = mPlayerView.getPlayerState();
+        Log.e(TAG, "isSaveState: state = " + state);
+        return state != IAliyunVodPlayer.PlayerState.Idle
+                && state != IAliyunVodPlayer.PlayerState.Stopped
+                && state != IAliyunVodPlayer.PlayerState.Completed
+                && state != IAliyunVodPlayer.PlayerState.Error;
+    }
+
 
 }

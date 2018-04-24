@@ -14,15 +14,16 @@
         android:layout_height="wrap_content">
 
         <ImageView
-            android:id="@+id/play"
+            android:id="@+id/player_player"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="30dp"
             android:padding="6dp"
-            android:src="@drawable/btn_play_normal" />
+            android:src="@drawable/btn_play_normal"
+            android:visibility="gone" />
 
         <ImageView
-            android:id="@+id/pause"
+            android:id="@+id/player_pause"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="30dp"
@@ -32,7 +33,7 @@
     </FrameLayout>
 
     <TextView
-        android:id="@+id/current_time"
+        android:id="@+id/player_current_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="34dp"
@@ -42,7 +43,7 @@
         tools:text="02:33" />
 
     <TextView
-        android:id="@+id/total_time"
+        android:id="@+id/player_total_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="2dp"
@@ -52,7 +53,7 @@
         tools:text="/06:30" />
 
     <SeekBar
-        android:id="@+id/seek_bar"
+        android:id="@+id/player_seek_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="24dp"

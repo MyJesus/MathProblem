@@ -251,7 +251,7 @@ public class FileUtil {
      * @param filePath
      */
     public static void deleteAliyunFiles(String filePath){
-        if(!TextUtils.isEmpty(filePath)){
+        /*if(!TextUtils.isEmpty(filePath)){
             File file = new File(filePath);
             File parentFile = file.getParentFile();
             String fileName = file.getName();
@@ -261,7 +261,7 @@ public class FileUtil {
             deleteDir(new File(parentFile, fileNameNoSuffix));
             deleteFile(new File(parentFile, fileNameNoSuffix + ".m3u8"));
             deleteFile(file);
-        }
+        }*/
     }
 
 }

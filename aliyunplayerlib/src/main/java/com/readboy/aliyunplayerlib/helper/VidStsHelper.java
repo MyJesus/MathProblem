@@ -24,7 +24,10 @@ public class VidStsHelper {
     private int mErrono = -1;
 
 
-    private AliyunVidSts getVidSts() {
+    /**
+     * 同步获取
+     */
+    public AliyunVidSts getVidSts() {
         try {
             //获取临时鉴权add by dway 180312
             String url = "http://api.video.readboy.com/videoSts?";

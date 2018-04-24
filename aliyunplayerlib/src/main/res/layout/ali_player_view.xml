@@ -2,37 +2,13 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:splitMotionEvents="false">
+    android:background="@android:color/black">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:background="#000000">
-        <SurfaceView
-            android:id="@+id/video_player_surface"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
-
-    <!--<include
-        android:id="@+id/video_player_top"
-        android:layout_width="match_parent"
+    <SurfaceView
+        android:id="@+id/video_player_surface"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        layout="@layout/layout_player_view_top" />
-
-    <include
-        android:id="@+id/video_player_bottom"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        layout="@layout/layout_player_view_bottom" />-->
-
-    <!--<RelativeLayout
-        android:id="@+id/video_player_control_layout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>-->
+        android:layout_gravity="center" />
 
     <TextView
         android:id="@+id/video_player_load_progress"
@@ -40,9 +16,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:gravity="center"
-        android:textSize="20sp"
+        android:text=""
         android:textColor="#ffffff"
-        android:text=""/>
+        android:textSize="20sp" />
 
     <com.readboy.aliyunplayerlib.view.PlayerLoadStatusView
         android:id="@+id/video_player_loading"
@@ -50,6 +26,5 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:visibility="visible" />
-
 
 </FrameLayout>
