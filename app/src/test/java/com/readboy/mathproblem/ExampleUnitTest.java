@@ -2,6 +2,7 @@ package com.readboy.mathproblem;
 
 import com.readboy.mathproblem.application.SubjectType;
 
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
@@ -40,6 +41,10 @@ public class ExampleUnitTest {
         CloneA cloneA2 = new CloneA();
         cloneA2.mName = "cloneA2";
         test2.cloneA = cloneA2;
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.keys();
+        jsonObject.names();
 
 
     }

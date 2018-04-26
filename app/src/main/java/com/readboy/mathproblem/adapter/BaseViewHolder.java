@@ -16,11 +16,11 @@ public class BaseViewHolder<E> extends RecyclerView.ViewHolder {
     }
 
     public void bindView(E data) {
-
+        this.mData = data;
     }
 
     public void bindView(int position, E data){
-
+        this.mData = data;
     }
 
     public void recycler() {

@@ -44,7 +44,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         IAliyunVodPlayer.OnTimeExpiredErrorListener,
         IAliyunVodPlayer.OnErrorListener,
         NetWatchdog.NetChangeListener {
-    private static final String TAG = "AliPlayerView";
+    private static final String TAG = "oubin_AliPlayerView";
 
     //版本号
     private static final String VERSION = "V1.0.180420001";
@@ -56,7 +56,6 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     //控件
     private PlayerTopViewBase mTopView = null;
     private PlayerBottomViewBase mBottomView = null;
-    //private PlayerLoadStatusView mLoadStatusView;
     private PlayerLoadStatusViewBase mLoadStatusView = null;
     private TextView mLoadProgressTextView;
     private SurfaceView mPlayerSurfaceView;
@@ -162,26 +161,29 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mLoadProgressTextView = findViewById(R.id.video_player_load_progress);
         mPlayerSurfaceView = findViewById(R.id.video_player_surface);
 
-        mPlayerSurfaceView.setOnClickListener(this);
-        mPlayerSurfaceView.setOnClickListener(this);
+//        mPlayerSurfaceView.setOnClickListener(this);
+//        mPlayerSurfaceView.setOnClickListener(this);
         //mLoadStatusView.setOnBtnClickListener(this);
 
         mPlayerSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 AliLogUtil.v(TAG, "---surfaceCreated---");
+                Log.e(TAG, "surfaceCreated: ");
                 mAliyunVodPlayer.setDisplay(holder);
             }
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
                 AliLogUtil.v(TAG, "---surfaceChanged---");
+                Log.e(TAG, "surfaceChanged() called with: format = " + format + ", width = " + width + ", height = " + height + "");
                 mAliyunVodPlayer.surfaceChanged();
             }
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
                 AliLogUtil.v(TAG, "---surfaceDestroyed---");
+                Log.e(TAG, "surfaceDestroyed: ");
             }
         });
     }
@@ -610,13 +612,13 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     }
 
     private void showControlView() {
-        mTopView.setVisibility(View.VISIBLE);
-        mBottomView.setVisibility(View.VISIBLE);
+//        mTopView.setVisibility(View.VISIBLE);
+//        mBottomView.setVisibility(View.VISIBLE);
     }
 
     private void hideControlView() {
-        mTopView.setVisibility(View.GONE);
-        mBottomView.setVisibility(View.GONE);
+//        mTopView.setVisibility(View.GONE);
+//        mBottomView.setVisibility(View.GONE);
     }
 
     private void delayHideControlView() {
@@ -644,12 +646,12 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     }
 
     private void heartProcess() {
-        AliLogUtil.v(TAG, "---heartProcess--- PlayerState = " + mAliyunVodPlayer.getPlayerState()
-                + ", " + mAliyunVodPlayer.getCurrentPosition()
-                + ", " + mAliyunVodPlayer.getBufferingPosition()
-                + ", " + mAliyunVodPlayer.getDuration()
-                + ", " + mIsSeekBarTouching
-                + ", " + mIsSeekComplete);
+//        AliLogUtil.v(TAG, "---heartProcess--- PlayerState = " + mAliyunVodPlayer.getPlayerState()
+//                + ", " + mAliyunVodPlayer.getCurrentPosition()
+//                + ", " + mAliyunVodPlayer.getBufferingPosition()
+//                + ", " + mAliyunVodPlayer.getDuration()
+//                + ", " + mIsSeekBarTouching
+//                + ", " + mIsSeekComplete);
         //设置播放进度和缓存进度
         if (!mIsSeekBarTouching && mIsSeekComplete) {
             setPlayProgressInfo();

@@ -1,10 +1,13 @@
 package com.readboy.mathproblem;
 
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,7 +22,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.liulishuo.filedownloader.BaseDownloadTask;
+import com.readboy.aliyunplayerlib.utils.AppUidUtil;
 import com.readboy.auth.Auth;
 import com.readboy.mathproblem.activity.BaseActivity;
 import com.readboy.mathproblem.activity.StudyActivity;
@@ -38,7 +41,8 @@ import com.readboy.mathproblem.dialog.DownloadDialog;
 import com.readboy.mathproblem.dialog.FavoriteDialog;
 import com.readboy.mathproblem.dialog.GradeListDialog;
 import com.readboy.mathproblem.dialog.NoNetworkDialog;
-import com.readboy.mathproblem.http.download.DownloadManager;
+import com.readboy.mathproblem.download.AliyunDownloadManagerWrapper;
+//import com.readboy.mathproblem.http.download.DownloadManager;
 import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
 import com.readboy.mathproblem.http.response.ProjectEntity;
@@ -59,7 +63,6 @@ import com.readboy.recyclerview.CommonAdapter;
 import com.tencent.bugly.crashreport.CrashReport;
 
 import java.math.BigInteger;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -119,7 +122,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     private Handler mHandler = new Handler(Looper.getMainLooper());
     private ContentObserver mScoreObserver;
     private ContentObserver mVideoObserver;
-    private DownloadManager.FileNameTaskObserver mDownloadObserver;
+//    private DownloadManager.FileNameTaskObserver mDownloadObserver;
 
     private GradeListDialog mGradeListDialog;
     private NoNetworkDialog mNetworkDialog;
@@ -128,7 +131,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        DownloadManager.getInstance().onCreate();
+//        DownloadManager.getInstance().onCreate();
+        AliyunDownloadManagerWrapper.getInstance().onCreate();
         Log.e(TAG, "onCreate: ");
 //        if (RequestPermissionsActivity.startPermissionActivity(this)) {
 //            finish();
@@ -143,6 +147,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         if (!needRequestPermissions()) {
             initData();
         }
+        Log.e(TAG, "onCreate: " + AppUidUtil.getCertificateSHA1Fingerprint(this));
 
     }
 
@@ -182,10 +187,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         Intent intent = new Intent();
 //        intent.setAction("dream.dreamplayer.MEDIAPLAYER");
         intent.setAction("android.readboy.MEDIAPLAYER");
-//        ComponentName comp = new ComponentName("com.dream.movie", "com.dream.movie.MovieActivity");
-//        intent.setComponent(comp);
-//        intent.setClassName(this, "com.dream.movie.MovieActivity");
-//        intent.setAction(Intent.ACTION_VIEW);
         intent.putExtra("path", url);
         intent.putExtra(Intent.EXTRA_MIME_TYPES, "video/mp4");
         Uri uri = Uri.parse(url);
@@ -210,20 +211,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         Log.e(TAG, "onCreate: fragment = " + s2);
     }
 
-    private void authTest() {
-        String deviceId = BuildUtils.getDeviceId();
-        Auth.setParameters("device_id", deviceId);
-        String time = String.valueOf(System.currentTimeMillis() / 1000 + 69000);
-        Log.e(TAG, "onCreate: time = " + time);
-        Auth.setParameters("t", time);
-        Properties properties = Auth.getSignature();
-        String date = properties.getProperty("t");
-        Log.e(TAG, "onCreate: date = " + date);
-        String sn = properties.getProperty("sn");
-    }
-
     private void uriTest() {
-        String uriString = VideoProxy.VIDEO_URI_SCHEME + "://" + "/download/mp2qpsp/流水问题.mp4";
+        String uriString = VideoProxy.SCHEME_VIDEO_URI + "://" + "/download/mp2qpsp/流水问题.mp4";
         Uri uri = Uri.parse(uriString);
         String scheme = uri.getScheme();
         String path = uri.getPath();
@@ -276,7 +265,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
     @Override
     protected void onDestroy() {
-        DownloadManager.getInstance().onDestroy();
+//        DownloadManager.getInstance().onDestroy();
         super.onDestroy();
         Log.e(TAG, "onDestroy: ");
         unregisterObserver();
@@ -291,10 +280,12 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         CacheEngine.cancelHttpRequest();
 
         //保存喜欢，方便下次打开应用初始化数据
+        Log.e(TAG, "onDestroy: currentGrade = " + mCurGrade + ", subjectType = " + mSubjectType);
         PreferencesUtils.saveGrade(mCurGrade);
         PreferencesUtils.saveSubject(mSubjectType);
 
         MathApplication.refWatch(this);
+        AliyunDownloadManagerWrapper.getInstance().onDestroy();
     }
 
     @Override
@@ -362,7 +353,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         //根据SharedPreferences初始化数据
         mCurGrade = PreferencesUtils.getGrade(0);
         mSubjectType = PreferencesUtils.getSubject(SubjectType.guide);
-        Log.e(TAG, "initData: mSubjectType = " + mSubjectType.name());
+        Log.e(TAG, "initData: grade = " + mCurGrade + " mSubjectType = " + mSubjectType.name());
         updateSelectedBtn();
         mGradeNameCb.setText(gradeNameList.get(mCurGrade));
         updateDataList();
@@ -435,9 +426,12 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 break;
             case R.id.download:
                 openDownloadDialog();
+//                AliyunDownloadManagerWrapper.getInstance().prepareDownload("8d18c54ccc25418caacca486c4a8073d");
+//                AliyunDownloadManagerWrapper.getInstance().prepareDownload("0d59501f36c443008a294844adad3c64");
                 break;
             case R.id.favorite:
                 openFavoriteDialog();
+//                AliyunDownloadManagerWrapper.getInstance().prepareDownload("7d4193bdcc5c467696bd7ea04ded4d91");
                 break;
             case R.id.problem_guide_normal:
                 changeSubjectType();
@@ -593,15 +587,15 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                         //判断是否已经下载。
                         if (!VideoUtils.videoIsExist(fileName)) {
                             //是否正在下载。
-                            if (DownloadManager.getInstance().isDownloading(fileName)) {
-                                status = ProjectHolder.VIDEO_STATUS_DOWNLOADING;
-                                hasVideoDownloading = true;
+//                            if (DownloadManager.getInstance().isDownloading(fileName)) {
+//                                status = ProjectHolder.VIDEO_STATUS_DOWNLOADING;
+//                                hasVideoDownloading = true;
+////                                addObserver(fileName);
+//                            } else {
+                            videoList.add(videoInfo);
+                            //监听是否有下载，通知mProjectRv更新Item
 //                                addObserver(fileName);
-                            } else {
-                                videoList.add(videoInfo);
-                                //监听是否有下载，通知mProjectRv更新Item
-//                                addObserver(fileName);
-                            }
+//                            }
                         } else {
                             if (!hasVideoDownloading) {
                                 status = ProjectHolder.VIDEO_STATUS_COMPLETED;
@@ -712,55 +706,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         CacheEngine.setCurrentProjectWrapper(position, mProjectWrapper);
     }
 
-    private void addObserver(String filename) {
-        mDownloadObserver.addObserver(filename);
-    }
-
-    private void removeObserver(String filename) {
-        mDownloadObserver.removeObserver(filename);
-    }
-
-    private void removeAllObserver() {
-        mDownloadObserver.clearObserver();
-    }
-
-    private void registerDownloadObserver() {
-        mDownloadObserver = new DownloadManager.FileNameTaskObserver() {
-            @Override
-            public void onTaskStarted(BaseDownloadTask task) {
-                super.onTaskStarted(task);
-                Log.e(TAG, "onTaskStarted: task = " + FileUtils.getFileName(task.getUrl()));
-                updateDataList();
-            }
-
-            @Override
-            public void onTaskPause(BaseDownloadTask task) {
-                super.onTaskPause(task);
-                Log.e(TAG, "onTaskPause: ");
-                updateDataList();
-            }
-
-            @Override
-            public void onTaskCompleted(BaseDownloadTask task) {
-                super.onTaskCompleted(task);
-                Log.e(TAG, "onTaskCompleted: task = " + FileUtils.getFileName(task.getUrl()));
-                removeObserver(FileUtils.getFileName(task.getUrl()));
-                updateDataList();
-            }
-
-            @Override
-            public void onTaskError(BaseDownloadTask task, Throwable t) {
-                super.onTaskError(task, t);
-                Log.e(TAG, "onTaskError: task = " + FileUtils.getFileName(task.getUrl()));
-                if (t instanceof UnknownHostException || t instanceof SocketException) {
-                    checkNetwork();
-                }
-                updateDataList();
-            }
-        };
-        DownloadManager.getInstance().registerDownloadTaskObserver(mDownloadObserver);
-    }
-
     private void checkNetwork() {
         if (!NetworkUtils.isConnected(MainActivity.this)) {
             if (mNetworkDialog == null) {
@@ -772,18 +717,20 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         }
     }
 
-    private void unregisterDownloadObserver() {
-        if (mDownloadObserver != null) {
-            DownloadManager.getInstance().unregisterDownloadTaskObserver(mDownloadObserver);
-        }
-    }
 
-    public static class VideoIdTaskObserver extends DownloadManager.BaseDownloadTaskObserver<Integer> {
 
-        @Override
-        public boolean isContains(BaseDownloadTask task) {
-            return set.contains(task.getTag());
-        }
-    }
+//    private void unregisterDownloadObserver() {
+//        if (mDownloadObserver != null) {
+//            DownloadManager.getInstance().unregisterDownloadTaskObserver(mDownloadObserver);
+//        }
+//    }
+//
+//    public static class VideoIdTaskObserver extends DownloadManager.BaseDownloadTaskObserver<Integer> {
+//
+//        @Override
+//        public boolean isContains(BaseDownloadTask task) {
+//            return set.contains(task.getTag());
+//        }
+//    }
 
 }

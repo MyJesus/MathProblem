@@ -1,5 +1,6 @@
 package com.readboy.mathproblem.download;
 
+import android.content.SharedPreferences;
 import android.database.Observable;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,17 +16,20 @@ import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
 import com.aliyun.vodplayer.downloader.AliyunRefreshStsCallback;
 import com.aliyun.vodplayer.media.AliyunVidSts;
 import com.readboy.aliyunplayerlib.helper.VidStsHelper;
+import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.application.MathApplication;
+import com.readboy.mathproblem.http.download.DownloadDbController;
 import com.readboy.mathproblem.http.download.DownloadEngine;
 import com.readboy.mathproblem.http.download.DownloadModel;
 import com.readboy.mathproblem.http.download.DownloadStatus;
-import com.readboy.mathproblem.http.download.DownloadUtils;
 import com.readboy.mathproblem.http.download.VideoInfoCallBack;
 import com.readboy.mathproblem.http.request.IdsParams;
 import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
 import com.readboy.mathproblem.http.service.PostVideoInfoService;
+import com.readboy.mathproblem.util.FileUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,16 +44,15 @@ import retrofit2.Response;
 import static com.readboy.mathproblem.http.download.DownloadContract.SUPPORT_BACKGROUND_DOWNLOAD;
 
 /**
- * Created by oubin on 2017/9/29.
- * //TODO 视频下载数据库单独编写，方便解耦，复用。
+ * Created by oubin on 2018/4/23
  * 新的下载一定要先创建DownloadModel, 并且添加到数据库中，再生产BaseDownloadTask进行下载。
  * 重构mAdapter, 写成观察者模式，Observer，参考{@link RecyclerView.AdapterDataObservable}
  *
  * @author oubin
  */
 
-public class AliDownloadManagerWrapper {
-    private static final String TAG = "oubin_AliDownloader";
+public class AliyunDownloadManagerWrapper {
+    private static final String TAG = "oubin_AliyunDownloader";
 
     private final List<DownloadModel> mDownloadModelVector = new Vector<>();
     /**
@@ -66,33 +69,23 @@ public class AliDownloadManagerWrapper {
     private AliyunDownloadInfoListener mDownloadListener;
     private VidStsHelper mVidStsHelper;
     private AliyunRefreshStsCallback mRefreshStsCallback;
+    private DownloadDbController mDbController;
 
-    private AliDownloadManagerWrapper() {
-        Log.e(TAG, "AliDownloadManagerWrapper: create a AliDownloadManagerWrapper");
+    private AliyunDownloadManagerWrapper() {
+        Log.e(TAG, "AliyunDownloadManagerWrapper: create a AliyunDownloadManagerWrapper");
         mTaskObservable = new DownloadTaskObservable();
         mAliyunDownloadManager = AliyunDownloadManager.getInstance(MathApplication.getInstance());
         mVidStsHelper = new VidStsHelper();
-        mRefreshStsCallback = new RefreshStsCallbackImpl();
-        mAliyunDownloadManager.setRefreshStsCallback(mRefreshStsCallback);
+        mDbController = new DownloadDbController();
 
     }
 
-    public static AliDownloadManagerWrapper getInstance() {
+    public static AliyunDownloadManagerWrapper getInstance() {
         return Inner.instance;
     }
 
     private final static class Inner {
-        private static AliDownloadManagerWrapper instance = new AliDownloadManagerWrapper();
-    }
-
-    public static AliyunDownloadMediaInfo getFakeMediaInfo() {
-        return getMediaInfo("404b068d841a4054bb80de7340376ccc");
-    }
-
-    public static AliyunDownloadMediaInfo getMediaInfo(String vid) {
-        AliyunDownloadMediaInfo mediaInfo = new AliyunDownloadMediaInfo();
-        mediaInfo.setVid(vid);
-        return mediaInfo;
+        private static AliyunDownloadManagerWrapper instance = new AliyunDownloadManagerWrapper();
     }
 
     public void setAdapter(RecyclerView.Adapter adapter) {
@@ -109,10 +102,15 @@ public class AliDownloadManagerWrapper {
         if (mDownloadListener != null) {
             mAliyunDownloadManager.removeDownloadInfoListener(mDownloadListener);
         }
+        mAliyunDownloadManager.clearDownloadInfoListener();
     }
 
     public void onCreate() {
+        Log.e(TAG, "onCreate: ");
         registerServiceConnectionListener();
+        mRefreshStsCallback = new RefreshStsCallbackImpl();
+        mAliyunDownloadManager.setRefreshStsCallback(mRefreshStsCallback);
+        loadDownloadModel();
     }
 
     public void onDestroy() {
@@ -120,18 +118,36 @@ public class AliDownloadManagerWrapper {
 
         if (!SUPPORT_BACKGROUND_DOWNLOAD) {
             mAliyunDownloadManager.stopDownloadMedias(mAliyunDownloadManager.getDownloadingMedias());
-            for (AliyunDownloadMediaInfo mediaInfo : mAliyunDownloadManager.getDownloadingMedias()) {
-                mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
-            }
+//            for (AliyunDownloadMediaInfo mediaInfo : mAliyunDownloadManager.getDownloadingMedias()) {
+//                mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
+//            }
         }
 
         mAliyunDownloadManager.setRefreshStsCallback(null);
         mRefreshStsCallback = null;
-        mAliyunDownloadManager.clearDownloadInfoListener();
 
         unregisterServiceConnectionListener();
 
-        unregisterAllDownloadTastObserver();
+        unregisterAllDownloadTaskObserver();
+
+//        saveDownloadModel();
+    }
+
+    private void saveDownloadModel(){
+        List<AliyunDownloadMediaInfo> mediaInfoList = mAliyunDownloadManager.getDownloadingMedias();
+        Log.e(TAG, "saveDownloadModel: mediaInfoList = " + mediaInfoList.size());
+        for (AliyunDownloadMediaInfo mediaInfo : mediaInfoList) {
+            mDbController.replaceTask(mediaInfo.getVid(), mediaInfo.getTitle());
+        }
+    }
+
+    private void loadDownloadModel(){
+        List<DownloadModel> list = mDbController.getAllTasks();
+        Log.e(TAG, "loadDownloadModel: size = " + list.size());
+        for (DownloadModel model : list) {
+            mDownloadModelVector.addAll(list);
+            prepareDownload(model.getVid());
+        }
     }
 
     public boolean isReady() {
@@ -140,6 +156,27 @@ public class AliDownloadManagerWrapper {
 
     private AliyunDownloadMediaInfo getMediaInfo(int position) {
         return null;
+    }
+
+    private AliyunDownloadMediaInfo getMediaInfo(String vid) {
+        List<AliyunDownloadMediaInfo> mediaInfoList = mAliyunDownloadManager.getDownloadingMedias();
+        for (AliyunDownloadMediaInfo mediaInfo : mediaInfoList) {
+            if (vid.equals(mediaInfo.getVid())) {
+                return mediaInfo;
+            }
+        }
+        return null;
+    }
+
+    private boolean isSame(AliyunDownloadMediaInfo outMediaInfo, AliyunDownloadMediaInfo downloadInfo) {
+        if (downloadInfo != null && outMediaInfo != null) {
+            return downloadInfo.getVid().equals(outMediaInfo.getVid())
+                    && downloadInfo.getQuality().equals(outMediaInfo.getQuality())
+                    && downloadInfo.getFormat().equals(outMediaInfo.getFormat())
+                    && downloadInfo.isEncripted() == outMediaInfo.isEncripted();
+        } else {
+            return false;
+        }
     }
 
     public DownloadModel valueAt(final int index) {
@@ -173,9 +210,11 @@ public class AliDownloadManagerWrapper {
         List<AliyunDownloadMediaInfo> infoList = mAliyunDownloadManager.getDownloadingMedias();
         List<DownloadModel> modelList = new ArrayList<>();
         for (AliyunDownloadMediaInfo mediaInfo : infoList) {
-            modelList.add(new DownloadModel(mediaInfo));
+            DownloadModel model = new DownloadModel(mediaInfo);
+            model.setStatus(DownloadStatus.convert(mediaInfo.getStatus()));
+            modelList.add(model);
         }
-        return mDownloadModelVector;
+        return modelList;
     }
 
     public int getStatus(final int id, String path) {
@@ -183,34 +222,21 @@ public class AliDownloadManagerWrapper {
         return DownloadStatus.COMPLETED.ordinal();
     }
 
-    public boolean isDownloading(String fileName) {
-        if (TextUtils.isEmpty(fileName)) {
+    public boolean isDownloading(String vid) {
+        if (TextUtils.isEmpty(vid)) {
             return false;
         }
-        boolean result = false;
-        int size = mDownloadModelVector.size();
-        for (int i = 0; i < size; i++) {
-            DownloadModel model = valueAt(i);
-            if (fileName.equals(model.getFileName()) && DownloadUtils.isDownloading(model.getTaskId())) {
-                result = true;
-                break;
-            }
-        }
-        return result;
-    }
-
-    public boolean isDownloading(int id) {
-        int size = mDownloadModelVector.size();
-        for (int i = 0; i < size; i++) {
-            DownloadModel model = valueAt(i);
-            if (model.getVideoId() == id && DownloadUtils.isDownloading(model.getTaskId())) {
-                return true;
+        List<AliyunDownloadMediaInfo> mediaInfoList = mAliyunDownloadManager.getDownloadingMedias();
+        for (AliyunDownloadMediaInfo mediaInfo : mediaInfoList) {
+            if (vid.equals(mediaInfo.getVid())) {
+                return isDownloadingStatus(mediaInfo.getStatus());
             }
         }
         return false;
     }
 
     public void prepareDownload(final String vid) {
+        mDbController.replaceTask(vid, "");
         Log.e(TAG, "prepareDownload() called with: vid = " + vid + "");
         Log.e(TAG, "prepareDownload: size = " + mAliyunDownloadManager.getDownloadingMedias().size());
         mVidStsHelper.getVidSts(new VidStsHelper.OnStsResultListener() {
@@ -232,13 +258,6 @@ public class AliDownloadManagerWrapper {
         });
     }
 
-    public DownloadModel addTaskWithUrl(final String url) {
-        DownloadModel model = addTask(url, createPath(url));
-        addDownloadMode(model);
-        startDownload(model);
-        return model;
-    }
-
     private DownloadModel addTask(final String url, final String path) {
         Log.e(TAG, "addTask() called with: url = " + url + ", path = " + path + "");
         if (TextUtils.isEmpty(url) || TextUtils.isEmpty(path)) {
@@ -247,38 +266,6 @@ public class AliDownloadManagerWrapper {
 
         return null;
     }
-
-    /**
-     * @param fileName 未编码的文件名，包括文件后缀
-     * @return task id
-     */
-    private int getTaskId(String fileName) {
-        int size = mDownloadModelVector.size();
-        for (int i = 0; i < size; i++) {
-            DownloadModel model = valueAt(i);
-            if (fileName.equals(model.getFileName())) {
-                return model.getTaskId();
-            }
-        }
-        return -1;
-    }
-
-    private DownloadModel getDownloadModel(String filename) {
-        int size = mDownloadModelVector.size();
-        for (int i = 0; i < size; i++) {
-            DownloadModel model = valueAt(i);
-            if (filename.equals(model.getFileName())) {
-                return model;
-            }
-        }
-        return null;
-    }
-
-    private String createPath(final String url) {
-
-        return "";
-    }
-
 
     private void notifyItemChanged(AliyunDownloadMediaInfo info) {
         int position = indexOfKey(info.getDownloadIndex());
@@ -301,7 +288,7 @@ public class AliDownloadManagerWrapper {
         if (model != null) {
             model.setStatus(status);
             if (status == DownloadStatus.PAUSE) {
-                model.setDownloadTask(null);
+                model.setMediaInfo(null);
             }
         }
         if (mAdapter != null) {
@@ -338,41 +325,38 @@ public class AliDownloadManagerWrapper {
     /**
      * 主动修改状态，但不通知界面更新，由{@link #mDownloadListener}反馈通知界面更新。
      *
-     * @param position adapter中的位置，也就是{@link #mDownloadModelVector 中的位置}
-     * @param status   想要改变的状态
+     * @param vid    adapter中的位置，也就是{@link #mDownloadModelVector 中的位置}
+     * @param status 想要改变的状态
      */
-    public void updateDownloadStatus(int position, DownloadStatus status) {
+    public void updateDownloadStatus(String vid, DownloadStatus status) {
         switch (status) {
             case PAUSE:
-                stopDownload(position);
+                stopDownload(vid);
                 break;
             case CONNECTING:
             case DOWNLOADING:
-                startDownload(position);
+                startDownload(vid);
                 break;
             case WAIT:
-                stopDownload(position);
+                stopDownload(vid);
                 break;
             default:
-                Log.e(TAG, "updateDownloadStatus: position = " + position + ", status = " + status);
+                Log.e(TAG, "updateDownloadStatus: vid = " + vid + ", status = " + status);
                 break;
         }
     }
 
-    private void startDownload(DownloadModel model) {
-        if (model == null) {
-            return;
-        }
-        int index = indexOfKey(model.getTaskId());
-        if (index >= 0) {
-            startDownload(index);
+    private void startDownload(String vid) {
+        AliyunDownloadMediaInfo mediaInfo = getMediaInfo(vid);
+        if (mediaInfo != null) {
+            startDownload(mediaInfo);
         } else {
-            Log.e(TAG, "startDownload: can't download, index = " + index);
+            prepareDownload(vid);
         }
     }
 
-    private void startDownload(int position) {
-
+    private void startDownload(AliyunDownloadMediaInfo mediaInfo) {
+        mAliyunDownloadManager.startDownloadMedia(mediaInfo);
     }
 
     public void stopDownload(int position) {
@@ -388,8 +372,20 @@ public class AliDownloadManagerWrapper {
             Log.e(TAG, "stopDownload: not downloading.");
             notifyItemChanged(DownloadStatus.PAUSE, model.getTaskId());
             valueAt(position).setStatus(DownloadStatus.PAUSE);
-            valueAt(position).setDownloadTask(null);
         }
+    }
+
+    public void stopDownload(String vid) {
+        AliyunDownloadMediaInfo mediaInfo = getMediaInfo(vid);
+        if (mediaInfo != null) {
+            stopDownload(mediaInfo);
+        } else {
+            Log.e(TAG, "stopDownload: stop fail, it not exit, vid = " + vid);
+        }
+    }
+
+    private void stopDownload(AliyunDownloadMediaInfo mediaInfo) {
+        mAliyunDownloadManager.stopDownloadMedia(mediaInfo);
     }
 
     private Call<VideoInfoEntity> getVideoInfoFromHttp(int id, Callback<VideoInfoEntity> callback) {
@@ -404,11 +400,12 @@ public class AliDownloadManagerWrapper {
         return call;
     }
 
-    public List<AliyunDownloadMediaInfo> getDownloadMedias(){
+    public List<AliyunDownloadMediaInfo> getDownloadMedias() {
         return mAliyunDownloadManager.getDownloadingMedias();
     }
 
-    public void removeMediaInfo(AliyunDownloadMediaInfo mediaInfo){
+    public void removeMediaInfo(AliyunDownloadMediaInfo mediaInfo) {
+//        stopDownload(mediaInfo);
         mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
     }
 
@@ -459,6 +456,12 @@ public class AliDownloadManagerWrapper {
         }
     }
 
+    public boolean isDownloadingStatus(AliyunDownloadMediaInfo.Status status) {
+        return status == AliyunDownloadMediaInfo.Status.Prepare
+                || status == AliyunDownloadMediaInfo.Status.Start
+                || status == AliyunDownloadMediaInfo.Status.Wait;
+    }
+
     /**
      * 需要校准顺序，防止界面显示混乱。
      */
@@ -493,7 +496,7 @@ public class AliDownloadManagerWrapper {
     }
 
 
-    public void unregisterAllDownloadTastObserver() {
+    public void unregisterAllDownloadTaskObserver() {
         mTaskObservable.unregisterAll();
     }
 
@@ -516,60 +519,51 @@ public class AliDownloadManagerWrapper {
             }
         }
 
-        void onTaskProgress(AliyunDownloadMediaInfo task, int soFarBytes, int totalBytes) {
-//            Log.e(TAG, "onTaskProgress: task id = " + task.getId());
+        void onTaskProgress(AliyunDownloadMediaInfo mediaInfo, int soFarBytes, int totalBytes) {
+//            Log.e(TAG, "onTaskProgress: mediaInfo id = " + mediaInfo.getId());
             for (int i = mObservers.size() - 1; i >= 0; i--) {
                 BaseDownloadTaskObserver observer = mObservers.get(i);
-                if (observer.isContains(task)) {
-//                    Log.e(TAG, "onTaskProgress: i = " + i + ", task = " + task.getId());
-                    observer.onTaskProgress(task, soFarBytes, totalBytes);
+                if (observer.isContains(mediaInfo)) {
+//                    Log.e(TAG, "onTaskProgress: i = " + i + ", mediaInfo = " + mediaInfo.getId());
+                    observer.onTaskProgress(mediaInfo, soFarBytes, totalBytes);
                 }
             }
         }
 
-        void onTaskPause(AliyunDownloadMediaInfo task) {
+        void onTaskPause(AliyunDownloadMediaInfo mediaInfo) {
             for (int i = mObservers.size() - 1; i >= 0; i--) {
                 BaseDownloadTaskObserver observer = mObservers.get(i);
-                if (observer.isContains(task)) {
-                    observer.onTaskPause(task);
+                if (observer.isContains(mediaInfo)) {
+                    observer.onTaskPause(mediaInfo);
                 }
             }
         }
 
-        void onTaskWait(AliyunDownloadMediaInfo task) {
+        void onTaskWait(AliyunDownloadMediaInfo mediaInfo) {
             for (int i = mObservers.size() - 1; i >= 0; i--) {
                 BaseDownloadTaskObserver observer = mObservers.get(i);
-                if (observer.isContains(task)) {
-                    observer.onTaskWait(task);
+                if (observer.isContains(mediaInfo)) {
+                    observer.onTaskWait(mediaInfo);
                 }
             }
         }
 
-        void onTaskCompleted(AliyunDownloadMediaInfo task) {
+        void onTaskCompleted(AliyunDownloadMediaInfo mediaInfo) {
             for (int i = mObservers.size() - 1; i >= 0; i--) {
                 BaseDownloadTaskObserver observer = mObservers.get(i);
-                if (observer.isContains(task)) {
-                    observer.onTaskCompleted(task);
+                if (observer.isContains(mediaInfo)) {
+                    observer.onTaskCompleted(mediaInfo);
                 }
             }
         }
 
-        void onTaskError(AliyunDownloadMediaInfo task, String message) {
+        void onTaskError(AliyunDownloadMediaInfo mediaInfo, String message) {
             for (int i = mObservers.size() - 1; i >= 0; i--) {
                 BaseDownloadTaskObserver observer = mObservers.get(i);
-                if (observer.isContains(task)) {
-                    observer.onTaskError(task, message);
+                if (observer.isContains(mediaInfo)) {
+                    observer.onTaskError(mediaInfo, message);
                 }
             }
-        }
-    }
-
-    public static class FileNameTaskObserver extends BaseDownloadTaskObserver<String> {
-
-        @Override
-        public boolean isContains(AliyunDownloadMediaInfo info) {
-//            Log.e(TAG, "isContains: task = " + FileUtils.getFileName(task.getUrl()));
-            return set.contains(info.getTitle());
         }
     }
 
@@ -593,31 +587,31 @@ public class AliDownloadManagerWrapper {
             set.clear();
         }
 
-        public void onTaskStarted(AliyunDownloadMediaInfo task) {
+        public void onTaskStarted(AliyunDownloadMediaInfo info) {
             //do nothing
         }
 
-        public void onTaskProgress(AliyunDownloadMediaInfo task, int soFarBytes, int totalBytes) {
+        public void onTaskProgress(AliyunDownloadMediaInfo info, int soFarBytes, int totalBytes) {
         }
 
-        public void onTaskPause(AliyunDownloadMediaInfo task) {
+        public void onTaskPause(AliyunDownloadMediaInfo info) {
         }
 
         public void onTaskWait(AliyunDownloadMediaInfo info) {
 
         }
 
-        public void onTaskCompleted(AliyunDownloadMediaInfo task) {
+        public void onTaskCompleted(AliyunDownloadMediaInfo info) {
         }
 
-        public void onTaskError(AliyunDownloadMediaInfo task, String message) {
+        public void onTaskError(AliyunDownloadMediaInfo info, String message) {
         }
 
-        public abstract boolean isContains(AliyunDownloadMediaInfo task);
+        public abstract boolean isContains(AliyunDownloadMediaInfo info);
     }
 
     /**
-     * 下载的状态由该变量控制反馈给界面更新。收{@link #updateDownloadStatus(int, DownloadStatus)}影响
+     * 下载的状态由该变量控制反馈给界面更新。收{@link #updateDownloadStatus(String, DownloadStatus)}影响
      */
     private class DownloadInfoListener implements AliyunDownloadInfoListener {
 
@@ -630,62 +624,73 @@ public class AliDownloadManagerWrapper {
             for (AliyunDownloadMediaInfo mediaInfo : list) {
                 Log.e(TAG, "onPrepared: mediaInfo = " + mediaInfo.getTitle() + ". size = " + mediaInfo.getSizeStr()
                         + ", " + mediaInfo.getCoverUrl() + ", " + mediaInfo.getVid() + ", " + mediaInfo.getDownloadIndex()
-                        + ", Quality = " + mediaInfo.getQuality());
+                        + ", Quality = " + mediaInfo.getQuality() + ", index = " + mediaInfo.getDownloadIndex()
+                        + ", path = " + mediaInfo.getSavePath() + ", format = " + mediaInfo.getFormat()
+                        + ", percent = " + mediaInfo.getProgress());
                 if (size < mediaInfo.getSize()) {
                     info = mediaInfo;
                     size = mediaInfo.getSize();
                 }
             }
             final AliyunDownloadMediaInfo mediaInfo = info;
-            mAliyunDownloadManager.addDownloadMedia(mediaInfo);
             if (mAliyunDownloadManager.getStsRefreshCallback() == null) {
                 Log.e(TAG, "run: why it is null.");
             }
-            mAliyunDownloadManager.startDownloadMedia(mediaInfo);
+            mAliyunDownloadManager.addDownloadMedia(mediaInfo);
+            startDownload(mediaInfo);
 //            notifyItemChanged(DownloadStatus.WAIT, list.get(0));
 //            mTaskObservable.onTaskStarted();
 
         }
 
         @Override
-        public void onStart(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
-            Log.e(TAG, "onStart: ");
-            mTaskObservable.onTaskStarted(aliyunDownloadMediaInfo);
+        public void onStart(AliyunDownloadMediaInfo mediaInfo) {
+            Log.e(TAG, "onStart: progress = " + mediaInfo.getProgress()
+                    + ", size = " + mediaInfo.getSizeStr());
+            mTaskObservable.onTaskStarted(mediaInfo);
         }
 
         @Override
         public void onProgress(AliyunDownloadMediaInfo mediaInfo, int i) {
-            Log.e(TAG, "onProgress: size = " + mediaInfo.getSize() + ", duration = " + mediaInfo.getDuration() + ", i = " + i);
-            long size = mediaInfo.getDuration();
+            Log.e(TAG, "onProgress: size = " + mediaInfo.getSize() + ", i = " + i);
+            long size = mediaInfo.getSize();
             mTaskObservable.onTaskProgress(mediaInfo, (int) (size * i * 0.01F), (int) size);
         }
 
         @Override
-        public void onStop(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+        public void onStop(AliyunDownloadMediaInfo mediaInfo) {
             Log.e(TAG, "onStop: ");
-            mTaskObservable.onTaskPause(aliyunDownloadMediaInfo);
+            mTaskObservable.onTaskPause(mediaInfo);
         }
 
         @Override
-        public void onCompletion(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
-            Log.e(TAG, "onCompletion: ");
-            mTaskObservable.onTaskCompleted(aliyunDownloadMediaInfo);
+        public void onCompletion(AliyunDownloadMediaInfo mediaInfo) {
+            Log.e(TAG, "onCompletion: oldPath = " + mediaInfo.getSavePath() + ", title = " + mediaInfo.getTitle());
+            mTaskObservable.onTaskCompleted(mediaInfo);
+
+            String oldPath = mediaInfo.getSavePath();
+            String newPath = Constants.getVideoPath(mediaInfo.getTitle());
+            FileUtils.renameTo(oldPath, newPath);
+
+            mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
+            mDbController.deleteTask(mediaInfo.getVid());
+
         }
 
         @Override
-        public void onError(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i, String s, String s1) {
+        public void onError(AliyunDownloadMediaInfo mediaInfo, int i, String s, String s1) {
             Log.e(TAG, "onError() called with: i = " + i + ", s = " + s + ", s1 = " + s1 + "");
-            mTaskObservable.onTaskError(aliyunDownloadMediaInfo, s);
+            mTaskObservable.onTaskError(mediaInfo, s);
         }
 
         @Override
-        public void onWait(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+        public void onWait(AliyunDownloadMediaInfo mediaInfo) {
             Log.e(TAG, "onWait: ");
-            mTaskObservable.onTaskWait(aliyunDownloadMediaInfo);
+            mTaskObservable.onTaskWait(mediaInfo);
         }
 
         @Override
-        public void onM3u8IndexUpdate(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i) {
+        public void onM3u8IndexUpdate(AliyunDownloadMediaInfo mediaInfo, int i) {
             Log.e(TAG, "onM3u8IndexUpdate: i = " + i);
         }
     }

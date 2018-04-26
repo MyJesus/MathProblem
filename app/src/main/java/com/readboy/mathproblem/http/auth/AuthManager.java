@@ -45,21 +45,7 @@ public class AuthManager {
         }
 
         final String filepath = FileHelper.getAuthAbsolutePath(AUTH_FILE_NAME);
-        VolleyApi.getAuth(context, response -> {
-            Log.e(TAG, "registerAuth: volley response.");
-            FileHelper.copy(response, filepath);
-            sAuthentication = MyJson.authentication(response.getAbsolutePath());
-            if (sAuthentication != null) {
-                sendMultiAuthEvent(uriSet, callback);
-            } else {
-                Log.e(TAG, "registerAuth: sAuthentication = null");
-                callback.onError(new DataFormatException("服务器返回数据有误"));
-            }
-        }, error -> {
-            error.printStackTrace();
-            Log.e(TAG, "registerMultiAuth: error ", error);
-            callback.onError(error);
-        });
+
     }
 
     private static void sendMultiAuthEvent(Set<String> uriSet, MultiAuthCallback callback) {
@@ -87,24 +73,7 @@ public class AuthManager {
 
         final String filepath = FileHelper.getAuthAbsolutePath(AUTH_FILE_NAME);
         Log.e(TAG, "registerAuth: volley. ");
-        VolleyApi.getAuth(context, response -> {
-            FileHelper.copy(response, filepath);
-            Authentication instance = MyJson.authentication(filepath);
-//            Log.e(TAG, "registerAuth: onResponse = " + instance.getTimestamp()
-//                    + ", current = " + System.currentTimeMillis());
-            sAuthentication = instance;
-            if (sAuthentication != null) {
-                callback.onAuth(instance.authUrl(uri));
-            } else {
-                Log.e(TAG, "registerAuth: error");
-                callback.onError(new DataFormatException("服务器返回数据有误，无法获取视频链接"));
-            }
-        }, error -> {
-            error.printStackTrace();
-            //外部处理好。
-            Log.e(TAG, "registerAuth: error ", error);
-            callback.onError(error);
-        });
+
     }
 
     private static void readFileCache() {

@@ -1,6 +1,6 @@
 package com.readboy.mathproblem.http.download;
 
-import com.liulishuo.filedownloader.BaseDownloadTask;
+import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
 
 /**
  * Created by oubin on 2017/9/29.
@@ -14,10 +14,16 @@ public class DownloadModel {
     private String url;
     private String path;
     private DownloadStatus status = DownloadStatus.PAUSE;
-    private BaseDownloadTask downloadTask;
+    private AliyunDownloadMediaInfo mediaInfo;
     private String thumbnailUrl;
 
     public DownloadModel() {
+    }
+
+    public DownloadModel(AliyunDownloadMediaInfo mediaInfo){
+        this.mediaInfo = mediaInfo;
+        thumbnailUrl = mediaInfo.getCoverUrl();
+        fileName = mediaInfo.getTitle();
     }
 
     public int getVideoId() {
@@ -60,14 +66,6 @@ public class DownloadModel {
         this.status = status;
     }
 
-    public BaseDownloadTask getDownloadTask() {
-        return downloadTask;
-    }
-
-    public void setDownloadTask(BaseDownloadTask downloadTask) {
-        this.downloadTask = downloadTask;
-    }
-
     public int getTaskId() {
         return taskId;
     }
@@ -77,15 +75,15 @@ public class DownloadModel {
     }
 
     public int getSpeed() {
-        return downloadTask != null ? downloadTask.getSpeed() : 0;
+        return 0;
     }
 
     public long getTotal() {
-        return downloadTask != null ? downloadTask.getSmallFileTotalBytes() : 0;
+        return mediaInfo != null ? mediaInfo.getSize() : 0;
     }
 
     public long getSoFar() {
-        return downloadTask != null ? downloadTask.getSmallFileSoFarBytes() : 0;
+        return mediaInfo != null ? mediaInfo.getSize() * mediaInfo.getProgress() : 0;
     }
 
     public String getThumbnailUrl() {
@@ -94,6 +92,18 @@ public class DownloadModel {
 
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public AliyunDownloadMediaInfo getMediaInfo() {
+        return mediaInfo;
+    }
+
+    public void setMediaInfo(AliyunDownloadMediaInfo mediaInfo) {
+        this.mediaInfo = mediaInfo;
+    }
+
+    public String getVid(){
+        return mediaInfo.getVid();
     }
 
     @Override

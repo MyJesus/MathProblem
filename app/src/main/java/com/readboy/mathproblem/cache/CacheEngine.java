@@ -1,11 +1,15 @@
 package com.readboy.mathproblem.cache;
 
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.support.v4.util.SparseArrayCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 
+import com.readboy.aliyunplayerlib.utils.FileUtil;
+import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.application.MathApplication;
 import com.readboy.mathproblem.application.SubjectType;
 import com.readboy.mathproblem.http.HttpRequestImpl;
@@ -440,7 +444,9 @@ public final class CacheEngine implements CacheConfig {
         File file = MathApplication.getInstance().getExternalCacheDir();
         String parent = file != null ? file.getAbsolutePath()
                 : PATH;
-        return parent + File.separator + "cache" + File.separator + type + "_" + grade + CACHE_FILE_EXTENSION;
+        //180125001， 4.1.17版本之前
+//        return parent + File.separator + "cache" + File.separator + type + "_" + grade + CACHE_FILE_EXTENSION;
+        return parent + File.separator + "project" + File.separator + type + "_" + grade + CACHE_FILE_EXTENSION;
 //        return CACHE_FILE_PATH + File.separator + type + "_" + grade + CACHE_FILE_EXTENSION;
     }
 
@@ -453,6 +459,34 @@ public final class CacheEngine implements CacheConfig {
 
     private void logToFile(String msg) {
 
+    }
+
+    public static void versionChangeHandle(Context context) {
+        try {
+            int versionCode = context.getPackageManager().getPackageInfo(context.getPackageName(), 0)
+                    .versionCode;
+            Log.e(TAG, "versionChangeHandle: version = " + versionCode);
+            if (versionCode <= 180125001) {
+                asyncDeleteCache();
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void asyncDeleteCache() {
+        new AsyncTask<Void, Void, Boolean>() {
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+            }
+
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                return null;
+            }
+        }.execute();
     }
 
     private static void sendBeforeEvent(CacheCallback cacheCallback) {

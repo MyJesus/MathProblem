@@ -9,7 +9,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.readboy.mathproblem.R;
-import com.readboy.mathproblem.video.movie.MovieActivity;
+import com.readboy.mathproblem.aliplayer.AliyunPlayerActivity;
 
 public class CustomProgressDialog extends Dialog {
     private static final String TAG = "oubin_ProgressDialog";
@@ -51,7 +51,7 @@ public class CustomProgressDialog extends Dialog {
 
     @Override
     public void onBackPressed() {
-        getContext().sendBroadcast(new Intent(MovieActivity.ACTION_APPSWITCH));
+        getContext().sendBroadcast(new Intent(AliyunPlayerActivity.ACTION_APPSWITCH));
     }
 
     public void setNetworkSpeed(String speeds) {

@@ -91,5 +91,10 @@
 -dontwarn com.tencent.bugly.**
 -keep public class com.tencent.bugly.**{*;}
 
+-keep class com.alivc.player.**{*;}
+-keep class com.aliyun.clientinforeport.**{*;}
+-keep class com.aliyun.vodplayer.**{*;}
+-dontwarn com.alivc.player.**
+
 
 proguard.config=${sdk.dir}\tools\proguard\proguard-android.txt:proguard-project.txt

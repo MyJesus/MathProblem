@@ -23,7 +23,7 @@
         android:orientation="vertical">
 
         <SeekBar
-            android:id="@+id/seek_bar"
+            android:id="@+id/player_seek_bar"
             style="@style/MyFloatWindowSeekBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -51,14 +51,14 @@
                 android:layout_centerInParent="true">
 
                 <ImageButton
-                    android:id="@+id/play"
+                    android:id="@+id/player_player"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/btn_play_selector"
                     android:visibility="visible" />
 
                 <ImageButton
-                    android:id="@+id/pause"
+                    android:id="@+id/player_pause"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/btn_pause_selector"
@@ -91,7 +91,7 @@
             android:src="@drawable/btn_playsize_originalsize1" />
 
         <ImageButton
-            android:id="@+id/back"
+            android:id="@+id/player_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"

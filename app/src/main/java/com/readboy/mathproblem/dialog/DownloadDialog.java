@@ -13,14 +13,17 @@ import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 
-import com.readboy.mathproblem.video.movie.MovieActivity;
+import com.aliyun.vodplayer.downloader.AliyunDownloadInfoListener;
+import com.aliyun.vodplayer.downloader.AliyunDownloadManager;
+import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
+import com.readboy.mathproblem.aliplayer.AliyunPlayerActivity;
+import com.readboy.mathproblem.download.AliyunDownloadManagerWrapper;
+import com.readboy.mathproblem.http.download.DownloadModel;
 import com.readboy.mathproblem.video.movie.VideoExtraNames;
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.adapter.DownloadAdapter;
 import com.readboy.mathproblem.adapter.VideoAdapter;
 import com.readboy.mathproblem.application.Constants;
-import com.readboy.mathproblem.http.download.DownloadManager;
-import com.readboy.mathproblem.http.download.DownloadModel;
 import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.SizeUtils;
 import com.readboy.mathproblem.util.ToastUtils;
@@ -29,30 +32,35 @@ import com.readboy.mathproblem.widget.LineItemDecoration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by oubin on 2017/9/5.
+ *
  * @author oubin
  */
 
 public class DownloadDialog extends BaseVideoDialog {
-    private static final String TAG = "DownloadDialog";
+    private static final String TAG = "oubin_DownloadDialog";
 
     /**
      * 已下载，本地视频
      */
     private RecyclerView mLocationRv;
     private VideoAdapter mLocationAdapter;
-    private final List<VideoInfo> mLocationVideoList = new ArrayList<>();
-    //正在下载中的视频
+    private final List<VideoInfo> mLocationVideoList = new CopyOnWriteArrayList<>();
+    /**
+     * 正在下载中的视频
+     */
     private RecyclerView mDownloadRv;
     private DownloadAdapter mDownloadAdapter;
     /**
      * 和Adapter中的dataList使用同一对象，确保数据更新
      * 如果不是同一对象，每次更新数据，都需重新获取数据。
      */
-    private List<DownloadModel> mDownloadArray;
-//    private ArrayMap<Integer, DownloadModel> mDownloadArray;
+    private List<DownloadModel> mDownloadArray = new ArrayList<>();
+    //    private List<AliyunDownloadMediaInfo> mDownloadArray;
+    private AliyunDownloadInfoListener mDownloadListener;
 //    private SparseArray<DownloadModel> mDownloadArray;
 
     //已下载
@@ -88,8 +96,8 @@ public class DownloadDialog extends BaseVideoDialog {
     @Override
     public void show() {
         super.show();
-//        Log.e(TAG, "show: ");
-        DownloadManager.getInstance().setAdapter(mDownloadAdapter);
+        Log.e(TAG, "show: ");
+//        DownloadManager.getInstance().setAdapter(mDownloadAdapter);
         if (!hasRegisterObserver) {
             mDownloadAdapter.registerAdapterDataObserver(mDownloadDataObserver);
             hasRegisterObserver = true;
@@ -98,7 +106,9 @@ public class DownloadDialog extends BaseVideoDialog {
         if (mDownloadArray != null) {
             mLastDownloadSize = mDownloadArray.size();
         }
-        mDownloadAdapter.notifyDataSetChanged();
+        updateDownloadList();
+        mDownloadListener = new DownloadInfoListener();
+        AliyunDownloadManager.getInstance(getContext()).addDownloadInfoListener(mDownloadListener);
         shouldUpdateUi = false;
     }
 
@@ -108,11 +118,13 @@ public class DownloadDialog extends BaseVideoDialog {
         Log.e(TAG, "dismiss: ");
         mLocationAdapter.setAllChecked(false);
         mDownloadAdapter.setAllChecked(false);
-        DownloadManager.getInstance().setAdapter(null);
+//        DownloadManager.getInstance().setAdapter(null);
         if (hasRegisterObserver) {
             mDownloadAdapter.unregisterAdapterDataObserver(mDownloadDataObserver);
             hasRegisterObserver = false;
         }
+        AliyunDownloadManager.getInstance(getContext()).removeDownloadInfoListener(mDownloadListener);
+        mDownloadListener = null;
     }
 
     @Override
@@ -139,7 +151,7 @@ public class DownloadDialog extends BaseVideoDialog {
         mLocationAdapter.setOnItemClickListener((position, viewHolder) -> {
             String path = mLocationVideoList.get(position).getPath();
 //            VideoProxy.playWithPath(path, DownloadDialog.this.getContext());
-            Intent intent = new Intent(DownloadDialog.this.getContext(), MovieActivity.class);
+            Intent intent = new Intent(DownloadDialog.this.getContext(), AliyunPlayerActivity.class);
             intent.putExtra(VideoExtraNames.EXTRA_INDEX, position);
 //            intent.putExtra(VideoExtraNames.EXTRA_PATH, path);
             ArrayList<String> paths = new ArrayList<>();
@@ -171,12 +183,17 @@ public class DownloadDialog extends BaseVideoDialog {
     }
 
     private void updateDownloadList() {
-        mDownloadArray = DownloadManager.getInstance().getDownloadArray();
+        List<DownloadModel> temp = AliyunDownloadManagerWrapper.getInstance().getDownloadArray();
+        Log.e(TAG, "updateDownloadList: size = " + mDownloadArray);
+        mDownloadArray.clear();
+        mDownloadArray.addAll(temp);
+//        mDownloadAdapter.setData(mDownloadArray);
+        mDownloadAdapter.notifyDataSetChanged();
     }
 
     private void updateLocationVideoList() {
         mLocationVideoList.clear();
-        File parent = new File(Constants.VIDEO_PATH);
+        File parent = new File(Constants.ALIYUN_DOWNLOAD_DIR);
         if (!parent.exists() && !parent.mkdirs()) {
             Log.e(TAG, "updateLocationVideoList: can't mkdirs, " + parent.getAbsolutePath());
             return;
@@ -193,7 +210,7 @@ public class DownloadDialog extends BaseVideoDialog {
     }
 
     private void updateLocationListFaker() {
-        File parent = new File(Constants.VIDEO_PATH);
+        File parent = new File(Constants.ALIYUN_DOWNLOAD_DIR);
         if (!parent.exists()) {
             if (!parent.mkdirs()) {
                 return;
@@ -222,7 +239,7 @@ public class DownloadDialog extends BaseVideoDialog {
         } else {
             count = mDownloadArray.size();
 //            Log.e(TAG, "updateCountView: count = " + count + ", mLastDownloadSize = " + mLastDownloadSize);
-            if (count != mLastDownloadSize){
+            if (count != mLastDownloadSize) {
 //                Log.e(TAG, "updateCountView: ");
                 mAllCheckedBox.setChecked(false);
             }
@@ -250,7 +267,7 @@ public class DownloadDialog extends BaseVideoDialog {
             showEmptyContentView();
             mDeleteView.setVisibility(View.GONE);
             mAllCheckedBox.setVisibility(View.GONE);
-        }else {
+        } else {
             mDeleteView.setVisibility(View.VISIBLE);
             mAllCheckedBox.setVisibility(View.VISIBLE);
         }
@@ -317,7 +334,7 @@ public class DownloadDialog extends BaseVideoDialog {
         mAllCheckedBox.setChecked(false);
     }
 
-    private void notifyDownloadDataChange(){
+    private void notifyDownloadDataChange() {
         dismissDeleteAlertDialog();
         mDownloadAdapter.notifyDataSetChanged();
         mAllCheckedBox.setChecked(false);
@@ -385,9 +402,10 @@ public class DownloadDialog extends BaseVideoDialog {
         List<Integer> positions = mLocationAdapter.getSelectedPosition();
         boolean result = true;
         int size = positions.size();
+        List<VideoInfo> videoInfoList = new ArrayList<>(mLocationVideoList);
         for (int i = size - 1; i >= 0; i--) {
             int position = positions.get(i);
-            String path = mLocationVideoList.get(position).getPath();
+            String path = videoInfoList.get(position).getPath();
             if (!FileUtils.delete(path)) {
                 result = false;
             } else {
@@ -400,15 +418,45 @@ public class DownloadDialog extends BaseVideoDialog {
         return result;
     }
 
+    private int getDownloadPosition(String vid) {
+        int size = mDownloadArray.size();
+        for (int i = 0; i < size; i++) {
+            DownloadModel model = mDownloadArray.get(i);
+            if (model.getVid().equals(vid)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+//    private boolean deleteDownloadTask() {
+//        List<Integer> positions = mDownloadAdapter.getSelectedPosition();
+//        int size = positions.size();
+//        for (int i = size - 1; i >= 0; i--) {
+//            int position = positions.get(i);
+////            DownloadManager.getInstance().deleteTaskByIndex(position);
+//            AliyunDownloadManagerWrapper.getInstance().d
+//        }
+//        return true;
+//    }
+
     private boolean deleteDownloadTask() {
         List<Integer> positions = mDownloadAdapter.getSelectedPosition();
+        if (positions == null) {
+            return true;
+        }
         int size = positions.size();
+        List<DownloadModel> temp = new ArrayList<>();
+        temp.addAll(mDownloadArray);
         for (int i = size - 1; i >= 0; i--) {
             int position = positions.get(i);
-            DownloadManager.getInstance().deleteTaskByIndex(position);
+            AliyunDownloadManagerWrapper.getInstance().removeMediaInfo(temp.get(position).getMediaInfo());
         }
+        updateDownloadList();
         return true;
     }
+
+
 
     @Override
     protected void showEmptyContentView() {
@@ -441,7 +489,7 @@ public class DownloadDialog extends BaseVideoDialog {
         return shouldUpdateUi;
     }
 
-    private int mLastDownloadCount=0;
+    private int mLastDownloadCount = 0;
 
     private class DownloadDataObserver extends RecyclerView.AdapterDataObserver {
 
@@ -451,7 +499,7 @@ public class DownloadDialog extends BaseVideoDialog {
 //            Log.e(TAG, "onChanged: ");
             int count = mDownloadAdapter.getItemCount();
 //            Log.e(TAG, "onChanged: count = " + count + ", mLastDownloadSize = " + mLastDownloadSize);
-            if (count < mLastDownloadSize){
+            if (count < mLastDownloadSize) {
                 updateLocationVideoList();
                 mLastDownloadSize = count;
             }
@@ -466,6 +514,53 @@ public class DownloadDialog extends BaseVideoDialog {
             Log.e(TAG, "onItemRangeRemoved: ");
 //            updateLocationVideoList();
             updateCountView();
+        }
+    }
+
+    private class DownloadInfoListener implements AliyunDownloadInfoListener {
+
+        @Override
+        public void onPrepared(List<AliyunDownloadMediaInfo> list) {
+
+        }
+
+        @Override
+        public void onStart(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+
+        }
+
+        @Override
+        public void onProgress(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i) {
+
+        }
+
+        @Override
+        public void onStop(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+
+        }
+
+        @Override
+        public void onCompletion(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+            int position = getDownloadPosition(aliyunDownloadMediaInfo.getVid());
+            if (position > 0) {
+                mDownloadArray.remove(position);
+                mDownloadAdapter.notifyItemRemoved(position);
+            }
+        }
+
+        @Override
+        public void onError(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i, String s, String s1) {
+
+        }
+
+        @Override
+        public void onWait(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+
+        }
+
+        @Override
+        public void onM3u8IndexUpdate(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i) {
+
         }
     }
 

@@ -17,6 +17,11 @@ Java_com_readboy_mathproblem_NativeApi_getSignature(
         jobject,
         jstring);
 
+JNIEXPORT jstring JNICALL
+Java_com_readboy_mathproblem_NativeApi_getAppSecret(
+        JNIEnv *,
+        jobject);
+
 #ifdef __cplusplus
 }
 #endif

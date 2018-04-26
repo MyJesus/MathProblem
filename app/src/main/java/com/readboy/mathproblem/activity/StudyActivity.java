@@ -67,7 +67,6 @@ import com.readboy.mathproblem.widget.SmallPlayerView;
 import com.readboy.recyclerview.CommonAdapter;
 import com.readboy.recyclerview.MultiItemTypeAdapter;
 import com.readboy.recyclerview.base.ViewHolder;
-import com.readboy.video.view.VideoView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -232,7 +231,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         }
         stopAnimation();
         pauseAudio();
-        pauseVideo();
+        pauseOrStopVideo();
 
         //解决再列题讲解界面有残影问题。
         //进入有视频的章节,例题讲解,下滑通知栏,设置,返回,视频会显出来。
@@ -289,7 +288,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         if (resultCode == RESULT_OK) {
             if (data != null) {
                 String path = data.getStringExtra(VideoExtraNames.EXTRA_PATH);
-                int seekPosition = data.getIntExtra(VideoExtraNames.EXTRA_SEEK_POSITION, 0);
+                long seekPosition = data.getLongExtra(VideoExtraNames.EXTRA_SEEK_POSITION, 0);
                 int videoIndex = data.getIntExtra(VideoExtraNames.EXTRA_INDEX, 0);
                 Log.e(TAG, "onActivityResult: seek = " + seekPosition + ", index = " + videoIndex);
                 mPlayerView.smoothScrollToPosition(videoIndex);
@@ -396,7 +395,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
                 Log.e(TAG, "onPageFinished: scaleY = " + view.getScaleY());
                 if (mWebProgress.isActivated()) {
                     mWebProgress.setVisibility(View.GONE);
-                }else {
+                } else {
                     mWebProgress.setActivated(true);
                 }
                 int w = View.MeasureSpec.makeMeasureSpec(0,
@@ -762,7 +761,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         if (!checkNetwork()) {
             return;
         }
-        if (mCurrentPosition >= mProjectList.size()){
+        if (mCurrentPosition >= mProjectList.size()) {
             ToastUtils.showShort(this, "无法获取音频数据");
             return;
         }
@@ -801,6 +800,15 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         abandonAudioFocus();
     }
 
+    private void pauseOrStopVideo() {
+//        if (mPlayerView.isPlaying()) {
+        Log.e(TAG, "pauseOrStopVideo: isPlaying = " + mPlayerView.isPlaying());
+            pauseVideo();
+//        } else {
+//            stopVideo();
+//        }
+    }
+
     private void pauseVideo() {
         mPlayerView.pauseVideo();
         abandonAudioFocus();
@@ -809,16 +817,6 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
     private void stopVideo() {
         mPlayerView.stopVideo();
         abandonAudioFocus();
-    }
-
-    private void pauseOrStopVideo() {
-        int state = mPlayerView.getPlayState();
-        Log.e(TAG, "pauseOrStopVideo: state = " + state);
-        if (state == VideoView.STATE_PREPARING) {
-            stopVideo();
-        } else {
-            pauseVideo();
-        }
     }
 
     private void startPlayingAnimation() {
@@ -993,7 +991,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
 
                 int videoState = mPlayerView.getPlayState();
                 Log.e(TAG, "handleNetWorkChange: videi state = " + videoState);
-                if (videoState == VideoView.STATE_PREPARING) {
+                if (videoState == 1) {
                     mPlayerView.stopVideo();
                     checkNetwork();
                 }
@@ -1205,9 +1203,9 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (mWebProgress.isActivated()){
+                    if (mWebProgress.isActivated()) {
                         mWebProgress.setVisibility(View.GONE);
-                    }else {
+                    } else {
                         mWebProgress.setActivated(true);
                     }
                     if (mTeacherSelectedParent.getVisibility() == View.VISIBLE) {

@@ -7,14 +7,13 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.liulishuo.filedownloader.BaseDownloadTask;
-import com.liulishuo.filedownloader.FileDownloader;
+import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.cache.PicassoWrapper;
-import com.readboy.mathproblem.http.download.DownloadManager;
+import com.readboy.mathproblem.download.AliyunDownloadManagerWrapper;
+import com.readboy.mathproblem.download.DownloadSpeedMonitor;
 import com.readboy.mathproblem.http.download.DownloadModel;
 import com.readboy.mathproblem.http.download.DownloadStatus;
-import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.SizeUtils;
 
 /**
@@ -32,8 +31,9 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
      */
     private TextView mVideoMemory;
     private ImageView mDownloadStatusIv;
-    private DownloadStatus mStatus;
-    private TaskIdTaskObserver mObserver;
+    private DownloadStatus mDownloadStatus = DownloadStatus.WAIT;
+    private VidTaskObserver mObserver;
+    private DownloadSpeedMonitor mSpeedMonitor;
     private DownloadModel model;
 
     public DownloadViewHolder(View itemView) {
@@ -45,16 +45,19 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         mVideoMemory = (TextView) itemView.findViewById(R.id.video_download_memory);
         mDownloadStatusIv = (ImageView) itemView.findViewById(R.id.video_download_status_iv);
         mDownloadStatusIv.setOnClickListener(this);
-        mObserver = new TaskIdTaskObserver();
-        DownloadManager.getInstance().registerDownloadTaskObserver(mObserver);
+        mObserver = new VidTaskObserver();
+//        DownloadManager.getInstance().registerDownloadTaskObserver(mObserver);
+        AliyunDownloadManagerWrapper.getInstance().registerDownloadTaskObserver(mObserver);
+        mSpeedMonitor = new DownloadSpeedMonitor();
     }
 
     @Override
     public void bindView(int position, boolean isChecked, DownloadModel model) {
         super.bindView(position, isChecked, model);
+        this.model = model;
         mObserver.clearObserver();
-        if (model.getDownloadTask() != null && !mObserver.isContains(model.getDownloadTask())) {
-            mObserver.addObserver(model.getTaskId());
+        if (model.getMediaInfo() != null && !mObserver.isContains(model.getMediaInfo())) {
+            mObserver.addObserver(model.getVid());
         }
         if (!TextUtils.isEmpty(model.getThumbnailUrl())) {
             PicassoWrapper.loadThumbnail(model.getThumbnailUrl(), mVideoThumbnail);
@@ -63,18 +66,13 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         }
 
         mCheckBox.setChecked(isChecked);
-        mVideoName.setText(FileUtils.getFileNameWithoutExtension(model.getFileName()));
-        mStatus = model.getStatus();
-        mDownloadStatusIv.setImageResource(mStatus.getDrawableResId());
-        if (mStatus == DownloadStatus.DOWNLOADING) {
-            mDownloadStatusTv.setText(String.format("%dKB/s", model.getSpeed()));
-        } else {
-            mDownloadStatusTv.setText(mStatus.getDescribe());
-        }
+        mVideoName.setText(model.getFileName());
+        mDownloadStatus = model.getStatus();
+        updateDownloadStatusView();
+
         long soFar = model.getSoFar();
 //        Log.e(TAG, "bindView: task so far = " + SizeUtils.formatMemorySize(soFar));
-        soFar = FileDownloader.getImpl().getSoFar(model.getTaskId());
-        long total = FileDownloader.getImpl().getTotal(model.getTaskId());
+        long total = model.getTotal();
 //        Log.e(TAG, "bindView: downloader so far = " + SizeUtils.formatMemorySize(soFar)
 //                + ", total = " + SizeUtils.formatMemorySize(total));
         mVideoMemory.setText(String.format("%s/%s",
@@ -94,9 +92,9 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
     }
 
     private void handlerStatusClickEvent() {
-        Log.e(TAG, "handlerStatusClickEvent: mStatus = " + mStatus);
-        DownloadStatus nextStatus = mStatus;
-        switch (mStatus) {
+        Log.e(TAG, "handlerStatusClickEvent: mDownloadStatus = " + mDownloadStatus);
+        DownloadStatus nextStatus = mDownloadStatus;
+        switch (mDownloadStatus) {
             case ERROR:
             case PAUSE:
 //                nextStatus = DownloadStatus.DOWNLOADING;
@@ -117,38 +115,73 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
                 Log.e(TAG, "handlerStatusClickEvent: status = " + nextStatus);
                 return;
         }
-        DownloadManager.getInstance().updateDownloadStatus(getAdapterPosition(), nextStatus);
+        AliyunDownloadManagerWrapper.getInstance().updateDownloadStatus(model.getVid(), nextStatus);
     }
 
-    public class TaskIdTaskObserver extends DownloadManager.BaseDownloadTaskObserver<Integer> {
+    private void updateDownloadStatusView() {
+        mDownloadStatusIv.setImageResource(mDownloadStatus.getDrawableResId());
+        if (mDownloadStatus == DownloadStatus.DOWNLOADING) {
+//            mDownloadStatusTv.setText(String.format("%dKB/s", mSpeedMonitor.getSpeed()));
+            mDownloadStatusTv.setText(mDownloadStatus.getDescribe());
+        } else {
+            mDownloadStatusTv.setText(mDownloadStatus.getDescribe());
+        }
+    }
+
+    public class VidTaskObserver extends AliyunDownloadManagerWrapper.BaseDownloadTaskObserver<String> {
 
         @Override
-        public boolean isContains(BaseDownloadTask task) {
-//            Log.e(TAG, "isContains: position = " + getAdapterPosition());
-            return set.contains(task.getId());
+        public boolean isContains(AliyunDownloadMediaInfo mediaInfo) {
+            return set.contains(mediaInfo.getVid());
         }
 
         @Override
-        public void onTaskStarted(BaseDownloadTask task) {
+        public void onTaskStarted(AliyunDownloadMediaInfo task) {
             super.onTaskStarted(task);
-
+            mDownloadStatus = DownloadStatus.STARTED;
+            updateDownloadStatusView();
+            long start = task.getSize() * task.getProgress();
+            mSpeedMonitor.start(start);
+            mSpeedMonitor.end(task.getSize());
         }
 
         @Override
-        public void onTaskProgress(BaseDownloadTask task, int soFarBytes, int totalBytes) {
+        public void onTaskWait(AliyunDownloadMediaInfo info) {
+            super.onTaskWait(info);
+            mDownloadStatus = DownloadStatus.WAIT;
+            updateDownloadStatusView();
+        }
+
+        @Override
+        public void onTaskPause(AliyunDownloadMediaInfo task) {
+            super.onTaskPause(task);
+            mDownloadStatus = DownloadStatus.PAUSE;
+            updateDownloadStatusView();
+        }
+
+        @Override
+        public void onTaskProgress(AliyunDownloadMediaInfo task, int soFarBytes, int totalBytes) {
             super.onTaskProgress(task, soFarBytes, totalBytes);
-//            Log.e(TAG, "onTaskProgress: so far = " + SizeUtils.formatMemorySize(soFarBytes)
-//                    + ", total = " + SizeUtils.formatMemorySize(totalBytes));
-            String speedStr;
-            int speed = task.getSpeed();
-            if (speed >= 1024) {
-                speedStr = String.format("%.2fMB", speed / 1024.0F);
-            } else {
-                speedStr = String.format("%dKB", speed);
-            }
-            mDownloadStatusTv.setText(String.format("%s/s", speedStr));
+            Log.e(TAG, "onTaskProgress() called with: soFarBytes = " + soFarBytes + ", totalBytes = " + totalBytes + "");
+            mSpeedMonitor.update(soFarBytes);
+//            String speedStr;
+//            int speed = 0;
+//            if (speed >= 1024) {
+//                speedStr = String.format("%.2fMB", speed / 1024.0F);
+//            } else {
+//                speedStr = String.format("%dKB", speed);
+//            }
+//            mDownloadStatusTv.setText(String.format("%s/s", speedStr));
             mVideoMemory.setText(String.format("%s/%s",
                     SizeUtils.formatMemorySize(soFarBytes), SizeUtils.formatMemorySize(totalBytes)));
+
+        }
+
+        @Override
+        public void onTaskCompleted(AliyunDownloadMediaInfo info) {
+            super.onTaskCompleted(info);
+            mDownloadStatus = DownloadStatus.COMPLETED;
+            updateDownloadStatusView();
         }
     }
 

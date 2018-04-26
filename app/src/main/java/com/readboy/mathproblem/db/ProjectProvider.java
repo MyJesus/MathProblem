@@ -89,7 +89,7 @@ public class ProjectProvider extends ContentProvider {
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         SQLiteDatabase db = mOpenHelper.getReadableDatabase();
         int match = sUriMatcher.match(uri);
-        Log.e(TAG, "query: match = " + match);
+//        Log.e(TAG, "query: match = " + match);
         switch (match) {
             case SCORE:
                 qb.setTables(SCORE_TABLE_NAME);

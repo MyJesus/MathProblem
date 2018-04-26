@@ -1,51 +1,49 @@
 package com.readboy.mathproblem.widget;
 
 import android.content.Context;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.aliyun.vodplayer.media.AliyunVidSts;
+import com.aliyun.vodplayer.media.AliyunVodPlayer;
+import com.aliyun.vodplayer.media.IAliyunVodPlayer;
+import com.aliyun.vodplayer.media.IAliyunVodPlayer.PlayerState;
+import com.aliyun.vodplayerview.utils.NetWatchdog;
+import com.readboy.aliyunplayerlib.helper.VidStsHelper;
+import com.readboy.aliyunplayerlib.utils.AliLogUtil;
 import com.readboy.mathproblem.R;
-import com.readboy.mathproblem.application.MathApplication;
 import com.readboy.mathproblem.application.SubjectType;
 import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
 import com.readboy.mathproblem.dialog.NoNetworkDialog;
-import com.readboy.mathproblem.http.auth.AuthCallback;
-import com.readboy.mathproblem.http.auth.AuthManager;
-import com.readboy.mathproblem.http.response.ProjectEntity;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
 import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.ToastUtils;
-import com.readboy.mathproblem.util.VideoUtils;
 import com.readboy.mathproblem.util.WakeUtil;
-import com.readboy.mathproblem.video.db.VideoDatabaseInfo;
 import com.readboy.mathproblem.video.movie.VideoExtraNames;
 import com.readboy.mathproblem.video.proxy.VideoProxy;
+import com.readboy.mathproblem.video.resource.IVideoResource;
+import com.readboy.mathproblem.video.resource.VidVideoResource;
 import com.readboy.recyclerview.CommonAdapter;
 import com.readboy.recyclerview.MultiItemTypeAdapter;
 import com.readboy.recyclerview.base.ViewHolder;
-import com.readboy.video.ErrorType;
-import com.readboy.video.IVideoPlayerListener;
-import com.readboy.video.view.VideoView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,13 +55,27 @@ import java.util.List;
  */
 
 public class SmallPlayerView extends LinearLayout implements View.OnClickListener,
-        IVideoPlayerListener {
+        IAliyunVodPlayer.OnSeekCompleteListener,
+        IAliyunVodPlayer.OnPreparedListener,
+        IAliyunVodPlayer.OnFirstFrameStartListener,
+        IAliyunVodPlayer.OnLoadingListener,
+        IAliyunVodPlayer.OnStoppedListener,
+        IAliyunVodPlayer.OnCompletionListener,
+        IAliyunVodPlayer.OnTimeExpiredErrorListener,
+        IAliyunVodPlayer.OnErrorListener,
+        IAliyunVodPlayer.OnInfoListener {
     private static final String TAG = "oubin_SmallPlayerView";
-    private static final int DELAY_SEND_HIDE_MESSAGE = 4_000;  //毫秒
+    //毫秒
+    private static final int DELAY_SEND_HIDE_MESSAGE = 4_000;
 
     private Context mContext;
 
-    private VideoView mVideoView;
+    private AliyunVodPlayer mAliyunVodPlayer;
+    private AliyunVidSts mVidSts;
+    private VidStsHelper mVidStsHelper = null;
+
+    private SurfaceView mSurfaceView;
+    private SurfaceHolder.Callback mCallback;
     private TextView mCurrentVideoNameTv;
     private RecyclerView mVideoRv;
     private CommonAdapter<VideoInfo> mVideoAdapter;
@@ -72,10 +84,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     private GestureView mGestureView;
     private VideoHandler mVideoHandler = new VideoHandler(Looper.getMainLooper());
     private int mCurrentVideoIndex;
-    private int mSeekPosition;
-    private String mUriPath;
-    private boolean isPlayUrl;
-    //    private ProgressBar mVideoProgressBar;
+    private long mSeekPosition;
     private ImageView mVideoProgressBar;
 
     private int mGrade;
@@ -85,8 +94,12 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
      * 更新VideoList时，后台加载视频，加载完成后，暂停播放，即默认不播放。
      */
     private boolean isFirstPlay = true;
+    private boolean isPaused = false;
+    private boolean isPreparing = false;
+    private PlayerState mTargetState = PlayerState.Idle;
 
     private final List<VideoInfo> mVideoInfoList = new ArrayList<>();
+    private IVideoResource mCurrentVideoResource;
 
     private NoNetworkDialog mNoNetworkDialog;
 
@@ -103,9 +116,13 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mContext = context;
         LayoutInflater.from(context).inflate(R.layout.player_view_small, this);
         initView();
+        initVodPlayer();
     }
 
     private void initView() {
+        mSurfaceView = (SurfaceView) findViewById(R.id.video_small_window);
+        mCallback = new InnerCallback();
+        mSurfaceView.getHolder().addCallback(mCallback);
         mCurrentVideoNameTv = (TextView) findViewById(R.id.small_player_video_name);
         mVideoController = findViewById(R.id.small_player_controller);
         mVideoController.setOnClickListener(this);
@@ -116,32 +133,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
 //        mVideoProgressBar = (ProgressBar) findViewById(R.id.video_progress_bar);
         mVideoProgressBar = (ImageView) findViewById(R.id.video_progress_bar);
         mVideoProgressBar.setOnClickListener(this);
-        mVideoView = (VideoView) findViewById(R.id.video_small_window);
-//        mVideoView.setOnPreparedListener(this);
-//        mVideoView.setOnErrorListener(this);
-//        mVideoView.setOnCompletionListener(this);
-//        mVideoView.setOnSeekCompleteListener(this);
-        mVideoView.addVideoPlayerListener(this);
-        mVideoView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                ViewTreeObserver observer = mVideoView.getViewTreeObserver();
-                if (!observer.isAlive()) {
-                    return;
-                }
-                observer.removeOnGlobalLayoutListener(this);
-                int showWidth = mVideoView.getMeasuredWidth();
-                int showHeight = mVideoView.getMeasuredHeight();
-                if (showWidth <= 0 || showHeight <= 0) {
-                    ViewGroup.LayoutParams layoutParams = mVideoView.getLayoutParams();
-                    showWidth = layoutParams.width;
-                    showHeight = layoutParams.height;
-                    Log.e(TAG, "initView: new width = " + showWidth + ", new height = " + showHeight);
-                }
-                Log.e(TAG, "initView: showWidth = " + showWidth + ", height = " + showHeight);
-                mVideoView.setLayout(showWidth, showHeight);
-            }
-        });
+
         mVideoRv = (RecyclerView) findViewById(R.id.small_player_video_list);
         mVideoRv.setLayoutManager(new LinearLayoutManager(mContext));
         mVideoAdapter = new CommonAdapter<VideoInfo>(mContext, R.layout.item_video_small, mVideoInfoList) {
@@ -150,7 +142,8 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
                 TextView videoIndex = (TextView) holder.itemView.findViewById(R.id.small_player_video_icon);
                 videoIndex.setText(String.valueOf(position + 1));
                 TextView videoName = (TextView) holder.itemView.findViewById(R.id.small_player_video_name);
-                videoName.setText(FileUtils.getFileNameWithoutExtension(videoInfo.getVideoUri()));
+//                videoName.setText(FileUtils.getFileNameWithoutExtension(videoInfo.getVideoUri()));
+                videoName.setText(videoInfo.getName());
                 if (position == mCurrentVideoIndex) {
                     videoIndex.setSelected(true);
                     videoName.setSelected(true);
@@ -167,6 +160,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
                     mCurrentVideoIndex = position;
                     Log.e(TAG, "onItemClick: current index = " + mCurrentVideoIndex);
                     isFirstPlay = false;
+                    stopVideo();
                     initVideoData(0, video);
                     mVideoAdapter.notifyDataSetChanged();
                 }
@@ -180,48 +174,34 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mVideoRv.setAdapter(mVideoAdapter);
     }
 
-    private void initVideoData(final int seekPosition, VideoInfo videoInfo) {
-        Log.e(TAG, "initVideoData: current status = " + mVideoView.getCurrentState());
-        stopVideo();
-        hidePlayerController();
-        showProgressBar();
-        if (!isFirstPlay) {
-            sendPlayBeforeEvent();
-        }
-        String fileName = FileUtils.getFileName(videoInfo.getVideoUri());
-        mCurrentVideoNameTv.setText(fileName);
-        if (VideoUtils.videoIsExist(fileName)) {
-            isPlayUrl = false;
-            playVideoUri(seekPosition, VideoUtils.getVideoPath(fileName), false);
-        } else {
-            String url = videoInfo.getUrl();
-//            Log.e(TAG, "initVideoData: url = " + url);
-            isPlayUrl = true;
-            if (!TextUtils.isEmpty(url) && AuthManager.isValid(url)) {
-                playVideoUri(seekPosition, url, true);
-            } else {
-                AuthManager.registerAuth(MathApplication.getInstance(), videoInfo.getVideoUri(), new AuthCallback() {
-                    @Override
-                    public void onAuth(String url) {
-                        if (!TextUtils.isEmpty(url)) {
-                            playVideoUri(seekPosition, url, true);
-                            videoInfo.setUrl(url);
-                        }
-                    }
+    private void initVodPlayer() {
+        mAliyunVodPlayer = new AliyunVodPlayer(getContext());
+        String sdDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/MathProblem/cache/";
+        mAliyunVodPlayer.setPlayingCache(true, sdDir, 60 * 60, 300);
+        mAliyunVodPlayer.setCirclePlay(true);
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        Log.e(TAG, "onError: throwable = " + throwable, throwable);
-                        if (FileUtils.getAvailableSize(getContext().getCacheDir().getPath())
-                                < 50 * 1024 * 1024){
-                            handleError("存储空间不足！");
-                        }else {
-                            handleError("无法获取视频资源，请检查网络。");
-                        }
-                    }
-                });
-            }
-        }
+        mAliyunVodPlayer.setOnPreparedListener(this);
+        mAliyunVodPlayer.setOnFirstFrameStartListener(this);
+        mAliyunVodPlayer.setOnErrorListener(this);
+        mAliyunVodPlayer.setOnCompletionListener(this);
+        mAliyunVodPlayer.setOnSeekCompleteListener(this);
+        mAliyunVodPlayer.setOnStoppedListner(this);
+//        mAliyunVodPlayer.enableNativeLog();
+
+        mVidStsHelper = new VidStsHelper();
+    }
+
+    private void initVideoData(final long seekPosition, VideoInfo videoInfo) {
+        this.mSeekPosition = seekPosition;
+//        stopVideo();
+//        showProgressBar();
+//        if (!isFirstPlay) {
+//            sendPlayBeforeEvent();
+//        }
+//        String fileName = FileUtils.getFileName(videoInfo.getVideoUri());
+        mCurrentVideoNameTv.setText(videoInfo.getName());
+        mCurrentVideoResource = new VidVideoResource(videoInfo);
+        playVideo(mCurrentVideoResource);
     }
 
     /**
@@ -236,13 +216,12 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     public void initVideoList(int projectPosition, int videoIndex, int seekPosition,
                               List<VideoInfo> videoList, boolean playVideo) {
         Log.e(TAG, "initVideoList() called with: projectPosition = " + projectPosition + ", videoIndex = "
-                + videoIndex + ", seekPosition = " + seekPosition + ", playVideo = " + playVideo + "");
+                + videoIndex + ", seekPosition = " + seekPosition + ", playOrResumeVideo = " + playVideo + "");
         isFirstPlay = !playVideo;
         mProjectPosition = projectPosition;
         mVideoInfoList.clear();
 
         if (videoList == null || videoList.size() == 0) {
-//            pauseVideo();
             setVisibility(GONE);
             mVideoAdapter.notifyDataSetChanged();
             return;
@@ -261,79 +240,132 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         initVideoList(projectPosition, 0, 0, videoList, playVideo);
     }
 
-    private void playVideoUri(int position, String uri, boolean isUrl) {
-        Log.e(TAG, "playVideoUri() called with: position = " + position + ", uri = " + uri + ", isUrl = " + isUrl + "");
-        hidePlayerController();
-        showProgressBar();
-        mUriPath = uri;
-        mSeekPosition = position;
-        this.isPlayUrl = isUrl;
-        Log.e(TAG, "playVideoUri: isPlayUrl = " + isPlayUrl);
-        if (isPlayUrl && !checkNetwork()) {
-            mVideoView.stopPlayback();
-            Log.e(TAG, "playVideoUri: return, is play url and no network. current status = " + mVideoView.getCurrentState());
+    private void playVideo(IVideoResource resource) {
+        mTargetState = PlayerState.Started;
+        onInit();
+        playWithVid(resource.getVideoUri().getAuthority());
+    }
+
+    /**
+     * vid在线点播
+     *
+     * @param vid vid
+     */
+    public void playWithVid(String vid) {
+        if (!checkNetwork()) {
             return;
-        } else {
-            enablePlayerController(true);
         }
-
-//        mVideoView.setVideoPath(mUriPath);
-        Log.e(TAG, "playVideoUri: firstPlay = " + isFirstPlay);
-        if (isFirstPlay) {
-            mVideoView.loadVideoUri(mUriPath, VideoView.DEFAULT_CACHE_PATH);
-            isFirstPlay = false;
-        } else {
-            mVideoView.setVideoURI(mUriPath, VideoDatabaseInfo.DEFAULT_CACHE_PATH, true);
+        Log.e(TAG, "playWithVid() called with: vid = " + vid + "");
+        if (mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle) {
+            mAliyunVodPlayer.stop();
         }
-        mVideoView.seekTo(position);
-//        mVideoController.setChecked(true);
-//        updateViewCausePlaying();
+        if (mVidSts != null) {
+            mVidSts.setVid(vid);
+        }
+        prepareAsync(true);
     }
 
-    private void playVideo() {
-        int state = mVideoView.getCurrentState();
-        Log.e(TAG, "playVideo: videoState = state = " + state);
-        if (state == VideoView.STATE_IDLE || state == VideoView.STATE_ERROR
-                || state == VideoView.STATE_STOPPED
-                || state == VideoView.STATE_PLAYBACK_COMPLETED) {
+    private void prepareAsync(boolean allowMobilePlay) {
+        if (mVidSts == null) {
+            getVidsts();
+        } else {
+            if (!allowMobilePlay && NetWatchdog.is4GConnected(getContext())) {
+                Log.e(TAG, "prepareAsync: do nothing.");
+            } else {
+                Log.e(TAG, "prepareAsync: ");
+                mAliyunVodPlayer.prepareAsync(mVidSts);
+            }
+        }
+    }
+
+    private void getVidsts() {
+        AliLogUtil.v(TAG, "---getVidsts---");
+        showProgressBar();
+        if (mVidStsHelper.isGettingVidsts()) {
+            return;
+        }
+        mVidStsHelper.getVidSts(new VidStsHelper.OnStsResultListener() {
+            @Override
+            public void onSuccess(String akid, String akSecret, String token) {
+                Log.e(TAG, "onSuccess() called with: akid = " + akid + ", akSecret = " + akSecret + ", token = " + token + "");
+                String vid = mCurrentVideoResource.getVideoUri().getAuthority();
+//                Log.e(TAG, "onSuccess: resource =  " + mCurrentVideoResource.getVideoUri().toString());
+//                Log.e(TAG, "onSuccess: vid = " + vid);
+                mVidSts = new AliyunVidSts();
+                mVidSts.setVid(vid);
+                mVidSts.setAcId(akid);
+                mVidSts.setAkSceret(akSecret);
+                mVidSts.setSecurityToken(token);
+
+                if (!isPaused) {
+                    prepareAsync(true);
+                }
+            }
+
+            @Override
+            public void onFail(int errno) {
+                Log.e(TAG, "onFail: errno = " + errno);
+                mVidSts = null;
+            }
+        });
+    }
+
+    private void playOrResumeVideo() {
+        PlayerState state = mAliyunVodPlayer.getPlayerState();
+        Log.e(TAG, "playOrResumeVideo: state = " + state + ", isPlaying = " + isPlaying());
+        if (isStopState(state)) {
             isFirstPlay = false;
-            Log.e(TAG, "playVideo: mCurrentVideoIndex = " + mCurrentVideoIndex + ", seek = " + mSeekPosition);
+            Log.e(TAG, "playOrResumeVideo: mCurrentVideoIndex = " + mCurrentVideoIndex + ", seek = " + mSeekPosition);
             playVideo(mCurrentVideoIndex, mSeekPosition);
-        } else if (!mVideoView.isPlaying()) {
-            sendPlayBeforeEvent();
-            updateViewCausePlaying();
-            mVideoView.start();
-//            mVideoController.setChecked(true);
-            WakeUtil.acquireCpuWakeLock(mContext);
+        } else if (!mAliyunVodPlayer.isPlaying()) {
+            resumePlay();
+        } else if (state == PlayerState.Paused
+                || state == PlayerState.Prepared) {
+            resumePlay();
         }
     }
 
-    public void playVideo(int videoIndex, int seekPosition) {
-//        Log.e(TAG, "playVideo: status = " + mVideoView.getCurrentState());
-        Log.e(TAG, "playVideo() called with: videoIndex = " + videoIndex + ", seekPosition = " + seekPosition + "");
+    public void resumePlay() {
+        Log.e(TAG, "resumePlay: ");
+        mTargetState = PlayerState.Started;
+        sendPlayBeforeEvent();
+        updateViewCausePlaying();
+        mAliyunVodPlayer.resume();
+        WakeUtil.acquireCpuWakeLock(mContext);
+    }
+
+    public void playVideo(int videoIndex, long seekPosition) {
+//        Log.e(TAG, "playOrResumeVideo: status = " + mVideoView.getCurrentState());
+        Log.e(TAG, "playOrResumeVideo() called with: videoIndex = " + videoIndex + ", seekPosition = " + seekPosition + "");
         mCurrentVideoIndex = videoIndex;
         initVideoData(seekPosition, mVideoInfoList.get(videoIndex));
         mVideoAdapter.notifyDataSetChanged();
     }
 
     public void pauseVideo() {
-        mSeekPosition = mVideoView.getCurrentPosition();
-        Log.e(TAG, "pauseVideo: seek = " + mSeekPosition);
-        updateViewCausePause();
-        hideProgressBar();
-        mVideoView.pause();
+        mTargetState = PlayerState.Paused;
+        mSeekPosition = mAliyunVodPlayer.getCurrentPosition();
+        Log.e(TAG, "pauseVideo: seek = " + mSeekPosition + ", state = " + mAliyunVodPlayer.getPlayerState());
+        Log.e(TAG, "pauseVideo: isPlaying() = " + mAliyunVodPlayer.isPlaying());
+        mAliyunVodPlayer.pause();
         WakeUtil.releaseCpuLock();
+        onPaused();
     }
 
     public void stopVideo() {
-//        if (mVideoView.isPlaying()) {
-        mVideoView.stopPlayback();
+        mTargetState = PlayerState.Stopped;
+        Log.e(TAG, "stopVideo: isPlaying = " + isPlaying() + ", state = " + mAliyunVodPlayer.getPlayerState());
+//        if (mAliyunVodPlayer.isPlaying()) {
+//        mAliyunVodPlayer.stopPlayback();
 //        }
+        mAliyunVodPlayer.stop();
+        onPaused();
     }
 
     private void resetData() {
         mSeekPosition = 0;
-        mUriPath = null;
+        mTargetState = PlayerState.Idle;
+//        mCurrentVideoResource = null;
     }
 
     private void updateViewCausePlaying() {
@@ -355,8 +387,8 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     private boolean checkNetwork() {
         if (!NetworkUtils.isConnected(mContext)) {
             showNoNetworkDialog();
-            mVideoProgressBar.setVisibility(GONE);
-            updateViewCausePause();
+            hideProgressBar();
+            isPreparing = false;
             enablePlayerController(false);
             return false;
         } else {
@@ -372,6 +404,8 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     }
 
     private void showProgressBar() {
+        Log.e(TAG, "showProgressBar: ");
+        hidePlayerController();
         mVideoProgressBar.setVisibility(VISIBLE);
         Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.progress_bar);
         animation.setInterpolator(new LinearInterpolator());
@@ -379,11 +413,13 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     }
 
     private void hideProgressBar() {
+        Log.e(TAG, "hideProgressBar: ");
         mVideoProgressBar.clearAnimation();
         mVideoProgressBar.setVisibility(GONE);
     }
 
     private void hidePlayerController() {
+//        Log.e(TAG, "hidePlayerController: " + mVideoController.getVisibility());
         if (mVideoController.getVisibility() != View.GONE) {
             mVideoController.setVisibility(View.GONE);
             mFullscreenBtn.setVisibility(View.GONE);
@@ -418,26 +454,26 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     }
 
     //TODO: 视频播放出错，禁用播放控制。
+
+    /**
+     *
+     * @param enable false 代表不可用状态
+     */
     public void enablePlayerController(boolean enable) {
         Log.e(TAG, "enablePlayerController() called with: enable = " + enable + "");
-//        if (!enable && !isPlayUrl) {
-//            return;
-//        }
-//        mVideoController.setEnabled(enable);
-//        mFullscreenBtn.setEnabled(enable);
-//        updateViewCausePause();
+        mVideoController.setEnabled(enable);
+        mFullscreenBtn.setEnabled(enable);
         if (!enable) {
             showPlayerController();
         }
         mVideoController.setActivated(enable);
         mFullscreenBtn.setActivated(enable);
-        Log.e(TAG, "enablePlayerController: current status = " + mVideoView.getCurrentState());
     }
 
     private void gotoMovieActivity() {
         CacheEngine.setCurrentIndex(mProjectPosition);
         pauseVideo();
-        int seekPosition = mVideoView.getCurrentPosition();
+        long seekPosition = mAliyunVodPlayer.getCurrentPosition();
         Log.e(TAG, "gotoMovieActivity: index = " + mCurrentVideoIndex + ", seekPosition = " + seekPosition);
 //        VideoProxy.playWithCurrentProject(mCurrentVideoIndex, seekPosition, mContext);
         if (mSubjectType != null) {
@@ -454,21 +490,19 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     }
 
     public int getPlayState() {
-        return mVideoView.getCurrentState();
+        return -1;
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.small_player_controller:
-                Log.e(TAG, "onClick: controller, isSelected = " + mVideoController.isSelected()
-                        + ", activated = " + mVideoController.isActivated() + ", status = " + mVideoView.getCurrentState());
                 if (!mVideoController.isActivated()) {
                     ToastUtils.showShort(mContext, "请连接网络");
                     return;
                 }
                 if (!mVideoController.isSelected()) {
-                    playVideo();
+                    playOrResumeVideo();
                 } else {
                     pauseVideo();
                 }
@@ -500,9 +534,13 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         this.isFirstPlay = isFirstPlay;
     }
 
-    private boolean isPlaying() {
-        return mVideoView.isPlaying();
+    public boolean isPlaying() {
+        return mAliyunVodPlayer.isPlaying();
 //        return mVideoController.isChecked();
+    }
+
+    public boolean isPreparing() {
+        return isPreparing;
     }
 
     public void smoothScrollToPosition(int videoPosition) {
@@ -524,62 +562,100 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         if (visibility == GONE) {
             Log.e(TAG, "setVisibility: video view gone.");
             //解决再例题讲解界面有残影问题。
-            mVideoView.setVisibility(GONE);
 //            mVideoView.setVisibility(INVISIBLE);
         } else if (visibility == VISIBLE) {
             Log.e(TAG, "setVisibility: video view visible.");
-            mVideoView.setVisibility(VISIBLE);
         } else {
-            mVideoView.setVisibility(visibility);
         }
     }
 
-    @Override
-    public void onInit() {
+    private void onInit() {
         Log.e(TAG, "onInit: ");
+        isPreparing = true;
         showProgressBar();
         hidePlayerController();
     }
 
-    @Override
-    public void onPrepared() {
-        Log.e(TAG, "onPrepared: ");
-        sendPlayBeforeEvent();
-    }
-
-    @Override
-    public void onRelease() {
-        Log.e(TAG, "onRelease: ");
-        hideProgressBar();
-    }
-
-    @Override
-    public void onPlaying() {
+    private void onPlaying() {
         Log.e(TAG, "onPlaying: isFirstPlay = " + isFirstPlay);
         updateViewCausePlaying();
         hideProgressBar();
         showPlayerController();
+        hidePlayerControllerDelayed();
+        setKeepScreenOn(true);
 //        if (isFirstPlay) {
 //            pauseVideo();
 //            isFirstPlay = false;
 //        }
     }
 
-    @Override
-    public void onPaused() {
+    private void onPaused() {
         Log.e(TAG, "onPaused: ");
         isFirstPlay = false;
         hideProgressBar();
         updateViewCausePause();
         showPlayerController();
+        setKeepScreenOn(false);
+    }
+
+    private void handleError(String error) {
+        hideProgressBar();
+        updateViewCausePause();
+        if (!checkNetwork()) {
+            ToastUtils.showLong(mContext, "视频播放出错：" + error);
+        }else {
+            ToastUtils.showLong(mContext, "未知错误:" + error);
+            enablePlayerController(true);
+        }
+    }
+
+    private boolean isStopState(PlayerState state) {
+        return state == PlayerState.Error
+                || state == PlayerState.Completed
+                || state == PlayerState.Stopped
+                || state == PlayerState.Idle;
+    }
+
+    /**
+     * 释放资源， Activity.onDestroy调用
+     */
+    public void release() {
+        Log.e(TAG, "release: ");
+        mSurfaceView.getHolder().removeCallback(mCallback);
+        if (mAliyunVodPlayer != null) {
+            mAliyunVodPlayer.stop();
+            mAliyunVodPlayer.release();
+            mAliyunVodPlayer = null;
+        }
+    }
+
+    @Override
+    public void onPrepared() {
+        Log.e(TAG, "onPrepared: seekPosition = " + mSeekPosition
+                + ", state = " + mAliyunVodPlayer.getPlayerState()
+                + ", mTargetState = " + mTargetState);
+//        if (isFirstPlay){
+//
+//        }else {
+        if (mSeekPosition > 0) {
+            mAliyunVodPlayer.seekTo((int) mSeekPosition);
+        } else {
+        }
+        if (mTargetState == PlayerState.Started) {
+            mAliyunVodPlayer.start();
+        }
+        isPreparing = false;
+//        }
     }
 
     @Override
     public void onStopped() {
-        Log.e(TAG, "onStopped: ");
-        hideProgressBar();
-        updateViewCausePause();
-        resetData();
+        Log.e(TAG, "onStopped: state = " + mAliyunVodPlayer.getPlayerState() + ", isPreparing = " + isPreparing);
+        if (!isPreparing) {
+            resetData();
+            hideProgressBar();
+            updateViewCausePause();
+        }
     }
 
     @Override
@@ -592,51 +668,80 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     }
 
     @Override
-    public void onError(String error, ErrorType errorType) {
-        Log.e(TAG, "onError() called with: error = " + error);
-        handleError(error);
-    }
-
-    private void handleError(String error) {
-        hideProgressBar();
-        updateViewCausePause();
-        if (isPlayUrl) {
-            if (checkNetwork()) {
-                ToastUtils.showLong(mContext, "视频播放出错：" + error);
-            }
-        } else {
-            ToastUtils.showLong(mContext, "未知错误:" + error);
-            enablePlayerController(true);
+    public void onError(int i, int i1, String s) {
+        Log.e(TAG, "onError() called with: i = " + i + ", i1 = " + i1 + ", s = " + s + "");
+        handleError(s);
+        if (i == 4502) {
+            //请求saas服务器错误，可能是AliyunVidSts参数无效
+            mVidSts = null;
         }
-        mVideoProgressBar.setVisibility(GONE);
+        isPreparing = false;
     }
 
     @Override
-    public void onBufferingUpdate(int percent) {
-//        Log.e(TAG, "onBufferingUpdate: percent = " + percent);
+    public void onFirstFrameStart() {
+        Log.e(TAG, "onFirstFrameStart: state = " + mAliyunVodPlayer.getPlayerState()
+                + ", mTargetState = " + mTargetState);
+        if (mTargetState == PlayerState.Started) {
+            onPlaying();
+        }
     }
 
     @Override
-    public void onBufferingStart() {
-        Log.e(TAG, "onBufferingStart: ");
-        hidePlayerController();
+    public void onLoadStart() {
+        Log.e(TAG, "onLoadStart: ");
         showProgressBar();
+        isPreparing = true;
     }
 
     @Override
-    public void onBufferingEnd() {
-        Log.e(TAG, "onBufferingEnd: ");
-        hideProgressBar();
+    public void onLoadEnd() {
+        Log.e(TAG, "onLoadEnd: ");
+        onPlaying();
+        isPreparing = false;
     }
 
-    /**
-     * 释放资源， Activity.onDestroy调用
-     */
-    public void release() {
-        Log.e(TAG, "release: ");
-        mVideoView.stopPlayback();
-        mVideoView.removeVideoPlayerListener(this);
-        mVideoView.release();
+    @Override
+    public void onLoadProgress(int i) {
+        Log.e(TAG, "onLoadProgress() called with: i = " + i + "");
+
+    }
+
+    @Override
+    public void onSeekComplete() {
+        Log.e(TAG, "onSeekComplete: ");
+//        updateViewCausePause();
+    }
+
+    @Override
+    public void onTimeExpiredError() {
+        Log.e(TAG, "onTimeExpiredError: ");
+//        updateViewCausePause();
+    }
+
+    @Override
+    public void onInfo(int i, int i1) {
+        Log.e(TAG, "onInfo() called with: i = " + i + ", i1 = " + i1 + "");
+    }
+
+    private class InnerCallback implements SurfaceHolder.Callback {
+
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            Log.e(TAG, "surfaceCreated: ");
+            mAliyunVodPlayer.setDisplay(holder);
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            Log.e(TAG, "surfaceChanged() called with: holder = " + holder + ", format = " + format + ", width = " + width + ", height = " + height + "");
+            mAliyunVodPlayer.surfaceChanged();
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+            Log.e(TAG, "surfaceDestroyed: ");
+        }
     }
 
     private class VideoHandler extends Handler {

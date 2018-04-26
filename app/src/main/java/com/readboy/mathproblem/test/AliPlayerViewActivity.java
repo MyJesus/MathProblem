@@ -1,4 +1,4 @@
-package com.readboy.rbdemovideoplayers;
+package com.readboy.mathproblem.test;
 
 import android.app.Activity;
 import android.content.Context;
@@ -11,11 +11,13 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 
+import com.readboy.aliyunplayerlib.utils.AliLogUtil;
 import com.readboy.aliyunplayerlib.view.AliPlayerView;
 import com.readboy.aliyunplayerlib.view.PlayerBottomViewDefault;
 import com.readboy.aliyunplayerlib.view.PlayerCompleteViewDefault;
 import com.readboy.aliyunplayerlib.view.PlayerTopViewDefault;
-import com.readboy.utils.ToastUtil;
+import com.readboy.mathproblem.R;
+import com.readboy.mathproblem.util.ToastUtils;
 
 import java.io.File;
 
@@ -26,6 +28,7 @@ public class AliPlayerViewActivity extends Activity implements View.OnClickListe
      * vid方式播放
      */
     public static void startWithVid(Context context, String vid) {
+        AliLogUtil.v("---startWithVid---"+vid);
         Intent intent = new Intent();
         intent.setClass(context, AliPlayerViewActivity.class);
         intent.putExtra("type", PLAY_TYPE_VID);
@@ -99,9 +102,10 @@ public class AliPlayerViewActivity extends Activity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.e(TAG, "onCreate: 1");
         setContentView(R.layout.activity_aliyun_player_view);
         //keepScreenOn();
-        Log.v(TAG, "---onCreate---");
+        Log.e(TAG, "onCreate: 2");
 
         mPlayType = getIntent().getIntExtra("type", 0);
         if (mPlayType == PLAY_TYPE_VID) {
@@ -192,7 +196,7 @@ public class AliPlayerViewActivity extends Activity implements View.OnClickListe
      */
     private void initPlayerView() {
         //初始化播放器控件。必须
-        mAliPlayerView = findViewById(R.id.ali_player_view);
+        mAliPlayerView = (AliPlayerView) findViewById(R.id.ali_player_view);
 
         //保持屏幕常亮，一般播放界面建议设置常亮，特殊情况自行考虑。选用
         mAliPlayerView.setKeepScreenOn(true);
@@ -228,7 +232,7 @@ public class AliPlayerViewActivity extends Activity implements View.OnClickListe
                     }
                     mAliPlayerView.playWithPath(mLocalPaths[mCurrentLocalPathsIndex]);
                     mPlayerTopView.setTitle("视频名称 第" + (mCurrentLocalPathsIndex + 1) + "个");
-                    ToastUtil.showToast("自动播放下一个");
+                    ToastUtils.show("自动播放下一个");
                 }
             }
         });
@@ -247,7 +251,7 @@ public class AliPlayerViewActivity extends Activity implements View.OnClickListe
             if (file.exists() && file.isFile()) {
                 mAliPlayerView.playWithPath(mLocalPath);
             } else {
-                ToastUtil.showToast("文件不存在");
+                ToastUtils.show("文件不存在");
             }
         } else if (mPlayType == PLAY_TYPE_LOCAL_PATHS) {
             boolean fileExist = true;
@@ -262,7 +266,7 @@ public class AliPlayerViewActivity extends Activity implements View.OnClickListe
                 mCurrentLocalPathsIndex = 0;
                 mAliPlayerView.playWithPath(mLocalPaths[mCurrentLocalPathsIndex]);
             } else {
-                ToastUtil.showToast("有文件不存在");
+                ToastUtils.show("有文件不存在");
             }
         }
     }

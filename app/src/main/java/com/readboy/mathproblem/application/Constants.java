@@ -1,6 +1,10 @@
 package com.readboy.mathproblem.application;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.os.Environment;
+
+import com.readboy.aliyunplayerlib.utils.FileUtil;
 
 import java.io.File;
 
@@ -17,11 +21,22 @@ public class Constants {
     private static final String DIR = Environment.getExternalStorageDirectory()
             + File.separator + APP_NAME;
 
-    public static final String VIDEO_PATH = DIR + File.separator + "video";
+    /**
+     * 旧视频文件目录，4.1.17版本及以前
+     */
+    public static final String VIDEO_PATH = DIR + File.separator + "video/";
     public static final String TEMP_PATH = DIR + File.separator + "temp";
     public static final String IMAGE_PATH = DIR + File.separator + "image";
-
     public static final String WEB_CACHE_PATH = DIR + File.separator + "web";
+
+    public static final String ALIYUN_DOWNLOAD_DIR = DIR + File.separator + "download";
+    public static final String ALIYUN_SECRET_IMAGE_PATH = DIR + "/aliyun/encryptedApp.dat";
+
+//    public static final String VIDEO_PATH = ALIYUN_DOWNLOAD_DIR;
+
+    public static String getVideoPath(String fileName){
+        return ALIYUN_DOWNLOAD_DIR + File.separator + fileName + ".mp4";
+    }
 
     public class Drawable {
         public static final String STAR_POSITIVE = "ic_star_positive";
@@ -57,6 +72,5 @@ public class Constants {
 
         public static final String VIDEO9 =
                 "http://d.elpsky.com/download/mp4qpsp/%E7%8B%90%E7%8B%B8%E7%AB%99%E9%95%BF%E7%9A%84%E6%83%85%E6%8A%A5%E7%AB%99_%E7%BB%9F%E8%AE%A1%E8%A1%A8%E5%92%8C%E5%88%86%E7%B1%BB.mp4?auth_key=1512476420-0-0-5d1482a4c8a5c4713efa4f841521147e";
-
     }
 }

@@ -406,7 +406,12 @@ public class FileUtils {
 
     public static String getFileNameWithoutExtension(String url) {
         String result = getFileName(url);
-        return result.substring(0, result.lastIndexOf("."));
+        int last = result.lastIndexOf(".");
+        if (last > 0) {
+            return result.substring(0, result.lastIndexOf("."));
+        } else {
+            return result;
+        }
     }
 
     public static boolean delete(String path) {
@@ -430,6 +435,65 @@ public class FileUtils {
         long availableBlocks = stat.getAvailableBlocksLong();
         //获取可用大小
         return availableBlocks * blockSize;
+    }
+
+    public static boolean copyAssetsToSD(Context context, String oldPath, String newPath) {
+        Log.e(TAG, "copyAssets: start.newPath = " + newPath);
+        // 获取assets目录下的所有文件及目录名
+        File file = new File(newPath);
+        if (file.isDirectory()) {
+            Log.e(TAG, "copyAssets: isDirectory.");
+            // 如果是目录
+            if (!file.mkdirs()) {
+                return false;
+            }
+            // 如果文件夹不存在，则递归
+            String[] fileNames = file.list();
+            for (String fileName : fileNames) {
+                copyAssetsToSD(context, oldPath + "/" + fileName, newPath + "/" + fileName);
+            }
+        } else {
+            // 如果是文件
+            Log.e(TAG, "copyAssets: is file.");
+            InputStream is = null;
+            FileOutputStream fos = null;
+            try {
+                is = context.getAssets().open(oldPath);
+                if (!createOrExistsDir(file.getParentFile())) {
+                    Log.e(TAG, "copyAssets: fail. can not create dir, dir = " + file.getParent());
+                    return false;
+                }
+                fos = new FileOutputStream(file);
+                byte[] buffer = new byte[1024];
+                int byteCount = 0;
+                while ((byteCount = is.read(buffer)) != -1) {
+                    // 循环从输入流读取
+                    // buffer字节
+                    fos.write(buffer, 0, byteCount);
+                    // 将读取的输入流写入到输出流
+                }
+                // 刷新缓冲区
+                fos.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e(TAG, "copyAssets: e: " + e.toString());
+                return false;
+            } finally {
+                closeIO(is);
+                closeIO(fos);
+            }
+        }
+        Log.e(TAG, "copyAssets: end.");
+        return true;
+    }
+
+    public static boolean renameTo(String oldPath, String newPath) {
+        File file = new File(oldPath);
+        if (!file.exists()) {
+            new FileNotFoundException("file: " + oldPath).printStackTrace();
+            return false;
+        }
+        return file.renameTo(new File(newPath));
     }
 
 }

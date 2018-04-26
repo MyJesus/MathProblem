@@ -9,7 +9,7 @@
     android:orientation="horizontal">
 
     <ImageButton
-        android:id="@+id/back"
+        android:id="@+id/player_back"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="6dp"
@@ -29,7 +29,7 @@
         tools:text="钟表问题" />
 
     <ImageButton
-        android:id="@+id/exercise"
+        android:id="@+id/player_exercise"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
@@ -41,7 +41,7 @@
         android:textStyle="bold" />
 
     <ImageButton
-        android:id="@+id/video_list_switch"
+        android:id="@+id/player_video_list_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginRight="58dp"

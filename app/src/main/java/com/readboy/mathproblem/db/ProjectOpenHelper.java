@@ -23,6 +23,10 @@ public class ProjectOpenHelper extends SQLiteOpenHelper {
     public static final String FAVORITE_TABLE_NAME = "favorite";
     public static final String VIDEO2_TABLE_NAME = "video2";
     private static final int VERSION = 1;
+    /**
+     * 20180419，视频播放接口修改，通过vid播放，之前的收藏的内容无效，无法播放，删除
+     */
+    private static final int VERSION_2 = 2;
 
     private static final String DEFAULT_FAVORITE =
             "(NULL, '探秘(行程)之路_钟表问题.mp4', 'download/mp4qpsp', '探秘“行程”之路__行程问题·钟表问题'," +
@@ -35,7 +39,7 @@ public class ProjectOpenHelper extends SQLiteOpenHelper {
     private static final String DEFAULT_VIDEO2 = "" + "(486318110, '探秘(行程)之路_钟表问题.mp4')";
 
     public ProjectOpenHelper(Context context) {
-        super(context, DATABASE_NAME, null, VERSION);
+        super(context, DATABASE_NAME, null, VERSION_2);
     }
 
     @Override
@@ -75,7 +79,6 @@ public class ProjectOpenHelper extends SQLiteOpenHelper {
         Log.e(TAG, "onCreate: end");
 
     }
-
 
     private void createScoreTable(SQLiteDatabase db) {
 //        db.execSQL("CREATE TABLE " + SCORE_TABLE_NAME + " (" +
@@ -125,6 +128,11 @@ public class ProjectOpenHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.e(TAG, "onUpgrade() called with: db = " + db + ", oldVersion = " + oldVersion
                 + ", newVersion = " + newVersion + "");
+        if (oldVersion == 1 && newVersion == VERSION_2){
+            //20180419，视频播放接口修改，通过vid播放，之前的收藏的内容无效，无法播放，删除
+            db.execSQL("DROP TABLE IF EXISTS " + FAVORITE_TABLE_NAME);
+            createFavoriteTable(db);
+        }
     }
 
 }

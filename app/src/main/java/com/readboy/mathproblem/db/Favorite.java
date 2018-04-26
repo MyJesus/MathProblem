@@ -11,6 +11,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 
+import com.readboy.mathproblem.http.response.VideoInfoEntity;
+import com.readboy.mathproblem.util.FileUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +48,22 @@ public class Favorite implements ProjectContract.FavoriteColumns {
 
     public Favorite() {
         mTime = System.currentTimeMillis();
+    }
+
+    public static Favorite convertFavorite(VideoInfoEntity.VideoInfo videoInfo) {
+        Favorite favorite = new Favorite();
+        favorite.mUrl = videoInfo.getVid();
+        favorite.mPath = videoInfo.getVideoUri();
+        favorite.mName = videoInfo.getName();
+        return favorite;
+    }
+
+    public static VideoInfoEntity.VideoInfo convertVideoInfo(Favorite favorite) {
+        VideoInfoEntity.VideoInfo videoInfo = new VideoInfoEntity.VideoInfo();
+        videoInfo.setName(favorite.mName);
+        videoInfo.setVid(favorite.mUrl);
+        videoInfo.setVideoUri(favorite.mPath);
+        return videoInfo;
     }
 
     public Favorite(Cursor cursor) {

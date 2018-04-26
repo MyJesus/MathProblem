@@ -62,7 +62,7 @@ Java_com_readboy_mathproblem_NativeApi_getSignature(
 
 //    return (*env)->NewStringUTF(env, (char*)device_id);
 
-    const char* app_secret = "358b4";
+    const char* app_secret = "be916db6f0771c9053e5f44106c358b4";
 
     unsigned char* source = malloc(strlen(device_id)+strlen(app_secret)+strlen(dateStr)+1);
     strcpy(source, device_id);
@@ -95,4 +95,11 @@ Java_com_readboy_mathproblem_NativeApi_getSignature(
     (*env)->ReleaseStringUTFChars(env, date, dateStr);
 
     return (*env)->NewStringUTF(env, (char*)md5Str32);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_readboy_mathproblem_NativeApi_getAppSecret(
+        JNIEnv* env,
+        jobject thiz){
+    return (*env)->NewStringUTF(env, "be916db6f0771c9053e5f44106c358b4");
 }

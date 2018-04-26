@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class DownloadDbOpenHelper extends SQLiteOpenHelper implements DownloadContract.DownloadColumns {
-    public final static String DATABASE_NAME = "download.db";
+    public final static String DATABASE_NAME = "download2.db";
     public final static int DATABASE_VERSION = 2;
 
     public DownloadDbOpenHelper(Context context) {

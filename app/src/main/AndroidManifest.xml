@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_LOGS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
 
     <application
         android:name=".application.MathApplication"
@@ -31,7 +33,7 @@
             android:name=".MainActivity"
             android:configChanges="orientation"
             android:screenOrientation="sensorLandscape"
-            android:allowTaskReparenting="true"
+            android:launchMode="singleTask"
             android:theme="@style/MainTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -44,12 +46,14 @@
             android:name=".activity.StudyActivity"
             android:configChanges="orientation"
             android:allowTaskReparenting="true"
+            android:launchMode="singleTop"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/MainTheme" />
         <activity
             android:name=".exercise.ExerciseActivity"
             android:screenOrientation="sensorLandscape"
             android:allowTaskReparenting="true"
+            android:launchMode="singleTop"
             android:theme="@style/MainTheme" />
 
         <provider
@@ -62,44 +66,6 @@
             android:configChanges="orientation"
             android:screenOrientation="landscape"
             android:theme="@style/MainTheme" />
-        <!-- <activity android:name="com.dream.dreamplayer.RequestPermissionsActivityBase" /> -->
-        <!-- android:screenOrientation="sensor" -->
-        <!-- android:process=":movie" -->
-        <activity
-            android:name=".video.movie.MovieActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|navigation|smallestScreenSize"
-            android:excludeFromRecents="true"
-            android:label="@string/movie_label"
-            android:screenOrientation="sensorLandscape">
-            <!-- android:process=":movie vitamio" -->
-            <intent-filter>
-                <!-- <action android:name="dream.dreamplayer.MEDIAPLAYER" /> -->
-                <!-- <action android:name="android.intent.action.MAIN" /> -->
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <!-- 隐藏系统条, 系统定制过，需要加该action -->
-                <action android:name="android.readboy.FLAG_HIDE_SYSTEMBAR" />
-                <!--<data android:scheme="content" />-->
-                <!--<data android:mimeType="video/*" />-->
-            </intent-filter>
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.VIEW" />-->
-                <!--<category android:name="android.intent.category.DEFAULT" />-->
-                <!--<category android:name="android.intent.category.BROWSABLE" />-->
-                <!--<data android:scheme="file" />-->
-                <!--<data android:mimeType="video/mpeg4" />-->
-                <!--<data android:mimeType="video/mp4" />-->
-                <!--<data android:mimeType="video/3gp" />-->
-                <!--<data android:mimeType="video/3gpp" />-->
-                <!--<data android:mimeType="video/3gpp2" />-->
-                <!--<data android:mimeType="video/webm" />-->
-                <!--<data android:mimeType="video/avi" />-->
-            <!--</intent-filter>-->
-        </activity>
-
-        <service
-            android:name=".video.movie.FloatingWindowService"
-            android:process=":movie" />
 
         <!-- Media button receiver -->
         <receiver android:name=".video.movie.MediaButtonIntentReceiver">
@@ -108,6 +74,34 @@
                 <action android:name="android.media.AUDIO_BECOMING_NOISY" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".aliplayer.AliyunPlayerActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|navigation|smallestScreenSize"
+            android:screenOrientation="sensorLandscape">
+            <intent-filter>
+                <!-- <action android:name="dream.dreamplayer.MEDIAPLAYER" /> -->
+                <!-- <action android:name="android.intent.action.MAIN" /> -->
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.readboy.APPLICATION.FLAG"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <!-- 隐藏系统条, 系统定制过，需要加该action -->
+                <action android:name="android.readboy.FLAG_HIDE_SYSTEMBAR" />
+                <!--<data android:scheme="content" />-->
+                <!--<data android:mimeType="video/*" />-->
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".test.AliPlayerViewActivity"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="keyboard|keyboardHidden|orientation">
+            <intent-filter>
+                <action android:name="android.readboy.FLAG_HIDE_SYSTEMBAR" />
+                <action android:name="android.intent.action.View" />
+                <action android:name="android.readboy.APPLICATION.FLAG"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <!--<activity android:name=".test.WebViewActivity" />-->
     </application>

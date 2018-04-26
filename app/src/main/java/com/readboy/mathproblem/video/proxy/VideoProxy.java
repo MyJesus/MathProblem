@@ -9,30 +9,24 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.readboy.mathproblem.application.SubjectType;
+import com.readboy.mathproblem.aliplayer.AliyunPlayerActivity;
 import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
 import com.readboy.mathproblem.db.Favorite;
+import com.readboy.mathproblem.download.AliyunDownloadManagerWrapper;
 import com.readboy.mathproblem.exercise.ExerciseActivity;
 import com.readboy.mathproblem.http.auth.AuthCallback;
 import com.readboy.mathproblem.http.auth.AuthManager;
-import com.readboy.mathproblem.http.download.DownloadManager;
-import com.readboy.mathproblem.http.download.VideoUrlCallback;
 import com.readboy.mathproblem.http.response.ProjectEntity;
-import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
-import com.readboy.mathproblem.js.JsUtils;
 import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.ToastUtils;
 import com.readboy.mathproblem.util.VideoUtils;
-import com.readboy.mathproblem.video.movie.MovieActivity;
 import com.readboy.mathproblem.video.movie.VideoExtraNames;
 import com.readboy.textbook.chapter.Content;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import retrofit2.http.HTTP;
 
 
 /**
@@ -48,11 +42,14 @@ public class VideoProxy implements VideoExtraNames {
     /**
      * 注意，因为有收藏功能，收藏的视频不知是否通过网络，所有，统一用该scheme收藏，标志video，path。
      */
-    public static final String VIDEO_URI_SCHEME = "videoUri";
+    public static final String SCHEME_VIDEO_URI = "videoUri";
+
+    public static final String SCHEME_VIDEO_VID = "videoVid";
 
 
     public static void play(VideoExtras extras, Context context) {
-        Intent intent = new Intent(context, MovieActivity.class);
+        Intent intent = new Intent(context, AliyunPlayerActivity.class);
+        intent.putParcelableArrayListExtra(EXTRA_VIDEO_INFO_LIST, extras.videoInfoList);
         intent.putExtra(EXTRA_PATH, extras.path);
         intent.putExtra(EXTRA_URL_CONFIG, extras.urlConfig);
         intent.putExtra(EXTRA_URL, extras.url);
@@ -83,7 +80,7 @@ public class VideoProxy implements VideoExtraNames {
     }
 
     public static void play(String path, ArrayList<String> pathList, Context context) {
-        Intent intent = new Intent(context, MovieActivity.class);
+        Intent intent = new Intent(context, AliyunPlayerActivity.class);
         intent.putExtra(VideoExtraNames.EXTRA_PATH, path);
         intent.putExtra(VideoExtraNames.EXTRA_MEDIA_LIST, pathList);
         context.startActivity(intent);
@@ -97,7 +94,7 @@ public class VideoProxy implements VideoExtraNames {
         playWithCurrentProject(0, -1, finishType, context);
     }
 
-    public static void playWithCurrentProject(int videoIndex, int seekPosition, Context context) {
+    public static void playWithCurrentProject(int videoIndex, long seekPosition, Context context) {
         playWithCurrentProject(videoIndex, seekPosition, TYPE_SET_RESULT, context);
     }
 
@@ -107,7 +104,7 @@ public class VideoProxy implements VideoExtraNames {
      * @param videoIndex   Project.getVideo中的位置
      * @param seekPosition 进度，单位秒
      */
-    public static void playWithCurrentProject(int videoIndex, int seekPosition, int finishType, Context context) {
+    public static void playWithCurrentProject(int videoIndex, long seekPosition, int finishType, Context context) {
         Log.e(TAG, "playWithCurrentProject() called with: videoIndex = " + videoIndex + ", seekPosition = " + seekPosition);
         ProjectEntity.Project project = CacheEngine.getCurrentProject();
         if (project == null) {
@@ -118,7 +115,7 @@ public class VideoProxy implements VideoExtraNames {
         playWithProject(videoIndex, seekPosition, finishType, context, project);
     }
 
-    public static void playWithProject(int videoIndex, int seekPosition, int finishType, Context context, ProjectEntity.Project project) {
+    public static void playWithProject(int videoIndex, long seekPosition, int finishType, Context context, ProjectEntity.Project project) {
         Log.e(TAG, "playWithProject() called with: videoIndex = " + videoIndex + ", seekPosition = "
                 + seekPosition + ", finishType = " + finishType + ", context = " + context
                 + ", project = " + project + "");
@@ -128,22 +125,26 @@ public class VideoProxy implements VideoExtraNames {
             Log.e(TAG, "playWithCurrentProject: video = null");
             return;
         }
-        for (VideoInfo video : videos) {
-            //为了保证收藏视频时，是收藏uri，而不是本地链接。
-//            String fileName = FileUtils.getFileName(video.getVideoUri());
-//            if (VideoUtils.videoIsExist(fileName)) {
-//                paths.add(VideoUtils.getVideoPath(fileName));
-//            } else {
-//                String url = video.getUrl();
-//                if (!TextUtils.isEmpty(url) && AuthManager.isValid(url)) {
-//                    paths.add(url);
-//                } else {
-            paths.add(VIDEO_URI_SCHEME + "://" + video.getVideoUri());
-//                }
-//            }
-        }
+//        for (VideoInfo video : videos) {
+//            //为了保证收藏视频时，是收藏uri，而不是本地链接。
+////            String fileName = FileUtils.getFileName(video.getVideoUri());
+////            if (VideoUtils.videoIsExist(fileName)) {
+////                paths.add(VideoUtils.getVideoPath(fileName));
+////            } else {
+////                String url = video.getUrl();
+////                if (!TextUtils.isEmpty(url) && AuthManager.isValid(url)) {
+////                    paths.add(url);
+////                } else {
+//            paths.add(SCHEME_VIDEO_URI + "://" + video.getVideoUri());
+////                }
+////            }
+//        }
+
+
+
 //        Log.e(TAG, "playWithCurrentProject: mediaList = " + Arrays.toString(paths.toArray()));
         VideoExtras extras = new VideoExtras();
+        extras.videoInfoList = (ArrayList<VideoInfo>) videos;
         extras.mediaList = paths;
         extras.index = videoIndex;
         extras.position = seekPosition;
@@ -185,13 +186,13 @@ public class VideoProxy implements VideoExtraNames {
     }
 
     public static void playWithUrl(String url, Context context) {
-        Intent intent = new Intent(context, MovieActivity.class);
+        Intent intent = new Intent(context, AliyunPlayerActivity.class);
         intent.putExtra(VideoExtraNames.EXTRA_URL, url);
         context.startActivity(intent);
     }
 
     public static Intent createIntent(Context context) {
-        return new Intent(context, MovieActivity.class);
+        return new Intent(context, AliyunPlayerActivity.class);
     }
 
     public static Intent putPath(String path, Intent intent) {
@@ -271,63 +272,11 @@ public class VideoProxy implements VideoExtraNames {
 
     public static boolean isUriPath(String uriString) {
         Uri uri = Uri.parse(uriString);
-        return VIDEO_URI_SCHEME.equals(uri.getScheme());
+        return SCHEME_VIDEO_URI.equals(uri.getScheme());
     }
 
-    public static void downloadVideo(String filename) {
-        Log.e(TAG, "downloadVideo: fileName = " + filename);
-//        DownloadManager.getInstance().addTask(filename);
-    }
-
-    public static void downloadVideo(int videoId) {
-//        DownloadManager.getInstance().addTaskWithId(videoId);
-    }
-
-    public static void downloadVideoWithUrl(String url) {
-//        DownloadManager.getInstance().addTaskWithUrl(url);
-    }
-
-    public static void downloadVideoWithUrl(Context context, String url) {
-//        Intent intent = new Intent(VideoProxyReceiver.ACTION_DOWNLOAD_VIDEO);
-//        intent.putExtra(EXTRA_URL, url);
-////        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
-//        context.sendBroadcast(intent);
-
-        Uri uri = Uri.parse(url);
-        if (VideoUtils.videoIsExist(FileUtils.getFileName(url))) {
-            Log.e(TAG, "onReceive: have downloaded. filename = " + FileUtils.getFileName(url));
-        } else {
-            String scheme = uri.getScheme();
-            if (VideoProxy.VIDEO_URI_SCHEME.equalsIgnoreCase(scheme)) {
-                Log.e(TAG, "onReceive: video uri = " + uri.getPath());
-                DownloadManager.getInstance().addTaskWithUri(uri.getPath(), null);
-            } else if (VideoProxy.HTTP_SCHEME.equalsIgnoreCase(scheme)) {
-                Log.e(TAG, "onReceive: video http = " + url);
-                DownloadManager.getInstance().addTaskWithUrl(url);
-            } else {
-                Log.e(TAG, "onReceive: can not parse url, url = " + url);
-            }
-        }
-
-    }
-
-    public static boolean isDownloading(String path) {
-        Uri uri = Uri.parse(path);
-        String p = uri.getPath();
-        return DownloadManager.getInstance().isDownloading(FileUtils.getFileName(p));
-    }
-
-    //通过文件名判断是否已下载
-    public static boolean isDownloaded(String filename) {
-        return VideoUtils.videoIsExist(filename);
-    }
-
-    public static void getVideoUrl(List<Integer> idList, VideoUrlCallback callback) {
-        DownloadManager.getInstance().getVideoUrl(idList, callback);
-    }
-
-    public static boolean isValid(String url) {
-        return AuthManager.isValid(url);
+    public static boolean isDownloading(String vid) {
+        return AliyunDownloadManagerWrapper.getInstance().isDownloading(vid);
     }
 
     public static void getVideoAbsoluteUri(String uri, Context context, @NonNull AbsoluteUriCallback callback) {
@@ -369,12 +318,13 @@ public class VideoProxy implements VideoExtraNames {
         public String path;
         public int urlConfig;
         public String url;
-        public int position;
+        public long position;
         public int index;
         public boolean isAbsolutePath = true;
         public boolean exerciseEnable;
         public int finishType;
         public ArrayList<String> mediaList;
+        public ArrayList<VideoInfo> videoInfoList;
 
         @Override
         public String toString() {

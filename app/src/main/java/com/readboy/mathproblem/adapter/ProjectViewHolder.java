@@ -3,7 +3,6 @@ package com.readboy.mathproblem.adapter;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
-import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -13,7 +12,6 @@ import com.readboy.mathproblem.activity.StudyActivity;
 import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.bean.ProjectHolder;
 import com.readboy.mathproblem.cache.CacheEngine;
-import com.readboy.mathproblem.http.download.DownloadManager;
 import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.util.BitmapUtils;
 import com.readboy.mathproblem.util.HtmlRegexUtils;
@@ -135,7 +133,7 @@ public class ProjectViewHolder extends BaseViewHolder<ProjectHolder> implements 
         switch (v.getId()) {
             case R.id.project_video_status_wait:
                 for (VideoInfoEntity.VideoInfo videoInfo : mVideoInfoList) {
-                    DownloadManager.getInstance().addTaskWithUri(videoInfo.getVideoUri(), videoInfo.getThumbnailUrl());
+
                 }
                 break;
             case R.id.play_video:

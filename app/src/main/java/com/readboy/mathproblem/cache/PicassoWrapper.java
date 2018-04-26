@@ -39,7 +39,9 @@ public class PicassoWrapper {
     private static final int KEY_PADDING = 50;
     private static final char KEY_SEPARATOR = '\n';
 
-    //静态，并且有引用context
+    /**
+     * 静态，并且有引用context
+     */
     private static Picasso mPicasso;
     private static LruCache mLruCache;
     private static Map<String, Target> mTargetMap = new ConcurrentHashMap<>();
@@ -146,11 +148,11 @@ public class PicassoWrapper {
      * @param imageView 显示图片的View
      */
     public static void loadThumbnail(String videoPath, ImageView imageView, Callback callback) {
-        if (TextUtils.isEmpty(videoPath)){
+        if (TextUtils.isEmpty(videoPath)) {
             Log.e(TAG, "loadThumbnail: path = null.");
             return;
         }
-        if (mPicasso == null){
+        if (mPicasso == null) {
             Log.e(TAG, "loadThumbnail: mPicasso == null.");
             return;
         }
@@ -169,7 +171,7 @@ public class PicassoWrapper {
      * @param url 缩略图url
      */
     public static void loadThumbnail(String url, ImageView imageView) {
-        if (TextUtils.isEmpty(url)){
+        if (TextUtils.isEmpty(url)) {
             return;
         }
         ViewGroup.LayoutParams lp = imageView.getLayoutParams();
@@ -180,12 +182,12 @@ public class PicassoWrapper {
                 .into(imageView, new Callback() {
                     @Override
                     public void onSuccess() {
-
+                        Log.e(TAG, "loadThumbnail onSuccess: ");
                     }
 
                     @Override
                     public void onError() {
-
+                        Log.e(TAG, "loadThumbnail onError: ");
                     }
                 });
 

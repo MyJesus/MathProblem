@@ -1,5 +1,8 @@
 package com.readboy.mathproblem.http.response;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.List;
 
 /**
@@ -52,7 +55,7 @@ public class VideoInfoEntity {
         this.data = data;
     }
 
-    public static class VideoInfo {
+    public static class VideoInfo implements Parcelable{
         /**
          * "videoUri": "/download/mp4qpsp/神奇数学动物园_差倍问题.mp4",
          * "name": "应用秘笈展览馆__典型应用题·神奇数学动物园\u2014\u2014差倍问题",
@@ -152,6 +155,50 @@ public class VideoInfoEntity {
                     ", url='" + url + '\'' +
                     '}';
         }
+
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(this.videoUri);
+            dest.writeString(this.name);
+            dest.writeString(this.vid);
+            dest.writeInt(this.id);
+            dest.writeInt(this.fileSize);
+            dest.writeDouble(this.duration);
+            dest.writeString(this.thumbnailUrl);
+            dest.writeString(this.url);
+        }
+
+        public VideoInfo() {
+        }
+
+        protected VideoInfo(Parcel in) {
+            this.videoUri = in.readString();
+            this.name = in.readString();
+            this.vid = in.readString();
+            this.id = in.readInt();
+            this.fileSize = in.readInt();
+            this.duration = in.readDouble();
+            this.thumbnailUrl = in.readString();
+            this.url = in.readString();
+        }
+
+        public static final Creator<VideoInfo> CREATOR = new Creator<VideoInfo>() {
+            @Override
+            public VideoInfo createFromParcel(Parcel source) {
+                return new VideoInfo(source);
+            }
+
+            @Override
+            public VideoInfo[] newArray(int size) {
+                return new VideoInfo[size];
+            }
+        };
     }
 
     @Override

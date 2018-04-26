@@ -121,7 +121,8 @@ public abstract class BaseVideoDialog extends Dialog implements View.OnClickList
             mDeleteAlertDialog.setOnClickListener(new BaseDialog.OnClickListener() {
                 @Override
                 public void onLeftClick(BaseDialog dialog) {
-                    asyncDelete();
+//                    asyncDelete();
+                    syncDelete();
                     dialog.dismiss();
                 }
 
@@ -158,6 +159,19 @@ public abstract class BaseVideoDialog extends Dialog implements View.OnClickList
      * 删除文件后运行，运行在主线程中
      */
     public abstract void deleteVideoAfter(boolean isSuccess);
+
+    private void syncDelete(){
+        boolean success = deleteVideo();
+        mDeleteView.setEnabled(true);
+        deleteVideoAfter(success);
+        Log.e(TAG, "onPostExecute: ");
+        mAllCheckedBox.setChecked(false);
+        if (success) {
+            ToastUtils.show(getContext(), "删除成功");
+        } else {
+            ToastUtils.show(getContext(), "删除失败");
+        }
+    }
 
     private void asyncDelete() {
         final AsyncTask<Void, Void, Boolean> asyncTask = new AsyncTask<Void, Void, Boolean>() {

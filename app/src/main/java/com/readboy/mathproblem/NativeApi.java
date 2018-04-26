@@ -18,4 +18,6 @@ public class NativeApi {
 
     public native static String getSignature(String date);
 
+    public native static String getAppSecret();
+
 }

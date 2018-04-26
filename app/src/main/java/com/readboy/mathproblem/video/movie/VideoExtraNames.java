@@ -14,7 +14,7 @@ public interface VideoExtraNames {
     public static final String EXTRA_URL = "url";
 
     //开始播放时的进度
-    //int,
+    //long,
     public static final String EXTRA_SEEK_POSITION = "position";
     //int
     public static final String EXTRA_INDEX = "index";
@@ -45,7 +45,11 @@ public interface VideoExtraNames {
      * 全屏变小屏播放处理方式。
      */
     String EXTRA_FINISH_TYPE = "finish_type";
-    int TYPE_SET_RESULT = 0;
-    int TYPE_GOTO = 1;
+
+    String EXTRA_VIDEO_INFO_LIST = "video_info_list";
+
+    String EXTRA_VIDEO_RESOURCE = "video_resource";
+    public int TYPE_SET_RESULT = 0;
+    public int TYPE_GOTO = 1;
 
 }

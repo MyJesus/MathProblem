@@ -27,7 +27,7 @@
             android:text="@string/download" />
 
         <Button
-            android:id="@+id/pause"
+            android:id="@+id/player_pause"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="pauseDownload"

@@ -1,1 +1,1 @@
-include ':app', ':baseadapter-recyclerview', ':video', ':auth', ':volleylib', ':textbook-webview', 'errorqstupload', ':aliyunplayerlib'
+include ':app', ':baseadapter-recyclerview', ':auth', ':textbook-webview', 'errorqstupload', ':aliyunplayerlib'

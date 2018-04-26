@@ -1,5 +1,8 @@
 package com.readboy.mathproblem.http.download;
 
+import android.util.Log;
+
+import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
 import com.readboy.mathproblem.R;
 
 /**
@@ -8,7 +11,6 @@ import com.readboy.mathproblem.R;
  */
 
 public enum DownloadStatus {
-
     /**
      * (界面显示的状态信息， 需要显示的图标)
      */
@@ -20,6 +22,8 @@ public enum DownloadStatus {
     ERROR("下载失败", R.drawable.download_start),
     COMPLETED("已完成", R.drawable.download_start);
 
+    private static final String TAG = "oubin_DownloadStatus";
+
     private String statusStr;
     private int resId;
 
@@ -30,6 +34,28 @@ public enum DownloadStatus {
     DownloadStatus(String statusStr, int resId) {
         this.statusStr = statusStr;
         this.resId = resId;
+    }
+
+    public static DownloadStatus convert(AliyunDownloadMediaInfo.Status status) {
+        Log.e(TAG, "convert: status = " + status);
+        switch (status) {
+            case Idle:
+                return CONNECTING;
+            case Prepare:
+                return CONNECTING;
+            case Wait:
+                return WAIT;
+            case Start:
+                return DOWNLOADING;
+            case Stop:
+                return PAUSE;
+            case Complete:
+                return COMPLETED;
+            case Error:
+                return ERROR;
+            default:
+                return ERROR;
+        }
     }
 
     public int getDrawableResId() {

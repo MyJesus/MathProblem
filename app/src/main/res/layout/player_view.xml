@@ -163,7 +163,7 @@
     <!--</LinearLayout>-->
 
     <!-- 底部栏-->
-    <include layout="@layout/player_control_bar" />
+    <include layout="@layout/player_bottom_bar" />
 
 
     <!--提示上传播放的时间点-->

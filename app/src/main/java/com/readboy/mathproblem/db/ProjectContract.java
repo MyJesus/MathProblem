@@ -115,7 +115,7 @@ public final class ProjectContract {
         String THUMBNAIL = "thumbnail";
 
         /**
-         * 视频下载链接, http开头，或者{@link VideoProxy#VIDEO_URI_SCHEME}videoUri
+         * 视频下载链接, http开头，或者{@link VideoProxy#SCHEME_VIDEO_URI}videoUri
          */
         String URL = "url";
 

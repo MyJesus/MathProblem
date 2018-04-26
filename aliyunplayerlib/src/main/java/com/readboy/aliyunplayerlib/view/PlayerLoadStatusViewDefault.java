@@ -17,7 +17,6 @@ import com.readboy.aliyunplayerlib.R;
 
 public class PlayerLoadStatusViewDefault extends PlayerLoadStatusViewBase {
 
-
     public PlayerLoadStatusViewDefault(Context context) {
         super(context);
     }

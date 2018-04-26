@@ -16,6 +16,7 @@ public abstract class CheckViewHolder<D> extends BaseViewHolder<D> {
     }
 
     public void bindView(int position, boolean isChecked, D d) {
+        super.bindView(position, d);
 //        if (mCheckBox != null) {
             mCheckBox.setTag(position);
             mCheckBox.setChecked(isChecked);

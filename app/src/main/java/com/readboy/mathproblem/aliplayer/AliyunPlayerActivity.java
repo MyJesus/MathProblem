@@ -52,6 +52,7 @@ import android.widget.Toast;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.readboy.aliyunplayerlib.view.AliPlayerView;
 import com.readboy.aliyunplayerlib.view.PlayerCompleteViewDefault;
+import com.readboy.aliyunplayerlib.view.PlayerIdleViewBase;
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.activity.StudyActivity;
 import com.readboy.mathproblem.application.MathApplication;
@@ -61,6 +62,7 @@ import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
 import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.util.FileUtils;
+import com.readboy.mathproblem.util.Lists;
 import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.ToastUtils;
 import com.readboy.mathproblem.video.db.VideoDatabaseInfo;
@@ -71,6 +73,7 @@ import com.readboy.mathproblem.video.movie.VideoExtraNames;
 import com.readboy.mathproblem.video.movie.VideoMessage;
 import com.readboy.mathproblem.video.proxy.VideoProxy;
 import com.readboy.mathproblem.video.resource.IVideoResource;
+import com.readboy.mathproblem.video.resource.LocalPathVideoResource;
 import com.readboy.mathproblem.video.resource.VidVideoResource;
 import com.readboy.mathproblem.video.tools.MyTrafficStatus;
 import com.readboy.mathproblem.video.tools.UriProxy;
@@ -89,22 +92,21 @@ import java.util.Arrays;
 import static com.readboy.mathproblem.video.proxy.MovieFile.saveVideoInfo;
 import static com.readboy.mathproblem.video.tools.NetWorkAnalyst.getNetworkType;
 
-public class AliPlayerActivity extends FragmentActivity implements VideoExtraNames, OnClickListener {
+public class AliyunPlayerActivity extends FragmentActivity implements VideoExtraNames, OnClickListener,
+        PlayerLoadStatusView.OnCompletedListener {
 
-    public static final String DREAM_PLAYER_SHADER = "DreamPlayerShader";
     public static final String ACTION_APPSWITCH = "com.readboy.switchapp";
     public static final String ACTION_TIP = "tip.infomation";
 
     private static final int BRIGHT_CONTROL_FACTOR = 600;
 
     private static final int MAX_DIRDEPTH = 15;
-    private static final String TAG = "oubin_AliPlayerActivity";
+    private static final String TAG = "oubin_AliyunPlayerAct";
 
     public static boolean onStopped = false;
 
     boolean isInit = false;
-    private boolean mIsPlayUrl = false;
-    private boolean mInTouchSeekBar = false;
+    private boolean mIsPlayUrl = true;
     private boolean mInHiding = false;
     private boolean mInShowing = false;
     private boolean mRmvbPauseByUser;
@@ -121,28 +123,23 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
      */
     private boolean mUserPresent = false;
     private boolean finishOnce = false;
-    private boolean mWinToFloat = false;
 
     private boolean mExit = true;
     private boolean mNetWorkSpeedShow = true;
 
     private int mIndex = 0;
-    private static final int HIDE_CONTROLLER_DELAY_DURATION = 5_000;
+    private static final int HIDE_CONTROLLER_DELAY_DURATION = 10_000;
     private long mDuration = 0;
-    private int mVideoLayout = 1;
     private int mNetworkType = ConnectivityManager.TYPE_WIFI;
     private int sScreenLeft = 0;
     private int sScreenRight = 0;
     private int sScreenHeight = 0;
-    private int mUrlConfig = 0;
 
     private float downX = 0, moveX;
     private float downY = 0, moveY;
-    private int mPosition = -1;
+    private long mPosition = -1;
 
-    //    private String mPath = null;
     private IVideoResource mVideoResource;
-//    private VideoInfoEntity.VideoInfo mCurrentVideoInfo;
 
     private TextView percentTextView = null;
     private ImageView mGestureController = null;
@@ -151,9 +148,11 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
     private PlayerBottomView mBottomView;
     private PlayerTopView mTopView;
     private PlayerCompleteViewDefault mCompleteView;
+    private PlayerLoadStatusView mLoadingView;
 
-    //视频列表相关
-//    private LinearLayout mVideoListParent;
+    /**
+     * 视频列表相关
+     */
     private RecyclerView mVideoRv;
     private CommonAdapter mVideoAdapter;
 
@@ -162,7 +161,6 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
      */
     private boolean isBuffering = false;
     private VideoDatabaseInfo mVideoDbInfo = new VideoDatabaseInfo();
-    //    private HeartThread mHearThread = null;
     CustomProgressDialog mPD = null;
     AlertDialog mNetworkDialog = null;
 
@@ -171,8 +169,6 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
 
     private MyTrafficStatus mTrafficStatus = null;
 
-    //    private final ArrayList<String> mVideoPathList = new ArrayList<>();
-//    private final ArrayList<VideoInfoEntity.VideoInfo> mVideoResourceList = new ArrayList<>();
     private final ArrayList<IVideoResource> mVideoResourceList = new ArrayList<>();
     private boolean hasRequestAudioFocus = false;
 
@@ -227,7 +223,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                             if (!finishOnce && path.contains(intent.getData().getPath())) {
                                 Log.e(TAG, "card removed.");
                                 finishOnce = true;
-                                Toast.makeText(AliPlayerActivity.this, "正在播放的文件不存在！", Toast.LENGTH_LONG).show();
+                                Toast.makeText(AliyunPlayerActivity.this, "正在播放的文件不存在！", Toast.LENGTH_LONG).show();
                                 finish();
                             }
 
@@ -307,43 +303,14 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                     }
                     break;
                 case VideoMessage.HEART:
-//                    Log.e(TAG, "handleMessage: VideoMessage.HEART.");
-                    //Vimatio rmvb can't recevie media completion message, so we send finish by ourself.
-//                    if (mPlayPrepared) {
-//                        if (mPlayerView.isPlaying() && mFragment.getDuration() - mFragment.getCurrentPosition() < 2000) {
-//                            mHandler.sendEmptyMessage(VideoMessage.FINISHED);
-//                        }
-//                        if (!mFragment.isPlaying() && !mRmvbPauseByUser && !onStopped) {
-//                        }
-//                    }
-//                    Log.e(TAG, "handleMessage: mInTouchSeekBar = " + mInTouchSeekBar
-//                            + ", mRmvbPauseByUser = " + mRmvbPauseByUser);
-//                    if (!mInTouchSeekBar && !mRmvbPauseByUser) {
-//                        updateController();
-//                    }
                     if (mNetWorkSpeedShow && mTrafficStatus != null) {
                         if (mPD != null) {
-                            String speeds = mTrafficStatus.getRxSpeed(AliPlayerActivity.this);
+                            String speeds = mTrafficStatus.getRxSpeed(AliyunPlayerActivity.this);
 //                            Log.e(TAG, "handleMessage: speeds = " + speeds);
                             if (speeds != null) {
                                 mPD.setMessage(speeds);
                             }
                         }
-                    }
-                    break;
-                case VideoMessage.FINISHED:
-                    saveCurrentPosition();
-                    Log.e(TAG, "handleMessage: play once = " + mPlayOnce + ", mIndex = " + mIndex
-                            + ", size = " + mVideoResourceList.size());
-                    if (mPlayOnce || mIndex >= mVideoResourceList.size() - 1) {
-//                        finishMyself();
-                        Log.d(TAG, " -------- Pause unnormal, VideoMessage.FINISHED ");
-                        finish();
-                    } else {
-                        mVideoResource = getNextMediaPath(true);
-                        mPosition = 0;
-                        mPlayerView.seekTo(mPosition);
-                        mHandler.sendEmptyMessage(VideoMessage.READY);
                     }
                     break;
                 case VideoMessage.NOOP:
@@ -358,7 +325,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                     if (onStopped) {
                         return;
                     }
-                    Toast.makeText(AliPlayerActivity.this, (String) message.obj, Toast.LENGTH_LONG).show();
+                    Toast.makeText(AliyunPlayerActivity.this, (String) message.obj, Toast.LENGTH_LONG).show();
                     finish();
                     break;
                 default:
@@ -418,7 +385,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
 
         mRemoteControlClient = MediaButtonIntentReceiver.registerMediaButton(this);
 
-        setContentView(R.layout.activity_ali_player_view);
+        setContentView(R.layout.activity_aliyun_player);
         registerReceiver();
         assignView();
 //        initClickEvent();
@@ -505,8 +472,12 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
         mCompleteView = new PlayerCompleteViewDefault(this);
         mCompleteView.getContinueView().setOnClickListener(this);
         mCompleteView.getCancelView().setOnClickListener(this);
+        mLoadingView = new PlayerLoadStatusView(this);
+        mLoadingView.setOnCompletedListener(this);
+        mLoadingView.setUnitOnClickListener(this);
+//        mLoadingView = new PlayerLoadStatusViewDefault(this);
         mPlayerView = (AliPlayerView) findViewById(R.id.ali_player_view);
-        mPlayerView.init(mTopView, mBottomView, mCompleteView);
+        mPlayerView.init(mTopView, mBottomView, mLoadingView, null, mCompleteView);
         //保持屏幕常亮，一般播放界面建议设置常亮，特殊情况自行考虑。选用
         mPlayerView.setKeepScreenOn(true);
 
@@ -554,17 +525,15 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                 if (mIndex == position) {
                     return;
                 }
-
-                showProgressDialog();
+//                showProgressDialog();
                 saveCurrentPosition();
                 videoViewPauseOrStop();
                 mIndex = position;
-                mVideoResource = mVideoResourceList.get(mIndex);
                 mPosition = 0;
-//                mFragment.seekTo(0);
-                updateCurrentVideoResource(mVideoResource);
+                updateCurrentVideoResource(mVideoResourceList.get(mIndex));
                 mRmvbPauseByUser = false;
-                mHandler.sendEmptyMessage(VideoMessage.READY);
+                updatePlay();
+                hideVideoList();
                 hideControllerDelayed();
             }
 
@@ -636,7 +605,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                 }
             }
 
-            if (newPath != null && !newPath.equals("")) {
+            if (!TextUtils.isEmpty(newPath)) {
                 Log.d(TAG, "---- onNewIntent newPath: " + newPath);
                 parseIntent(intent);
                 initMovieActivity();
@@ -648,10 +617,12 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
     }
 
     private void updateVideoPath(ArrayList<String> pathList) {
-        if (pathList == null) {
+        if (Lists.isEmpty(pathList)) {
             return;
         }
-        mVideoAdapter.notifyDataSetChanged();
+        for (String path : pathList) {
+            mVideoResourceList.add(new LocalPathVideoResource(path));
+        }
 //        mVideoRv.post(() -> ViewUtils.setSelectedPosition(mIndex, R.id.player_video_name, mVideoRv));
     }
 
@@ -835,8 +806,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
             }
         }
         Log.i(TAG, "-------- getNextMediaPath index: " + mIndex);
-        IVideoResource resource = mVideoResourceList.get(mIndex);
-        return resource;
+        return mVideoResourceList.get(mIndex);
     }
 
     @Override
@@ -892,11 +862,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                 finishMyself();
                 break;
             case R.id.player_complete_btn_continue:
-                mIndex = 0;
-                if (mVideoResourceList.size() > 1) {
-                    mVideoResource = mVideoResourceList.get(mIndex);
-                }
-                updatePlay();
+                replay();
                 break;
             case R.id.player_video_list_switch:
                 if (mVideoRv.getVisibility() == View.VISIBLE) {
@@ -905,11 +871,26 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                     showVideoList();
                 }
                 break;
+            case R.id.load_status_view_btn_continue:
+
+                break;
             default:
                 Log.e(TAG, "onClick: other view click = " + v.getId());
                 break;
         }
     }
+
+    @Override
+    public void onCompleted() {
+        int size = mVideoResourceList.size();
+        Log.e(TAG, "onCompleted: size = " + size);
+        if (mIndex < size - 1) {
+            next();
+        } else {
+            mLoadingView.showFinishView();
+        }
+    }
+
 
     private void showVideoList() {
         Log.e(TAG, "showVideoList: ");
@@ -940,20 +921,29 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
     }
 
     private void next() {
-        if (!mButtonCanClick) {
-            return;
-        }
+//        if (!mButtonCanClick) {
+//            return;
+//        }
         saveCurrentPosition();
         if (mIndex < mVideoResourceList.size() - 1) {
-            mVideoResource = getNextMediaPath(true);
+            updateCurrentVideoResource(getNextMediaPath(true));
             mPosition = 0;
-            mPlayerView.seekTo(mPosition);
             mRmvbPauseByUser = false;
-            mHandler.sendEmptyMessage(VideoMessage.READY);
             cancelAutoHide();
+            updatePlay();
         } else {
             Toast.makeText(this, "没有多余的视频了", Toast.LENGTH_LONG).show();
         }
+    }
+
+    /**
+     * 重新播放
+     */
+    private void replay() {
+        mIndex = 0;
+        mPosition = 0;
+        updateCurrentVideoResource(mVideoResourceList.get(0));
+        updatePlay();
     }
 
     /**
@@ -965,6 +955,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
         Log.e(TAG, "showController() called with: isShow = " + isShow + "");
         if (isControllerShowing()) {
             if (isShow) {
+                Log.e(TAG, "showController: is showing.");
                 hideControllerDelayed();
                 return;
             }
@@ -1146,10 +1137,6 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
         Log.e(TAG, "prepare: seek to " + mPosition);
 //            mFragment.seekTo(mPosition);
         Log.d(TAG, "-------- prepare mPosition: " + mPosition);
-    }
-
-    public void complete() {
-        mHandler.sendEmptyMessage(VideoMessage.FINISHED);
     }
 
     public boolean onError(MediaPlayer mp, int what, int extra) {
@@ -1344,7 +1331,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
      * 优选播放path（本地视频），在选择url（网络视频），次之medialist内容
      */
     private boolean parseIntent(Intent intent) {
-        mIsPlayUrl = false;
+        mIsPlayUrl = true;
         mFinishType = intent.getIntExtra(EXTRA_FINISH_TYPE, TYPE_SET_RESULT);
         String mPath;
         mPath = intent.getStringExtra(VideoExtraNames.EXTRA_PATH);
@@ -1358,21 +1345,26 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
         } else {
             mTopView.setViewVisibility(R.id.player_exercise, View.GONE);
         }
-        mUrlConfig = intent.getIntExtra(VideoExtraNames.EXTRA_URL_CONFIG, 0);
-        mPosition = intent.getIntExtra(VideoExtraNames.EXTRA_SEEK_POSITION, 0);
+        mPosition = intent.getLongExtra(VideoExtraNames.EXTRA_SEEK_POSITION, 0);
         mIndex = intent.getIntExtra(VideoExtraNames.EXTRA_INDEX, 0);
 
-//        boolean result = parsePathList(intent);
         parseVideoInfoList(intent);
+        parsePathList(intent);
+
+        if (!Lists.isEmpty(mVideoResourceList)) {
+            mIndex = Math.min(mIndex, mVideoResourceList.size() - 1);
+            Log.e(TAG, "parseVideoInfoList: mIndex = " + mIndex);
+            updateCurrentVideoResource(mVideoResourceList.get(mIndex));
+        }
 
 //        updateStatus(mPath);
-        Log.e(TAG, "parseIntent: paths = " + Arrays.toString(mVideoResourceList.toArray()));
-        Log.e(TAG, "parseIntent: mPath = " + mPath + ", \nmIndex = " + mIndex + ", \nisPlayUrl = " + mIsPlayUrl);
+        Log.e(TAG, "parseIntent: paths = " + mVideoResourceList.size());
+        Log.e(TAG, "parseIntent: mPath = " + mPath + ", \nmIndex = " + mIndex + ", \nseekPosition = " + mPosition);
         return true;
     }
 
     private boolean parsePathList(Intent intent) {
-        String mPath = null;
+        String mPath = intent.getStringExtra(VideoExtraNames.EXTRA_PATH);
         Uri uri = intent.getData();
         ArrayList<String> pathList = intent.getStringArrayListExtra(VideoExtraNames.EXTRA_MEDIA_LIST);
         if (pathList == null) {
@@ -1412,7 +1404,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
             mPlayOnce = true;
             result = true;
         }
-        Log.e(TAG, "parsePathList: " + Arrays.toString(pathList.toArray()));
+        Log.e(TAG, "parsePathList: " + pathList.size());
         updateVideoPath(pathList);
         return result;
     }
@@ -1420,20 +1412,12 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
     private void parseVideoInfoList(Intent intent) {
         ArrayList<VideoInfoEntity.VideoInfo> videoInfos =
                 intent.getParcelableArrayListExtra(VideoExtraNames.EXTRA_VIDEO_INFO_LIST);
-        mVideoResourceList.clear();
-        if (videoInfos != null) {
+        if (videoInfos != null && videoInfos.size() > 0) {
+            mVideoResourceList.clear();
             for (VideoInfoEntity.VideoInfo videoInfo : videoInfos) {
                 mVideoResourceList.add(new VidVideoResource(videoInfo));
             }
         }
-        if (mVideoResourceList.size() > 0) {
-            mIndex = Math.min(mIndex, mVideoResourceList.size() - 1);
-            updateCurrentVideoResource(mVideoResourceList.get(mIndex));
-        }
-    }
-
-    private void parseFileNameList(Intent intent) {
-
     }
 
     /**
@@ -1445,9 +1429,9 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
             return;
         }
         mVideoResource = resource;
-        mIsPlayUrl = false;
+        mIsPlayUrl = true;
 
-        Log.e(TAG, "updateCurrentVideoResource: current = " + mVideoResource.toString());
+        Log.e(TAG, "updateCurrentVideoResource: current = " + mVideoResource.getVideoName());
         updateFavoriteAndDownload();
     }
 
@@ -1488,14 +1472,16 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
             if (checkNetwork()) {
                 mVideoResource.play(mPlayerView, mPosition);
                 mBottomView.setFavoriteVisibility(View.VISIBLE);
+                mBottomView.setDownloadVisibility(View.VISIBLE);
             }
         } else {
             mVideoResource.play(mPlayerView, mPosition);
             updateStatusCauseUri();
             mBottomView.setFavoriteVisibility(View.GONE);
+            mBottomView.setDownloadVisibility(View.GONE);
         }
 
-        showController(true);
+//        showController(true);
         Log.e(TAG, "updatePlay: mIndex = " + mIndex);
         mVideoAdapter.notifyDataSetChanged();
     }
@@ -1523,35 +1509,6 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
         } else {
             mTrafficStatus = null;
         }
-    }
-
-    private void playVideoAndAuth(String uri) {
-        VideoProxy.getVideoAbsoluteUri(uri, this, new VideoProxy.AbsoluteUriCallback() {
-            @Override
-            public void onResponse(String uri, boolean isUrl) {
-                Log.e(TAG, "onResponse() called with: uri = " + uri + ", isUrl = " + isUrl + "");
-                mIsPlayUrl = isUrl;
-//                mPath = uri;
-                if (mIsPlayUrl && !checkNetwork()) {
-                    Log.e(TAG, "playVideoAndAuth: not internet.");
-                    return;
-                }
-                mPlayerView.playWithUrl(uri);
-                updateStatusCauseUri();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                Log.e(TAG, "onError: t = " + throwable, throwable);
-                if (FileUtils.getAvailableSize(getCacheDir().getPath())
-                        < 50 * 1024 * 1024) {
-                    ToastUtils.showShort(AliPlayerActivity.this, "播放错误：存储空间不足。");
-                } else {
-                    ToastUtils.showShort(AliPlayerActivity.this, "无法获取视频资源");
-                }
-                mButtonCanClick = true;
-            }
-        });
     }
 
     private void createProgressDialog() {
@@ -1639,7 +1596,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
         Log.e(TAG, "videoViewPause: ");
         mRmvbPauseByUser = true;
         mPlayerView.onPause();
-        hideControllerDelayed();
+//        hideControllerDelayed();
         abandonAudioFocus();
     }
 
@@ -1678,12 +1635,6 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
             intent.putExtra(EXTRA_SEEK_POSITION, mPosition);
             intent.putExtra(EXTRA_DURATION, mDuration);
             intent.putExtra(EXTRA_INDEX, mIndex);
-//		sendBroadcast(othersintent);
-//			FragmentManager mFrgnr = getSupportFragmentManager();
-//			FragmentTransaction mFrgTrntn = mFrgnr.beginTransaction();
-//			mFrgTrntn.remove(mFragment);
-//			mFrgTrntn.commit();
-//			mFragment = null;
         }
         setResult(RESULT_OK, intent);
         finish();
@@ -1706,7 +1657,7 @@ public class AliPlayerActivity extends FragmentActivity implements VideoExtraNam
                 wrapper.getGrade());
         updatePosition();
         parcelable.setVideoIndex(mIndex);
-        parcelable.setSeekPosition(mPosition);
+        parcelable.setSeekPosition((int) mPosition);
         intent.putExtra(ProjectParcelable.EXTRA_PROJECT_PARCELABLE, parcelable);
         intent.putExtra(EXTRA_FINISH_TYPE, TYPE_GOTO);
 

@@ -11,7 +11,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="6dp">
 
-        <com.readboy.video.view.VideoView
+        <SurfaceView
             android:id="@+id/video_small_window"
             android:layout_width="334dp"
             android:layout_height="210dp" />
