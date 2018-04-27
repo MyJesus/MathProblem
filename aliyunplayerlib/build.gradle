@@ -35,13 +35,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.3.1'
     testCompile 'junit:junit:4.12'
 
-//    compile(name: 'AlivcReporter', ext: 'aar')
-//    compile(name: 'AlivcPlayer', ext: 'aar')
-//    compile(name: 'AliyunVodPlayer', ext: 'aar')
-//    compile(name: 'AliyunVodPlayerView', ext: 'aar')
+    compile(name: 'AlivcReporter', ext: 'aar')
+    compile(name: 'AlivcPlayer', ext: 'aar')
+    compile(name: 'AliyunVodPlayer', ext: 'aar')
+    compile(name: 'AliyunVodPlayerView', ext: 'aar')
 
-    compile(name: 'AlivcReporter-1.1', ext: 'aar')
-    compile(name: 'AlivcPlayer-3.4.2', ext: 'aar')
-    compile(name: 'AliyunVodPlayer-3.4.2', ext: 'aar')
-    compile(name: 'AliyunVodPlayerView-3.4.2', ext: 'aar')
 }

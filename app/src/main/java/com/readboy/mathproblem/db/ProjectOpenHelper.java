@@ -50,6 +50,16 @@ public class ProjectOpenHelper extends SQLiteOpenHelper {
         createVideo2Table(db);
         createFavoriteTable(db);
 
+//        initFakeData(db);
+
+        Log.e(TAG, "onCreate: end");
+
+    }
+
+    /**
+     * 赋予测试数据，仅用于测试
+     */
+    private void initFakeData(SQLiteDatabase db) {
         String cs = ", "; //comma and space
         //创建默认收藏视频，用于测试
 //        String insertFavorite = "INSERT INTO " + FAVORITE_TABLE_NAME + " (" +
@@ -75,9 +85,6 @@ public class ProjectOpenHelper extends SQLiteOpenHelper {
                 VideoColumns.NAME + cs +
                 VideoColumns.PROGRESS + ") VALUES ";
         db.execSQL(insertVideo + DEFAULT_VIDEO);
-
-        Log.e(TAG, "onCreate: end");
-
     }
 
     private void createScoreTable(SQLiteDatabase db) {

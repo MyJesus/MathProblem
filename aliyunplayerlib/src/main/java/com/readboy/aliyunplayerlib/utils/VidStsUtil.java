@@ -21,9 +21,10 @@ public class VidStsUtil {
         try {
             //获取临时鉴权add by dway 180312
             String url = "http://api.video.readboy.com/videoSts?";
-            url += "device_id=" + DataSnUtil.getDeviceId();
-            url += "&t=" + DataSnUtil.getT();
-            url += "&sn=" + DataSnUtil.getSn();
+            url += "device_id=" + DataSnUtil.getDeviceIdEncodeUrl();
+            String t = DataSnUtil.getT();
+            url += "&t=" + t;
+            url += "&sn=" + DataSnUtil.getSn(t);
             Log.v(TAG, "---getVidSts---url = " + url);
             String response = HttpClientUtil.doGet(url);
             Log.v(TAG, "---getVidSts---response = " + response);

@@ -17,6 +17,7 @@ import org.json.JSONObject;
 public class VidStsHelper {
     private static final String TAG = VidStsHelper.class.getSimpleName();
 
+    public static final int ERRNO_DEVICE_UNAUTH = 6003;//签名失效，未授权的机型
     public static final int ERRNO_SIGNATURE_INVALID = 6005;//签名失效，有可能系统时间有误
 
     private AsyncTask<Void, Void, AliyunVidSts> mAsyncTask = null;
@@ -24,16 +25,14 @@ public class VidStsHelper {
     private int mErrono = -1;
 
 
-    /**
-     * 同步获取
-     */
     public AliyunVidSts getVidSts() {
         try {
             //获取临时鉴权add by dway 180312
             String url = "http://api.video.readboy.com/videoSts?";
-            url += "device_id=" + DataSnUtil.getDeviceId();
-            url += "&t=" + DataSnUtil.getT();
-            url += "&sn=" + DataSnUtil.getSn();
+            url += "device_id=" + DataSnUtil.getDeviceIdEncodeUrl();
+            String t = DataSnUtil.getT();
+            url += "&t=" + t;
+            url += "&sn=" + DataSnUtil.getSn(t);
             AliLogUtil.v(TAG, "---getVidSts---url = " + url);
             String response = HttpClientUtil.doGet(url);
             AliLogUtil.v(TAG, "---getVidSts---response = " + response);

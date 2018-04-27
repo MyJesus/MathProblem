@@ -145,6 +145,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         assignView();
         initView();
         if (!needRequestPermissions()) {
+            MathApplication.copySecretFile(this);
             initData();
         }
         Log.e(TAG, "onCreate: " + AppUidUtil.getCertificateSHA1Fingerprint(this));
@@ -292,6 +293,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     protected void onRequestPermissionsSuccess() {
         super.onRequestPermissionsSuccess();
         initData();
+        MathApplication.copySecretFile(this);
     }
 
     private void testDb(int i) {

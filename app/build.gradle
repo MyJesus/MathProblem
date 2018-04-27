@@ -7,8 +7,8 @@ android {
         applicationId "com.readboy.mathproblem"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 180426001
-        versionName "4.1.18"
+        versionCode 180427001
+        versionName "4.1.19"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         jackOptions.enabled = true
         multiDexEnabled true
@@ -19,8 +19,8 @@ android {
         }
 
         ndk {
-            // 设置支持的 SO 库构架，
-            abiFilters "armeabi", "arm64-v8a"
+//            // 设置支持的 SO 库构架，
+            abiFilters "arm64-v8a", "armeabi-v7a"
         }
     }
 

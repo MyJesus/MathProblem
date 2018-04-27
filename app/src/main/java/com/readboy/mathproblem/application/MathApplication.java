@@ -10,6 +10,7 @@ import android.util.Log;
 
 import com.alivc.player.AliVcMediaPlayer;
 
+import com.alivc.player.TBMPlayer;
 import com.aliyun.vodplayer.downloader.AliyunDownloadConfig;
 import com.aliyun.vodplayer.downloader.AliyunDownloadManager;
 import com.readboy.aliyunplayerlib.utils.AppUtil;
@@ -145,7 +146,7 @@ public class MathApplication extends MyApplication {
     }
 
     private void initAliDownloader() {
-        copySecretFile();
+//        copySecretFile(this);
         //设置保存密码。此密码如果更换，则之前保存的视频无法播放
         AliyunDownloadConfig config = new AliyunDownloadConfig();
         config.setSecretImagePath(Constants.ALIYUN_SECRET_IMAGE_PATH);
@@ -153,15 +154,15 @@ public class MathApplication extends MyApplication {
         //设置保存路径。请确保有SD卡访问权限。
         config.setDownloadDir(Constants.ALIYUN_DOWNLOAD_DIR);
         //设置同时下载个数
-        config.setMaxNums(2);
+        config.setMaxNums(3);
 
         AliyunDownloadManager.getInstance(this).setDownloadConfig(config);
     }
 
-    private void copySecretFile() {
+    public static void copySecretFile(Context context) {
         File file = new File(Constants.ALIYUN_SECRET_IMAGE_PATH);
         if (!file.exists()) {
-            boolean result = FileUtils.copyAssetsToSD(this, "encryptedApp.dat", file.getAbsolutePath());
+            boolean result = FileUtils.copyAssetsToSD(context, "encryptedApp.dat", file.getAbsolutePath());
             Log.e(TAG, "copySecretFile: result = " + result);
         }
     }
