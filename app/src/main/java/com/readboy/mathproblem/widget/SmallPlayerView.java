@@ -33,7 +33,6 @@ import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
 import com.readboy.mathproblem.dialog.NoNetworkDialog;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
-import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.ToastUtils;
 import com.readboy.mathproblem.util.WakeUtil;
@@ -178,7 +177,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mAliyunVodPlayer = new AliyunVodPlayer(getContext());
         String sdDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/MathProblem/cache/";
         mAliyunVodPlayer.setPlayingCache(true, sdDir, 60 * 60, 300);
-        mAliyunVodPlayer.setCirclePlay(true);
+        mAliyunVodPlayer.setCirclePlay(false);
 
         mAliyunVodPlayer.setOnPreparedListener(this);
         mAliyunVodPlayer.setOnFirstFrameStartListener(this);
@@ -290,14 +289,14 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
                 Log.e(TAG, "onSuccess() called with: akid = " + akid + ", akSecret = " + akSecret + ", token = " + token + "");
                 String vid = mCurrentVideoResource.getVideoUri().getAuthority();
 //                Log.e(TAG, "onSuccess: resource =  " + mCurrentVideoResource.getVideoUri().toString());
-//                Log.e(TAG, "onSuccess: vid = " + vid);
+                Log.e(TAG, "onSuccess: vid = " + vid);
                 mVidSts = new AliyunVidSts();
                 mVidSts.setVid(vid);
                 mVidSts.setAcId(akid);
                 mVidSts.setAkSceret(akSecret);
                 mVidSts.setSecurityToken(token);
 
-                if (!isPaused) {
+                if (mTargetState == PlayerState.Started) {
                     prepareAsync(true);
                 }
             }
@@ -322,13 +321,15 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         } else if (state == PlayerState.Paused
                 || state == PlayerState.Prepared) {
             resumePlay();
+        } else if (state == PlayerState.Started){
+            updateViewCausePlaying();
         }
     }
 
     public void resumePlay() {
         Log.e(TAG, "resumePlay: ");
         mTargetState = PlayerState.Started;
-        sendPlayBeforeEvent();
+//        sendPlayBeforeEvent();
         updateViewCausePlaying();
         mAliyunVodPlayer.resume();
         WakeUtil.acquireCpuWakeLock(mContext);
@@ -344,7 +345,9 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
 
     public void pauseVideo() {
         mTargetState = PlayerState.Paused;
-        mSeekPosition = mAliyunVodPlayer.getCurrentPosition();
+        if (!isPreparing) {
+//            mSeekPosition = mAliyunVodPlayer.getCurrentPosition();
+        }
         Log.e(TAG, "pauseVideo: seek = " + mSeekPosition + ", state = " + mAliyunVodPlayer.getPlayerState());
         Log.e(TAG, "pauseVideo: isPlaying() = " + mAliyunVodPlayer.isPlaying());
         mAliyunVodPlayer.pause();
@@ -372,6 +375,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         Log.e(TAG, "updateViewCausePlaying: ");
         mVideoController.setSelected(true);
         hidePlayerControllerDelayed();
+        sendPlayBeforeEvent();
     }
 
     private void updateViewCausePause() {

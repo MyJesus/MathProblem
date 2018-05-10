@@ -16,7 +16,9 @@ public interface VideoExtraNames {
     //开始播放时的进度
     //long,
     public static final String EXTRA_SEEK_POSITION = "position";
-    //int
+    /**
+     * int, 在视频列表时的位置
+     */
     public static final String EXTRA_INDEX = "index";
     //ArrayList<String>, 视频列表
     public static final String EXTRA_MEDIA_LIST = "medialist";

@@ -75,6 +75,7 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         long total = model.getTotal();
 //        Log.e(TAG, "bindView: downloader so far = " + SizeUtils.formatMemorySize(soFar)
 //                + ", total = " + SizeUtils.formatMemorySize(total));
+        Log.e(TAG, "bindView: soFar = " + model.getSoFar() + ", total = " + total);
         mVideoMemory.setText(String.format("%s/%s",
                 SizeUtils.formatMemorySize(soFar), SizeUtils.formatMemorySize(total)));
     }
@@ -128,7 +129,7 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         }
     }
 
-    public class VidTaskObserver extends AliyunDownloadManagerWrapper.BaseDownloadTaskObserver<String> {
+    private class VidTaskObserver extends AliyunDownloadManagerWrapper.BaseDownloadTaskObserver<String> {
 
         @Override
         public boolean isContains(AliyunDownloadMediaInfo mediaInfo) {
@@ -164,14 +165,15 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
             super.onTaskProgress(task, soFarBytes, totalBytes);
             Log.e(TAG, "onTaskProgress() called with: soFarBytes = " + soFarBytes + ", totalBytes = " + totalBytes + "");
             mSpeedMonitor.update(soFarBytes);
-//            String speedStr;
-//            int speed = 0;
-//            if (speed >= 1024) {
-//                speedStr = String.format("%.2fMB", speed / 1024.0F);
-//            } else {
-//                speedStr = String.format("%dKB", speed);
-//            }
-//            mDownloadStatusTv.setText(String.format("%s/s", speedStr));
+            String speedStr;
+            int speed = mSpeedMonitor.getSpeed();
+            if (speed >= 1024) {
+                speedStr = String.format("%.2fMB", speed / 1024.0F);
+            } else {
+                speedStr = String.format("%dKB", speed);
+            }
+            Log.e(TAG, "onTaskProgress: speed = " + speedStr);
+            mDownloadStatusTv.setText(String.format("%s/s", speedStr));
             mVideoMemory.setText(String.format("%s/%s",
                     SizeUtils.formatMemorySize(soFarBytes), SizeUtils.formatMemorySize(totalBytes)));
 
@@ -182,6 +184,12 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
             super.onTaskCompleted(info);
             mDownloadStatus = DownloadStatus.COMPLETED;
             updateDownloadStatusView();
+        }
+
+        @Override
+        public void onTaskError(AliyunDownloadMediaInfo info, String message) {
+            super.onTaskError(info, message);
+            mDownloadStatus = DownloadStatus.ERROR;
         }
     }
 

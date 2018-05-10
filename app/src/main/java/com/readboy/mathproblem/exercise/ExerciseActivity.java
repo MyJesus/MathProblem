@@ -459,7 +459,7 @@ public class ExerciseActivity extends BaseActivity implements View.OnClickListen
         Score score = new Score(mProject.getId(), (int) correctCount);
         Score.insertScore(getContentResolver(), score);
         ExerciseResultDialog resultDialog = new ExerciseResultDialog(this, mResult);
-        resultDialog.setOnCLickListener(this);
+        resultDialog.setOnClickListener(this);
         resultDialog.show();
     }
 

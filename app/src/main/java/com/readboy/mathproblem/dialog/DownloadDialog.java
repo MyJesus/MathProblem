@@ -17,6 +17,7 @@ import com.aliyun.vodplayer.downloader.AliyunDownloadInfoListener;
 import com.aliyun.vodplayer.downloader.AliyunDownloadManager;
 import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
 import com.readboy.mathproblem.aliplayer.AliyunPlayerActivity;
+import com.readboy.mathproblem.application.MathApplication;
 import com.readboy.mathproblem.download.AliyunDownloadManagerWrapper;
 import com.readboy.mathproblem.http.download.DownloadModel;
 import com.readboy.mathproblem.video.movie.VideoExtraNames;
@@ -184,7 +185,7 @@ public class DownloadDialog extends BaseVideoDialog {
 
     private void updateDownloadList() {
         List<DownloadModel> temp = AliyunDownloadManagerWrapper.getInstance().getDownloadArray();
-        Log.e(TAG, "updateDownloadList: size = " + mDownloadArray);
+        Log.e(TAG, "updateDownloadList: size = " + temp.size());
         mDownloadArray.clear();
         mDownloadArray.addAll(temp);
 //        mDownloadAdapter.setData(mDownloadArray);
@@ -193,7 +194,7 @@ public class DownloadDialog extends BaseVideoDialog {
 
     private void updateLocationVideoList() {
         mLocationVideoList.clear();
-        File parent = new File(Constants.ALIYUN_DOWNLOAD_DIR);
+        File parent = new File(Constants.getDownloadPath(MathApplication.getInstance()));
         if (!parent.exists() && !parent.mkdirs()) {
             Log.e(TAG, "updateLocationVideoList: can't mkdirs, " + parent.getAbsolutePath());
             return;
@@ -210,7 +211,7 @@ public class DownloadDialog extends BaseVideoDialog {
     }
 
     private void updateLocationListFaker() {
-        File parent = new File(Constants.ALIYUN_DOWNLOAD_DIR);
+        File parent = new File(Constants.getDownloadPath(MathApplication.getInstance()));
         if (!parent.exists()) {
             if (!parent.mkdirs()) {
                 return;
@@ -420,8 +421,10 @@ public class DownloadDialog extends BaseVideoDialog {
 
     private int getDownloadPosition(String vid) {
         int size = mDownloadArray.size();
+        Log.e(TAG, "getDownloadPosition() called with: vid = " + vid + ", size = " + size);
         for (int i = 0; i < size; i++) {
             DownloadModel model = mDownloadArray.get(i);
+            Log.e(TAG, "getDownloadPosition: vid = " + model.getVid());
             if (model.getVid().equals(vid)) {
                 return i;
             }
@@ -525,41 +528,43 @@ public class DownloadDialog extends BaseVideoDialog {
         }
 
         @Override
-        public void onStart(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+        public void onStart(AliyunDownloadMediaInfo mediaInfo) {
 
         }
 
         @Override
-        public void onProgress(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i) {
+        public void onProgress(AliyunDownloadMediaInfo mediaInfo, int i) {
 
         }
 
         @Override
-        public void onStop(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+        public void onStop(AliyunDownloadMediaInfo mediaInfo) {
 
         }
 
         @Override
-        public void onCompletion(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
-            int position = getDownloadPosition(aliyunDownloadMediaInfo.getVid());
-            if (position > 0) {
+        public void onCompletion(AliyunDownloadMediaInfo mediaInfo) {
+            Log.e(TAG, "onCompletion: mediaInfo = " + mediaInfo.getTitle());
+            int position = getDownloadPosition(mediaInfo.getVid());
+            Log.e(TAG, "onCompletion: position = " + position);
+            if (position >= 0) {
                 mDownloadArray.remove(position);
                 mDownloadAdapter.notifyItemRemoved(position);
             }
         }
 
         @Override
-        public void onError(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i, String s, String s1) {
+        public void onError(AliyunDownloadMediaInfo mediaInfo, int i, String s, String s1) {
 
         }
 
         @Override
-        public void onWait(AliyunDownloadMediaInfo aliyunDownloadMediaInfo) {
+        public void onWait(AliyunDownloadMediaInfo mediaInfo) {
 
         }
 
         @Override
-        public void onM3u8IndexUpdate(AliyunDownloadMediaInfo aliyunDownloadMediaInfo, int i) {
+        public void onM3u8IndexUpdate(AliyunDownloadMediaInfo mediaInfo, int i) {
 
         }
     }

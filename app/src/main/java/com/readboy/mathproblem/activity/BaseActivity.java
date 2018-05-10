@@ -73,7 +73,6 @@ public class BaseActivity extends Activity implements CacheCallback {
     }
 
     /**
-     *
      * @param permissions 权限
      * @return true 已有权限，false 还需申请权限。
      */
@@ -116,17 +115,20 @@ public class BaseActivity extends Activity implements CacheCallback {
                 REQUEST_ALL_PERMISSIONS);
     }
 
-
     protected void assignView() {
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
     }
 
     protected void showProgressBar() {
-        mProgressBar.setVisibility(View.VISIBLE);
+        if (mProgressBar != null) {
+            mProgressBar.setVisibility(View.VISIBLE);
+        }
     }
 
     protected void hideProgressBar() {
-        mProgressBar.setVisibility(View.GONE);
+        if (mProgressBar != null) {
+            mProgressBar.setVisibility(View.GONE);
+        }
     }
 
     @Override

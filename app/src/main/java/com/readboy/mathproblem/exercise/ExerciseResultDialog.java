@@ -125,7 +125,7 @@ public class ExerciseResultDialog extends Dialog implements View.OnClickListener
         }
     }
 
-    public void setOnCLickListener(OnClickListener listener) {
+    public void setOnClickListener(OnClickListener listener) {
         this.mOnClickListener = listener;
     }
 

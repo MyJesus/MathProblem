@@ -17,7 +17,7 @@ public class Score implements ProjectContract.ScoreColumns {
 
     public static final long INVALID_ID = -1;
 
-//    public long _id = INVALID_ID;
+    //    public long _id = INVALID_ID;
     public long mProjectId;
     /**
      * 0-5分，对应0-100%
@@ -31,8 +31,8 @@ public class Score implements ProjectContract.ScoreColumns {
     };
 
     /**
-     * @param projectId    课题的id, Project.id
-     * @param score 分数 0-5分
+     * @param projectId 课题的id, Project.id
+     * @param score     分数 0-5分
      */
     public Score(int projectId, int score) {
 //        this._id = INVALID_ID;
@@ -59,7 +59,8 @@ public class Score implements ProjectContract.ScoreColumns {
 
     public static int getScore(ContentResolver resolver, int projectId) {
         int score = 0;
-        try (Cursor cursor = resolver.query(CONTENT_URI, QUERY_COLUMNS, PROJECT_ID + "=" + projectId, null, null)) {
+        try (Cursor cursor = resolver.query(CONTENT_URI, QUERY_COLUMNS, PROJECT_ID + "=?",
+                new String[]{String.valueOf(projectId)}, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 Score scoreObj = new Score(cursor);
                 score = scoreObj.mScore;

@@ -223,8 +223,9 @@ public class MediaPlayerImpl implements IMediaPlayer {
     public void stop() {
         Log.e(TAG, "stop: ");
         if (mMediaPlayer != null) {
-            mMediaPlayer.reset();
             mMediaPlayer.stop();
+            mMediaPlayer.reset();
+//            mMediaPlayer.stop();
             mCurrentState = IMediaPlayer.PlayState.STOPPED;
             // delete audio file
             if (audioStreamStore != null) {

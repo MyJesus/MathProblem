@@ -1,13 +1,10 @@
 package com.readboy.mathproblem;
 
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,8 +19,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.readboy.aliyunplayerlib.utils.AppUidUtil;
-import com.readboy.auth.Auth;
 import com.readboy.mathproblem.activity.BaseActivity;
 import com.readboy.mathproblem.activity.StudyActivity;
 import com.readboy.mathproblem.adapter.BaseViewHolder;
@@ -42,11 +37,8 @@ import com.readboy.mathproblem.dialog.FavoriteDialog;
 import com.readboy.mathproblem.dialog.GradeListDialog;
 import com.readboy.mathproblem.dialog.NoNetworkDialog;
 import com.readboy.mathproblem.download.AliyunDownloadManagerWrapper;
-//import com.readboy.mathproblem.http.download.DownloadManager;
-import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
 import com.readboy.mathproblem.http.response.ProjectEntity;
-import com.readboy.mathproblem.util.BuildUtils;
 import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.Lists;
 import com.readboy.mathproblem.util.NetworkUtils;
@@ -55,30 +47,17 @@ import com.readboy.mathproblem.util.SizeUtils;
 import com.readboy.mathproblem.util.ToastUtils;
 import com.readboy.mathproblem.util.VideoUtils;
 import com.readboy.mathproblem.util.ViewUtils;
-import com.readboy.mathproblem.video.proxy.VideoProxy;
 import com.readboy.mathproblem.video.proxy.VideoProxyReceiver;
 import com.readboy.mathproblem.widget.SpaceItemDecoration;
 import com.readboy.mathproblem.widget.ZoomLayoutManager;
 import com.readboy.recyclerview.CommonAdapter;
 import com.tencent.bugly.crashreport.CrashReport;
 
-import java.math.BigInteger;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.TimeZone;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 /**
  * Created by oubin on 2017/9/21.
@@ -145,111 +124,11 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         assignView();
         initView();
         if (!needRequestPermissions()) {
-            MathApplication.copySecretFile(this);
+            MathApplication.initFile(this);
             initData();
         }
-        Log.e(TAG, "onCreate: " + AppUidUtil.getCertificateSHA1Fingerprint(this));
+//        Log.e(TAG, "onCreate: " + AppUidUtil.getCertificateSHA1Fingerprint(this));
 
-    }
-
-    //使用MD5算法进行加密
-    public static String md5(String plainText) {
-        byte[] secretBytes = null;
-        try {
-            secretBytes = MessageDigest.getInstance("MD5").digest(plainText.getBytes());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("没有MD5这个算法!");
-        }
-        //16进制数
-        String md5code = new BigInteger(1, secretBytes).toString(16);
-        //如果生成数字没满32位,需要前面补0
-        StringBuilder md5Builder = new StringBuilder(new BigInteger(1, secretBytes).toString(16));
-        for (int i = 0; i < 32 - md5code.length(); i++) {
-            md5code = "0" + md5code;
-        }
-        return md5code;
-    }
-
-    private void dateTest() {
-        Calendar cal = Calendar.getInstance();
-
-        // Locale.US用于将日期区域格式设为美国（英国也可以）。缺省改参数的话默认为机器设置，如中文系统星期将显示为汉子“星期六”
-        SimpleDateFormat localDate = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss", Locale.US);
-        SimpleDateFormat greenwichDate = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss 'GMT'", Locale.US);
-        // 时区设为格林尼治
-        greenwichDate.setTimeZone(TimeZone.getTimeZone("GMT"));
-
-        Log.e(TAG, "onCreate: 当前时间：" + localDate.format(cal.getTime()));
-        Log.e(TAG, "onCreate: 格林尼治时间：" + greenwichDate.format(cal.getTime()));
-    }
-
-    private void testPlay() {
-        String url = "http://d.elpsky.com/download/mp4qpsp/%E6%8E%A2%E7%A7%98(%E8%A1%8C%E7%A8%8B)%E4%B9%8B%E8%B7%AF_%E6%B5%81%E6%B0%B4%E8%A1%8C%E8%88%B9%E9%97%AE%E9%A2%98.mp4?auth_key=1512088728-0-0-56dc817315752fbe521ca5fc910e9bca";
-        Intent intent = new Intent();
-//        intent.setAction("dream.dreamplayer.MEDIAPLAYER");
-        intent.setAction("android.readboy.MEDIAPLAYER");
-        intent.putExtra("path", url);
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, "video/mp4");
-        Uri uri = Uri.parse(url);
-        intent.setData(uri);
-        startActivity(intent);
-
-    }
-
-    private void uriTest2() {
-        String url = "http://d.elpsky.com/download/mp4qpsp/%E6%8E%A2%E7%A7%98%28%E8%A1%8C%E7%A8%8B%29%E4%B9%8B%E8%B7%AF_%E6%B5%81%E6%B0%B4%E8%A1%8C%E8%88%B9%E9%97%AE%E9%A2%98.mp4?auth_key=1509593014-0-0-d2abb6a04725ea817b52a3dd809a4bcc";
-//        VideoProxy.playWithUrl(url, this);
-        Uri uri = Uri.parse(url);
-        String scheme = uri.getScheme();
-        String c = uri.getSchemeSpecificPart();
-        String path = uri.getPath();
-        String s = uri.getAuthority();
-        String s1 = uri.getEncodedQuery();
-        String s2 = uri.getEncodedFragment();
-        Log.e(TAG, "onCreate: path = " + path);
-        Log.e(TAG, "onCreate: authority = " + s);
-        Log.e(TAG, "onCreate: query = " + s1);
-        Log.e(TAG, "onCreate: fragment = " + s2);
-    }
-
-    private void uriTest() {
-        String uriString = VideoProxy.SCHEME_VIDEO_URI + "://" + "/download/mp2qpsp/流水问题.mp4";
-        Uri uri = Uri.parse(uriString);
-        String scheme = uri.getScheme();
-        String path = uri.getPath();
-        String ePath = uri.getEncodedPath();
-        String fragment = uri.getFragment();
-        String authority = uri.getAuthority();
-        boolean h = uri.isHierarchical();
-
-        String uriString2 = "http://www.baidu.com";
-        Uri uri2 = Uri.parse(uriString2);
-        String host = uri2.getHost();
-        String scheme2 = uri2.getScheme();
-        boolean b = uri2.isHierarchical();
-    }
-
-    private void test() {
-        ArrayList<Integer> idList = new ArrayList<>();
-        idList.add(486868110);
-        idList.add(486788110);
-        idList.add(486298110);
-        idList.add(486478110);
-        idList.add(486488110);
-        idList.add(486498110);
-        CacheEngine.getVideoInfoFromHttp(idList, new Callback<VideoInfoEntity>() {
-            @Override
-            public void onResponse(Call<VideoInfoEntity> call, Response<VideoInfoEntity> response) {
-                if (response.body() != null) {
-                    Log.e(TAG, "onResponse: body = " + response.body().toString());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<VideoInfoEntity> call, Throwable t) {
-                Log.e(TAG, "onFailure: t = " + t.toString(), t);
-            }
-        });
     }
 
     @Override
@@ -262,6 +141,15 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     protected void onResume() {
         Log.e(TAG, "onResume: ");
         super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //保存喜欢，方便下次打开应用初始化数据
+        Log.e(TAG, "onDestroy: currentGrade = " + mCurGrade + ", subjectType = " + mSubjectType);
+        PreferencesUtils.saveGrade(mCurGrade);
+        PreferencesUtils.saveSubject(mSubjectType);
     }
 
     @Override
@@ -280,11 +168,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
         CacheEngine.cancelHttpRequest();
 
-        //保存喜欢，方便下次打开应用初始化数据
-        Log.e(TAG, "onDestroy: currentGrade = " + mCurGrade + ", subjectType = " + mSubjectType);
-        PreferencesUtils.saveGrade(mCurGrade);
-        PreferencesUtils.saveSubject(mSubjectType);
-
         MathApplication.refWatch(this);
         AliyunDownloadManagerWrapper.getInstance().onDestroy();
     }
@@ -293,7 +176,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     protected void onRequestPermissionsSuccess() {
         super.onRequestPermissionsSuccess();
         initData();
-        MathApplication.copySecretFile(this);
+        MathApplication.initFile(this);
     }
 
     private void testDb(int i) {
@@ -718,7 +601,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             }
         }
     }
-
 
 
 //    private void unregisterDownloadObserver() {

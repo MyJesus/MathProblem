@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "26.0.2"
+    buildToolsVersion "27.0.3"
     defaultConfig {
         applicationId "com.readboy.mathproblem"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 180427001
-        versionName "4.1.19"
+        versionCode 180509001
+        versionName "4.1.20"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         jackOptions.enabled = true
         multiDexEnabled true

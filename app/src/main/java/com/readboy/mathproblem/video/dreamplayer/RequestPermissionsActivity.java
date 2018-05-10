@@ -44,6 +44,8 @@ import java.util.Arrays;
 
 /**
  * Activity that requests permissions needed for activities exported from filemanager.
+ * TODO: 存在一些问题，无法在onCreate(savedInstanceState)中，恢复onSaveInstanceState中保存的数据
+ * 如果不需要处理该内容，可以使用该类。
  */
 public class RequestPermissionsActivity extends Activity {
 

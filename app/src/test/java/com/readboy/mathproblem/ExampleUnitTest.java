@@ -5,6 +5,7 @@ import com.readboy.mathproblem.application.SubjectType;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
@@ -26,7 +27,10 @@ import static org.junit.Assert.*;
 public class ExampleUnitTest {
     @Test
     public void addition_isCorrect() throws Exception {
-        assertEquals(4, 2 + 2);
+//        assertEquals(4, 2 + 2);]
+        int i = Integer.MAX_VALUE;
+        i++;
+
     }
 
     @Test
@@ -77,7 +81,7 @@ public class ExampleUnitTest {
         String s4 = s1.trim();
         String s2 = s1.replace("a", "");
 
-        String s3= s1;
+        String s3 = s1;
         SubjectType method = SubjectType.method;
         String methodString = method.toString();
         String se = method.name();

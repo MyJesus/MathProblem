@@ -20,6 +20,7 @@ public final class DownloadContract {
         String NAME = "name";
         String URL = "url";
         String PATH = "path";
+        String SIZE = "size";
     }
 
 }

@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
 import com.readboy.aliyunplayerlib.utils.FileUtil;
 import com.readboy.aliyunplayerlib.view.AliPlayerView;
 import com.readboy.mathproblem.application.Constants;
@@ -15,6 +16,7 @@ import com.readboy.mathproblem.db.Video;
 import com.readboy.mathproblem.download.AliyunDownloadManagerWrapper;
 import com.readboy.mathproblem.http.response.VideoInfoEntity;
 import com.readboy.mathproblem.util.FileUtils;
+import com.readboy.mathproblem.util.VideoUtils;
 import com.readboy.mathproblem.video.tools.Constant;
 
 import java.io.File;
@@ -24,7 +26,7 @@ import java.io.File;
  */
 
 public class VidVideoResource implements IVideoResource {
-    private static final String TAG = "oubin_VidVideoResource";
+    private static final String TAG = "oubin_AliyunVResource";
 
     public static final String SCHEME = "vid";
 
@@ -40,6 +42,9 @@ public class VidVideoResource implements IVideoResource {
     @Override
     public void play(AliPlayerView aliPlayerView, long position) {
         Log.e(TAG, "play: position = " + position);
+        if (VideoUtils.videoIsExist(mVideoInfo.getName())){
+            Log.e(TAG, "play: video is downloaded.");
+        }
         aliPlayerView.playWithVid(mVideoInfo.getVid());
         aliPlayerView.seekTo(position);
     }
@@ -73,7 +78,7 @@ public class VidVideoResource implements IVideoResource {
 
     @Override
     public boolean downloadVideo() {
-        AliyunDownloadManagerWrapper.getInstance().prepareDownload(mVideoInfo.getVid());
+        AliyunDownloadManagerWrapper.getInstance().prepareDownload(mVideoInfo);
         return true;
     }
 

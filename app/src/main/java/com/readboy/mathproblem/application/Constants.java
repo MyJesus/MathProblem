@@ -18,8 +18,11 @@ public class Constants {
 
     public static final String EMPTY_URL = "about:blank";
 
-    private static final String DIR = Environment.getExternalStorageDirectory()
+    private static final String DIR = Environment.getExternalStorageDirectory().getAbsolutePath()
             + File.separator + APP_NAME;
+
+    private static final String DIR_DATA = Environment.getExternalStorageDirectory().getAbsolutePath()
+            + "/Android/data/com.readboy.mathproblem/files";
 
     /**
      * 旧视频文件目录，4.1.17版本及以前
@@ -29,13 +32,13 @@ public class Constants {
     public static final String IMAGE_PATH = DIR + File.separator + "image";
     public static final String WEB_CACHE_PATH = DIR + File.separator + "web";
 
-    public static final String ALIYUN_DOWNLOAD_DIR = DIR + File.separator + "download";
-    public static final String ALIYUN_SECRET_IMAGE_PATH = DIR + "/aliyun/encryptedApp.dat";
+    public static final String ALIYUN_DOWNLOAD_DIR = DIR + "/download/";
+    public static final String ALIYUN_SECRET_IMAGE_NAME = "encryptedApp.dat";
 
 //    public static final String VIDEO_PATH = ALIYUN_DOWNLOAD_DIR;
 
-    public static String getVideoPath(String fileName){
-        return ALIYUN_DOWNLOAD_DIR + File.separator + fileName + ".mp4";
+    public static String getVideoPath(String fileName) {
+        return getDownloadPath(MathApplication.getInstance()) + File.separator + fileName + ".mp4";
     }
 
     public class Drawable {
@@ -48,7 +51,6 @@ public class Constants {
     public static class URL {
         public static final String VIDEO1 =
                 "http://data.caidouenglish.com/video/2017/06/16/96/9b/969b8cf1851899a29e858752e952b196.mp4";
-        //阿里云OSS
         public static final String VIDEO2 =
                 "http://contres.readboy.com/resources/dub/2017/6000009/1ecb23dd58ae9b0870e4ad809c8e31c7.mp4";
 
@@ -73,4 +75,21 @@ public class Constants {
         public static final String VIDEO9 =
                 "http://d.elpsky.com/download/mp4qpsp/%E7%8B%90%E7%8B%B8%E7%AB%99%E9%95%BF%E7%9A%84%E6%83%85%E6%8A%A5%E7%AB%99_%E7%BB%9F%E8%AE%A1%E8%A1%A8%E5%92%8C%E5%88%86%E7%B1%BB.mp4?auth_key=1512476420-0-0-5d1482a4c8a5c4713efa4f841521147e";
     }
+
+    public static String getDir(Context context) {
+        File file = context.getExternalFilesDir(null);
+        return file != null ? file.getAbsolutePath() : DIR_DATA;
+    }
+
+    public static String getDownloadPath(Context context) {
+        return new File(getDir(context), "cache").getAbsolutePath();
+    }
+
+    /**
+     * ALIYUN_SECRET_IMAGE_PATH
+     */
+    public static String getSecretImagePath(Context context) {
+        return getDir(context) + "/secret/" + ALIYUN_SECRET_IMAGE_NAME;
+    }
+
 }

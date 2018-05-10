@@ -40,7 +40,7 @@
         android:textSize="24sp"
         android:textStyle="bold" />
 
-    <ImageButton
+    <CheckBox
         android:id="@+id/player_video_list_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

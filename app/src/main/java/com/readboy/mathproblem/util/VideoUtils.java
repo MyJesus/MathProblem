@@ -3,6 +3,7 @@ package com.readboy.mathproblem.util;
 import android.net.Uri;
 
 import com.readboy.mathproblem.application.Constants;
+import com.readboy.mathproblem.application.MathApplication;
 import com.readboy.mathproblem.video.tools.Constant;
 
 import java.io.File;
@@ -35,7 +36,7 @@ public final class VideoUtils {
     public static String getVideoPath(String fileName) {
         int last = fileName.lastIndexOf(".");
         if (last > 0) {
-            return Constants.ALIYUN_DOWNLOAD_DIR + File.separator + fileName;
+            return Constants.getDownloadPath(MathApplication.getInstance()) + File.separator + fileName;
         } else {
             return Constants.getVideoPath(fileName);
         }

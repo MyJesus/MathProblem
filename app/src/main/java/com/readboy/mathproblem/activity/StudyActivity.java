@@ -287,7 +287,6 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             if (data != null) {
-                String path = data.getStringExtra(VideoExtraNames.EXTRA_PATH);
                 long seekPosition = data.getLongExtra(VideoExtraNames.EXTRA_SEEK_POSITION, 0);
                 int videoIndex = data.getIntExtra(VideoExtraNames.EXTRA_INDEX, 0);
                 Log.e(TAG, "onActivityResult: seek = " + seekPosition + ", index = " + videoIndex);

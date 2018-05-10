@@ -47,7 +47,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     private static final String TAG = "oubin_AliPlayerView";
 
     //版本号
-    private static final String VERSION = "V1.0.180427001";
+    private static final String VERSION = "V1.0.180509001";
 
     //常量
     private static final int MSG_HEART = 1;
@@ -56,6 +56,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     //控件
     private PlayerTopViewBase mTopView = null;
     private PlayerBottomViewBase mBottomView = null;
+    //private PlayerLoadStatusView mLoadStatusView;
     private PlayerLoadStatusViewBase mLoadStatusView = null;
     private TextView mLoadProgressTextView;
     private SurfaceView mPlayerSurfaceView;
@@ -107,7 +108,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     private boolean mIsSeekComplete = true;//是否seek完成
     private IAliyunVodPlayer.PlayerState mPlayerState;//pause时播放状态，在onResume判断恢复
     private boolean mIsPauseWhileGetVidsts = false;
-    private boolean isPreparing = false;
+    private boolean mIsPrepareAsyncSuccess = false;//是否prepareAsync成功
 
     //播放清晰度选择顺序
     /*private String[] QUALITYS = {
@@ -150,7 +151,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     }
 
-    private void initViews() {
+    private void initViews(){
         AliLogUtil.v(TAG, "---initViews---");
         LayoutInflater.from(this.getContext()).inflate(R.layout.ali_player_view, this, true);
         //mLoadStatusView = findViewById(R.id.video_player_loading);
@@ -211,26 +212,26 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
             PlayerBottomViewBase bottomView,
             PlayerLoadStatusViewBase loadStatusView,
             PlayerIdleViewBase idleView,
-            PlayerCompleteViewBase completeView) {
-        if (topView != null) {
+            PlayerCompleteViewBase completeView){
+        if(topView != null) {
             mTopView = topView;
-        } else {
+        }else{
             mTopView = new PlayerTopViewDefault(getContext());
         }
-        if (bottomView != null) {
+        if(bottomView != null) {
             mBottomView = bottomView;
-        } else {
+        }else{
             mBottomView = new PlayerBottomViewDefault(getContext());
         }
-        if (loadStatusView != null) {
+        if(loadStatusView != null){
             mLoadStatusView = loadStatusView;
-        } else {
+        }else{
             mLoadStatusView = new PlayerLoadStatusViewDefault(getContext());
         }
-        if (idleView != null) {
+        if(idleView != null){
             mLoadStatusView.setIdleView(idleView);
         }
-        if (completeView != null) {
+        if(completeView != null){
             mLoadStatusView.setCompleteView(completeView);
         }
 
@@ -255,38 +256,37 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mLoadStatusView.setIdle();
     }
 
-    public void init(PlayerTopViewBase topView, PlayerBottomViewBase bottomView, PlayerCompleteViewBase completeView) {
+    public void init(PlayerTopViewBase topView, PlayerBottomViewBase bottomView, PlayerCompleteViewBase completeView){
         init(topView, bottomView, null, null, completeView);
     }
 
     /**
      * 打开阿里的打印
      */
-    public void enableNativeLog() {
+    public void enableNativeLog(){
         mAliyunVodPlayer.enableNativeLog();
     }
 
     /**
      * 关闭阿里的打印
      */
-    public void disableNativeLog() {
+    public void disableNativeLog(){
         mAliyunVodPlayer.disableNativeLog();
     }
 
     /**
      * 设置视频缩放模式
-     *
      * @param videoScalingMode IAliyunVodPlayer.VideoScalingMode.VIDEO_SCALING_MODE_SCALE_TO_FIT 全部显示但不裁剪
      *                         IAliyunVodPlayer.VideoScalingMode.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING 会有裁剪
      */
-    public void setVideoScalingMode(IAliyunVodPlayer.VideoScalingMode videoScalingMode) {
+    public void setVideoScalingMode(IAliyunVodPlayer.VideoScalingMode videoScalingMode){
         mAliyunVodPlayer.setVideoScalingMode(videoScalingMode);
     }
 
     /**
      * 设置预处理状态
      */
-    public void setPreprocess() {
+    public void setPreprocess(){
         hideControlView();
         mLoadStatusView.setPreprocess();
     }
@@ -294,26 +294,25 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     /**
      * 设置预处理出错状态
      */
-    public void setPreprocessError(String errorMsg) {
+    public void setPreprocessError(String errorMsg){
         mLoadStatusView.setPreprocessError(errorMsg);
     }
 
     /**
      * 预处理出错界面按钮监听
-     *
      * @param listener
      */
-    public void setOnPreprocessBtnListener(OnPreprocessBtnListener listener) {
+    public void setOnPreprocessBtnListener(OnPreprocessBtnListener listener){
         mOnPreprocessBtnListener = listener;
     }
 
     /**
      * vid在线点播
-     *
      * @param vid vid
      */
-    public void playWithVid(String vid) {
+    public void playWithVid(String vid){
         AliLogUtil.v(TAG, "---playWithVid---vid = " + vid);
+        resetState();
         if (mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle) {
             mAliyunVodPlayer.stop();
         }
@@ -323,20 +322,23 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mVidSts = null;//需要置为null，才能重新获取vidsts来播放
 
         mVid = vid;
-        hideControlView();
+
+        /*hideControlView();
         setLoadStatusViewBgBlack(true);
         prepareAsync(false);
 
-        mAutoCount = 0;
+        mAutoCount = 0;*/
+
+        prepareAsync(false);
     }
 
     /**
      * localPath本地播放
-     *
      * @param localPath localPath
      */
-    public void playWithPath(String localPath) {
+    public void playWithPath(String localPath){
         AliLogUtil.v(TAG, "---playWithPath---localPath = " + localPath);
+        resetState();
         if (mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle) {
             mAliyunVodPlayer.stop();
         }
@@ -345,24 +347,26 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mUrl = null;
         mlocalPath = localPath;
 
-        AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
+        /*AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
         asb.setSource(mlocalPath);
         AliyunLocalSource localSource = asb.build();
         hideControlView();
         setLoadStatusViewBgBlack(true);
         mLoadStatusView.setLoading();
-        isPreparing = true;
         mAliyunVodPlayer.prepareAsync(localSource);
+        mIsPrepareAsyncSuccess = false;
 
-        mAutoCount = 0;
+        mAutoCount = 0;*/
+
+        prepareAsync(false);
     }
 
     /**
      * 在线url地址播放
      */
-    public void playWithUrl(String url) {
+    public void playWithUrl(String url){
         AliLogUtil.v(TAG, "---playWithUrl---url = " + url);
-        if (mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle) {
+        if(mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle) {
             mAliyunVodPlayer.stop();
         }
 
@@ -371,26 +375,27 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mVidSts = null;//需要置为null，才能重新获取vidsts来播放
         mVid = null;
 
-        AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
+        /*AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
         asb.setSource(mUrl);
         AliyunLocalSource mUrlSource = asb.build();
-        isPreparing = true;
         mAliyunVodPlayer.prepareAsync(mUrlSource);
+        mIsPrepareAsyncSuccess = false;
 
         hideControlView();
         setLoadStatusViewBgBlack(true);
         mLoadStatusView.setLoading();
 
-        mAutoCount = 0;
+        mAutoCount = 0;*/
+
+        prepareAsync(false);
     }
 
     /**
      * 设置指定位置播放
-     *
      * @param ms 毫秒
      */
-    public void seekTo(long ms) {
-        AliLogUtil.v(TAG, "---seekTo---ms = " + ms);
+    public void seekTo(long ms){
+        AliLogUtil.v(TAG, "---seekTo---ms = "+ms);
         mCurrentPosition = ms;
         mAliyunVodPlayer.seekTo((int) mCurrentPosition);
         /*if(mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle){
@@ -400,70 +405,107 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     /**
      * 获取当前播放进度
-     *
      * @return 单位毫秒
      */
-    public long getCurrentPosition() {
+    public long getCurrentPosition(){
         return mAliyunVodPlayer != null ? mAliyunVodPlayer.getCurrentPosition() : 0;
     }
 
     /**
      * 获取播放状态
      */
-    public IAliyunVodPlayer.PlayerState getPlayerState() {
+    public IAliyunVodPlayer.PlayerState getPlayerState(){
         return mAliyunVodPlayer.getPlayerState();
     }
 
     /**
      * 闲置状态点击回调
      */
-    public void setOnIdleBtnListener(OnIdleBtnListener listener) {
+    public void setOnIdleBtnListener(OnIdleBtnListener listener){
         mOnIdleBtnListener = listener;
     }
 
     /**
      * 播放结束回调
      */
-    public void setOnPlayCompleteListener(OnPlayCompleteListener listener) {
+    public void setOnPlayCompleteListener(OnPlayCompleteListener listener){
         mOnPlayCompleteListener = listener;
     }
 
     /**
      * 重播
      */
-    public void replay() {
+    public void replay(){
         mLoadStatusView.setLoading();
-        mAliyunVodPlayer.replay();
-        mAutoCount = 0;
+        if(mIsPrepareAsyncSuccess) {
+            mAliyunVodPlayer.replay();
+            mAutoCount = 0;
+        }else{
+            prepareAsync(false);
+        }
     }
 
     /**
      * 获取播放时间，只记录处于播放状态的时间，单位秒
      */
-    public int getPlayTimeSec() {
+    public int getPlayTimeSec(){
         return mPlayTimeSec;
     }
 
 
-    private void prepareAsync(boolean allowMobilePlay) {
-        mLoadStatusView.setLoading();
-        if (mVidSts == null) {
-            getVidsts();
-        } else {
-            if (!allowMobilePlay && NetWatchdog.is4GConnected(getContext())) {
+    private void prepareAsync(boolean allowMobilePlay){
+        AliLogUtil.v(TAG, "---prepareAsync---");
+        if(!TextUtils.isEmpty(mVid)){
+            //vidsts播放
+            hideControlView();
+            setLoadStatusViewBgBlack(true);
+            mLoadStatusView.setLoading();
+            mAutoCount = 0;
+            if(mVidSts == null){
+                getVidsts();
+            }else{
+                if(!allowMobilePlay && NetWatchdog.is4GConnected(getContext())){
+                    mLoadStatusView.setMobileNet();
+                }else{
+                    AliLogUtil.v(TAG, "---prepareAsync---prepareAsync(vidsts)");
+                    mAliyunVodPlayer.prepareAsync(mVidSts);
+                    mIsPrepareAsyncSuccess = false;
+                }
+            }
+        }else if(!TextUtils.isEmpty(mlocalPath)){
+            //本地播放
+            AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
+            asb.setSource(mlocalPath);
+            AliyunLocalSource localSource = asb.build();
+            hideControlView();
+            setLoadStatusViewBgBlack(true);
+            mLoadStatusView.setLoading();
+            mAliyunVodPlayer.prepareAsync(localSource);
+            mIsPrepareAsyncSuccess = false;
+            mAutoCount = 0;
+        }else if(!TextUtils.isEmpty(mUrl)){
+            //在线url播放
+            hideControlView();
+            setLoadStatusViewBgBlack(true);
+            mLoadStatusView.setLoading();
+            mAutoCount = 0;
+
+            if(!allowMobilePlay && NetWatchdog.is4GConnected(getContext())){
                 mLoadStatusView.setMobileNet();
-            } else {
-                AliLogUtil.v(TAG, "---prepareAsync---2");
-                isPreparing = true;
-                mAliyunVodPlayer.prepareAsync(mVidSts);
+            }else{
+                AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
+                asb.setSource(mUrl);
+                AliyunLocalSource mUrlSource = asb.build();
+                mAliyunVodPlayer.prepareAsync(mUrlSource);
+                mIsPrepareAsyncSuccess = false;
             }
         }
     }
 
-    private void getVidsts() {
+    private void getVidsts(){
         AliLogUtil.v(TAG, "---getVidsts---");
         mLoadStatusView.setLoading();
-        if (mVidStsHelper.isGettingVidsts()) {
+        if(mVidStsHelper.isGettingVidsts()){
             return;
         }
         mVidStsHelper.getVidSts(new VidStsHelper.OnStsResultListener() {
@@ -476,7 +518,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
                 mVidSts.setAkSceret(akSecret);
                 mVidSts.setSecurityToken(token);
 
-                if (!mIsPaused) {
+                if(!mIsPaused) {
                     mLoadStatusView.setHide();
                     prepareAsync(false);
                     stopHideControlView();
@@ -486,7 +528,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
             @Override
             public void onFail(int errno) {
-                AliLogUtil.v(TAG, "---getVidsts---fail");
+                AliLogUtil.v(TAG, "---getVidsts---errno = "+errno);
                 mVidSts = null;
                 if(errno == VidStsHelper.ERRNO_SIGNATURE_INVALID) {
                     mLoadStatusView.setErrorNoVidsts(getResources().getString(R.string.player_load_status_view_text_error_signature_invalid));
@@ -504,10 +546,11 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     }
 
 
-    public void onResume() {
-        if (mIsPaused) {
+
+    public void onResume(){
+        if(mIsPaused) {
             mIsPaused = false;
-            AliLogUtil.v(TAG, "---onResume---mPlayerState = " + mPlayerState + ", mIsPauseWhileGetVidsts = " + mIsPauseWhileGetVidsts);
+            AliLogUtil.v(TAG, "---onResume---mPlayerState = "+mPlayerState+", mIsPauseWhileGetVidsts = "+mIsPauseWhileGetVidsts);
             if (mPlayerState == IAliyunVodPlayer.PlayerState.Started) {
                 /*if (mAliyunVodPlayer.getPlayerState() == IAliyunVodPlayer.PlayerState.Paused) {
                     mAliyunVodPlayer.resume();
@@ -536,40 +579,32 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         }
     }
 
-    public void onPause() {
+    public void onPause(){
         mIsPaused = true;
         AliLogUtil.v(TAG, "---onPause---");
-        if (mVidStsHelper.isGettingVidsts()) {
+        if(mVidStsHelper.isGettingVidsts()){
             mIsPauseWhileGetVidsts = true;
         }
         mPlayerState = mAliyunVodPlayer.getPlayerState();
-        AliLogUtil.v(TAG, "---onPause---" + mPlayerState);
-        if (mPlayerState == IAliyunVodPlayer.PlayerState.Started) {
+        AliLogUtil.v(TAG, "---onPause---"+mPlayerState);
+        if(mPlayerState == IAliyunVodPlayer.PlayerState.Started){
             mAliyunVodPlayer.pause();
+            mBottomView.setPlayPauseStatus(false);//播放暂停按钮ldw180508
+            mLoadStatusView.setHide();
+            showControlView();
         }
     }
 
-    public void onStop() {
-        if (mAliyunVodPlayer != null) {
-            mAliyunVodPlayer.stop();
-        }
-        if (mNetWatchdog != null) {
-            mNetWatchdog.stopWatch();
-        }
-        stopHeart();
-        stopHideControlView();
-    }
-
-    public void onDestroy() {
+    public void onDestroy(){
         AliLogUtil.v(TAG, "---onDestroy---");
-        if (mVidStsHelper != null) {
+        if(mVidStsHelper != null) {
             mVidStsHelper.cancelRequest();
         }
-        if (mAliyunVodPlayer != null) {
+        if(mAliyunVodPlayer != null) {
             mAliyunVodPlayer.stop();
             mAliyunVodPlayer.release();
         }
-        if (mNetWatchdog != null) {
+        if(mNetWatchdog != null){
             mNetWatchdog.stopWatch();
         }
         stopHeart();
@@ -589,20 +624,12 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         return mAliyunVodPlayer.isPlaying();
     }
 
-    public boolean isPreparing() {
-        return isPreparing;
-    }
-
-    public void seekTo(int position) {
-        mAliyunVodPlayer.seekTo(position);
-    }
-
     /**
      * 设置播放画面可见性，播放器加载阶段设置不可见，避免切换播放源的时候，界面还停留在上一次播放的最后一帧。
      * 这样在INVISIBLE后，surface会destroy掉，感觉不是很好。
      * 所以最后改成去修改LoadStatusView的背景颜色为全黑和半透明，来遮住surface
      */
-    private void setLoadStatusViewBgBlack(boolean black) {
+    private void setLoadStatusViewBgBlack(boolean black){
         //mPlayerSurfaceView.setVisibility(visible ? VISIBLE : INVISIBLE);
         mLoadStatusView.setBgBlack(black);
     }
@@ -610,7 +637,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     /**
      * 上下播放控件可见性
      */
-    private boolean getControlViewVisibility() {
+    private boolean getControlViewVisibility(){
         return mTopView.getVisibility() == View.VISIBLE || mBottomView.getVisibility() == View.VISIBLE;
     }
 
@@ -624,51 +651,51 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 //        mBottomView.setVisibility(View.GONE);
     }
 
-    private void delayHideControlView() {
+    private void delayHideControlView(){
         mHandler.removeMessages(MSG_HIDE_CONTROL_VIEW);
         mHandler.sendEmptyMessageDelayed(MSG_HIDE_CONTROL_VIEW, 10000);
     }
 
-    private void stopHideControlView() {
+    private void stopHideControlView(){
         mHandler.removeMessages(MSG_HIDE_CONTROL_VIEW);
     }
 
-    private void startHeart() {
+    private void startHeart(){
         stopHeart();
         Message message = mHandler.obtainMessage(MSG_HEART);
         mHandler.sendMessage(message);
     }
 
-    private void continueHeart() {
+    private void continueHeart(){
         Message message = mHandler.obtainMessage(MSG_HEART);
         mHandler.sendMessageDelayed(message, 1000);
     }
 
-    private void stopHeart() {
+    private void stopHeart(){
         mHandler.removeMessages(MSG_HEART);
     }
 
-    private void heartProcess() {
-//        AliLogUtil.v(TAG, "---heartProcess--- PlayerState = " + mAliyunVodPlayer.getPlayerState()
-//                + ", " + mAliyunVodPlayer.getCurrentPosition()
-//                + ", " + mAliyunVodPlayer.getBufferingPosition()
-//                + ", " + mAliyunVodPlayer.getDuration()
-//                + ", " + mIsSeekBarTouching
-//                + ", " + mIsSeekComplete);
+    private void heartProcess(){
+        AliLogUtil.v(TAG, "---heartProcess--- PlayerState = " + mAliyunVodPlayer.getPlayerState()
+                + ", " + mAliyunVodPlayer.getCurrentPosition()
+                + ", " + mAliyunVodPlayer.getBufferingPosition()
+                + ", " + mAliyunVodPlayer.getDuration()
+                + ", " + mIsSeekBarTouching
+                + ", " + mIsSeekComplete);
         //设置播放进度和缓存进度
-        if (!mIsSeekBarTouching && mIsSeekComplete) {
+        if(!mIsSeekBarTouching && mIsSeekComplete){
             setPlayProgressInfo();
         }
         //播放暂停按钮
-        if (mAliyunVodPlayer.getPlayerState() == IAliyunVodPlayer.PlayerState.Started) {
+        if(mAliyunVodPlayer.getPlayerState() == IAliyunVodPlayer.PlayerState.Started){
             mPlayTimeSec++;
             mBottomView.setPlayPauseStatus(true);
-        } else {
+        }else{
             mBottomView.setPlayPauseStatus(false);
         }
     }
 
-    private void setPlayProgressInfo() {
+    private void setPlayProgressInfo(){
         int current = (int) mAliyunVodPlayer.getCurrentPosition();
         int duration = (int) mAliyunVodPlayer.getDuration();
         int max = Math.max(current, duration);//因为计算不准确，可能存在当前比总长大的情况，没办法只能这么处理
@@ -680,14 +707,15 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     }
 
     private void resetState() {
-        isPreparing = false;
+        mIsSeekComplete = true;
+        mIsSeekBarTouching = false;
+        mIsPaused = false;
     }
-
 
     private Handler mHandler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
-            switch (msg.what) {
+            switch (msg.what){
                 case MSG_HEART:
                     heartProcess();
                     continueHeart();
@@ -702,31 +730,31 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onClick(View v) {
-        AliLogUtil.v(TAG, "---onClick---" + v);
-        if (v == mBottomView.mPlayPauseView) {
+        AliLogUtil.v(TAG, "---onClick---"+v);
+        if(v == mBottomView.mPlayPauseView){
             IAliyunVodPlayer.PlayerState playerState = mAliyunVodPlayer.getPlayerState();
             AliLogUtil.v(TAG, "---onClick---playerState = " + playerState);
-            if (playerState == IAliyunVodPlayer.PlayerState.Started) {
+            if(playerState == IAliyunVodPlayer.PlayerState.Started){
                 mAliyunVodPlayer.pause();
                 mBottomView.setPlayPauseStatus(false);
-            } else if (playerState == IAliyunVodPlayer.PlayerState.Paused) {
+            }else if(playerState == IAliyunVodPlayer.PlayerState.Paused){
                 mAliyunVodPlayer.resume();
                 mBottomView.setPlayPauseStatus(true);
-            }else if(playerState == IAliyunVodPlayer.PlayerState.Idle){
-                prepareAsync(false);
-                mBottomView.setPlayPauseStatus(true);
-            } else {
+            }else if(playerState == IAliyunVodPlayer.PlayerState.Prepared){
                 mAliyunVodPlayer.start();
+                mBottomView.setPlayPauseStatus(true);
+            }else{
+                prepareAsync(false);
                 mBottomView.setPlayPauseStatus(true);
             }
             delayHideControlView();
-        } else if (v == mPlayerSurfaceView) {
-            if (mLoadStatusView.getStatus() == PlayerLoadStatusViewBase.STATUS_FINISH) {
+        }else if(v == mPlayerSurfaceView){
+            if(mLoadStatusView.getStatus() == PlayerLoadStatusViewBase.STATUS_FINISH){
                 return;
             }
-            if (getControlViewVisibility()) {
+            if(getControlViewVisibility()){
                 hideControlView();
-            } else {
+            }else{
                 showControlView();
                 delayHideControlView();
             }
@@ -735,10 +763,10 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onContinueBtnClick() {
-        AliLogUtil.v(TAG, "---onContinueBtnClick---" + mLoadStatusView.getStatus());
-        switch (mLoadStatusView.getStatus()) {
+        AliLogUtil.v(TAG, "---onContinueBtnClick---"+ mLoadStatusView.getStatus());
+        switch (mLoadStatusView.getStatus()){
             case PlayerLoadStatusViewBase.STATUS_IDLE:
-                if (mOnIdleBtnListener != null) {
+                if(mOnIdleBtnListener != null) {
                     mOnIdleBtnListener.onIdleContinueBtnClick();
                 }
                 break;
@@ -751,18 +779,22 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
                 mAliyunVodPlayer.replay();
                 break;
             case PlayerLoadStatusViewBase.STATUS_MOBILE_NET:
-                prepareAsync(true);
+                if(mAliyunVodPlayer.getPlayerState() == IAliyunVodPlayer.PlayerState.Paused){
+                    mAliyunVodPlayer.resume();
+                    mBottomView.setPlayPauseStatus(true);
+                    mLoadStatusView.setHide();
+                }else {
+                    prepareAsync(true);
+                }
                 break;
             case PlayerLoadStatusViewBase.STATUS_FINISH:
                 mLoadStatusView.setLoading();
                 mAliyunVodPlayer.replay();
                 break;
             case PlayerLoadStatusViewBase.STATUS_PREPROCESS_ERROR:
-                if (mOnPreprocessBtnListener != null) {
+                if(mOnPreprocessBtnListener != null){
                     mOnPreprocessBtnListener.onPreContinueBtnClick();
                 }
-                break;
-            default:
                 break;
         }
     }
@@ -770,16 +802,16 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     @Override
     public void onCancelBtnClick() {
         AliLogUtil.v(TAG, "---onCancelBtnClick---");
-        switch (mLoadStatusView.getStatus()) {
+        switch (mLoadStatusView.getStatus()){
             case PlayerLoadStatusViewBase.STATUS_PREPROCESS_ERROR:
-                if (mOnPreprocessBtnListener != null) {
+                if(mOnPreprocessBtnListener != null){
                     mOnPreprocessBtnListener.onPreCancelBtnClick();
                 }
                 break;
             default:
                 Context context = getContext();
-                if (context instanceof Activity) {
-                    ((Activity) context).finish();
+                if(context instanceof Activity) {
+                    ((Activity)context).finish();
                 }
                 break;
         }
@@ -787,7 +819,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        if (fromUser) {
+        if(fromUser) {
             mBottomView.setCurrentText(progress);
         }
     }
@@ -801,10 +833,13 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-        AliLogUtil.v(TAG, "---onStopTrackingTouch---");
+        AliLogUtil.v(TAG, "---onStopTrackingTouch---playerState = "+mAliyunVodPlayer.getPlayerState());
         mIsSeekBarTouching = false;
-        mIsSeekComplete = false;
-        mAliyunVodPlayer.seekTo(seekBar.getProgress());
+        IAliyunVodPlayer.PlayerState playerState = mAliyunVodPlayer.getPlayerState();
+        if(playerState == IAliyunVodPlayer.PlayerState.Started || playerState == IAliyunVodPlayer.PlayerState.Paused || playerState == IAliyunVodPlayer.PlayerState.Prepared) {
+            mIsSeekComplete = false;
+            mAliyunVodPlayer.seekTo(seekBar.getProgress());
+        }
         delayHideControlView();
     }
 
@@ -816,13 +851,13 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onPrepared() {
-        AliLogUtil.v(TAG, "---onPrepared---" + mAliyunVodPlayer.getCurrentQuality() + ", " + mAliyunVodPlayer.getPlayerState());
+        AliLogUtil.v(TAG, "---onPrepared---" + mAliyunVodPlayer.getCurrentQuality()+", "+mAliyunVodPlayer.getPlayerState());
         //可设置播放时期望的清晰度。阿里云默认从高到低选择清晰度
         //mAliyunVodPlayer.changeQuality(IAliyunVodPlayer.QualityValue.QUALITY_LOW);
 
         //seekTo
-        if (mCurrentPosition > 0) {
-            if (mCurrentPosition > mAliyunVodPlayer.getDuration()) {
+        if(mCurrentPosition > 0) {
+            if(mCurrentPosition > mAliyunVodPlayer.getDuration()){
                 mCurrentPosition = mAliyunVodPlayer.getDuration();
             }
             mAliyunVodPlayer.seekTo((int) mCurrentPosition);
@@ -837,6 +872,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
             showControlView();
         }
         mAutoCount = 0;
+        mIsPrepareAsyncSuccess = true;
     }
 
     @Override
@@ -848,12 +884,6 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         showControlView();
         delayHideControlView();
         startHeart();
-        //回调的时候可能已经进入onPause，所以需要暂停
-        if (mIsPaused) {
-            AliLogUtil.v(TAG, "---onFirstFrameStart---pause " + mAliyunVodPlayer.getPlayerState());
-            mAliyunVodPlayer.pause();
-        }
-        mAutoCount = 0;
     }
 
     @Override
@@ -861,9 +891,9 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         //AliLogUtil.v(TAG, "---onLoadStart---"+mLoadStatusView.getStatus());
         mLoadProgress = 0;
         //以下为了不让两个界面重叠
-        if (mLoadStatusView.getStatus() != PlayerLoadStatusViewBase.STATUS_HIDE) {
+        if(mLoadStatusView.getStatus() != PlayerLoadStatusViewBase.STATUS_HIDE){
             mLoadProgressTextView.setVisibility(GONE);
-        } else {
+        }else {
             mLoadProgressTextView.setVisibility(VISIBLE);
             mLoadProgressTextView.setText(StringUtil.format(getContext(), R.string.player_loading_text, mLoadProgress));
         }
@@ -879,18 +909,18 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     @Override
     public void onLoadProgress(int i) {
         //AliLogUtil.v(TAG, "---onLoadProgress--- "+i+", "+mLoadStatusView.getStatus());
-        if (mLoadProgress == i) {
-            if (mLoadStatusView.getStatus() != PlayerLoadStatusViewBase.STATUS_HIDE) {
+        if(mLoadProgress == i){
+            if(mLoadStatusView.getStatus() != PlayerLoadStatusViewBase.STATUS_HIDE){
                 mLoadProgressTextView.setVisibility(GONE);
-            } else {
+            }else {
                 mLoadProgressTextView.setVisibility(VISIBLE);
                 //mLoadProgressTextView.setText(StringUtil.format(getContext(), R.string.player_loading_text, mLoadProgress));
             }
-        } else {
+        }else{
             mLoadProgress = i;
-            if (mLoadStatusView.getStatus() != PlayerLoadStatusViewBase.STATUS_HIDE) {
+            if(mLoadStatusView.getStatus() != PlayerLoadStatusViewBase.STATUS_HIDE){
                 mLoadProgressTextView.setVisibility(GONE);
-            } else {
+            }else {
                 mLoadProgressTextView.setVisibility(VISIBLE);
                 mLoadProgressTextView.setText(StringUtil.format(getContext(), R.string.player_loading_text, mLoadProgress));
             }
@@ -900,42 +930,40 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     @Override
     public void onCompletion() {
         AliLogUtil.v(TAG, "---onCompletion---");
-        //播放完有可能没回调onSeekComplete
-        mIsSeekComplete = true;
+        mIsSeekComplete = true;//播放完有可能没回调onSeekComplete
         mLoadStatusView.setFinish();
         stopHeart();
         stopHideControlView();
         setPlayProgressInfo();
         hideControlView();
-        if (mOnPlayCompleteListener != null) {
+        if(mOnPlayCompleteListener != null){
             mOnPlayCompleteListener.onPlayCompleteListener();
         }
     }
 
     @Override
     public void onChangeQualitySuccess(String s) {
-        AliLogUtil.v(TAG, "---onChangeQualitySuccess---" + s);
+        AliLogUtil.v(TAG, "---onChangeQualitySuccess---"+s);
     }
 
     @Override
     public void onChangeQualityFail(int i, String s) {
-        AliLogUtil.v(TAG, "---onChangeQualityFail---" + i + ", " + s);
+        AliLogUtil.v(TAG, "---onChangeQualityFail---"+i+", "+s);
     }
 
     @Override
     public void onTimeExpiredError() {
         AliLogUtil.v(TAG, "---onTimeExpiredError---");
-        if (!TextUtils.isEmpty(mVid)) {
-            //需要置为null，才能重新获取vidsts来播放
-            mVidSts = null;
+        if(!TextUtils.isEmpty(mVid)) {
+            mVidSts = null;//需要置为null，才能重新获取vidsts来播放
             prepareAsync(false);
         }
     }
 
     @Override
     public void onError(int i, int i1, String s) {
-        AliLogUtil.v(TAG, "---onError---" + i + ", " + i1 + ", " + s);
-        if (i == 4002) {
+        AliLogUtil.v(TAG, "---onError---"+i+", "+i1+", "+s);
+        if(i == 4002){
             //4002是鉴权信息过期，跟onTimeExpiredError重复，所以不处理
             return;
         }
@@ -945,73 +973,79 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         }
 
         mCurrentPosition = mAliyunVodPlayer.getCurrentPosition();
-        AliLogUtil.v(TAG, "---onError---mCurrentPosition = " + mCurrentPosition);
+        AliLogUtil.v(TAG, "---onError---mCurrentPosition = "+mCurrentPosition);
         mAliyunVodPlayer.stop();
         AliLogUtil.v(TAG, "---onError---stop");
         stopHeart();
         hideControlView();
-        if (NetWatchdog.hasNet(getContext())) {
-            AliLogUtil.v(TAG, "---onError---mAutoCount = " + mAutoCount);
+        if(NetWatchdog.hasNet(getContext())){
+            AliLogUtil.v(TAG, "---onError---mAutoCount = "+mAutoCount);
             mAutoCount++;
-            if (mAutoCount <= AUTO_COUNT_MAX) {
+            if(mAutoCount <= AUTO_COUNT_MAX){
                 mLoadStatusView.setLoading();
-                mAliyunVodPlayer.seekTo((int) mCurrentPosition);
-                mAliyunVodPlayer.replay();
+                if(mIsPrepareAsyncSuccess) {
+                    mAliyunVodPlayer.seekTo((int) mCurrentPosition);
+                    mAliyunVodPlayer.replay();
+                }else{
+                    prepareAsync(false);
+                }
             }else {
                 mAutoCount = 0;
                 if(i == AliyunErrorCode.ALIVC_ERR_INVALID_INPUTFILE.getCode()){
                     mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
                             R.string.player_load_status_view_text_error_code_msg, i,
                             getResources().getString(R.string.player_error_4003)));
-                } else if (i == AliyunErrorCode.ALIVC_ERROR_LOADING_TIMEOUT.getCode()) {
+                }else if(i == AliyunErrorCode.ALIVC_ERROR_LOADING_TIMEOUT.getCode()){
                     mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
                             R.string.player_load_status_view_text_error_code_msg, i,
                             getResources().getString(R.string.player_error_4008)));
-                } else if (i == AliyunErrorCode.ALIVC_ERR_DATA_ERROR.getCode()) {
+                }else if(i == AliyunErrorCode.ALIVC_ERR_DATA_ERROR.getCode()){
                     mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
                             R.string.player_load_status_view_text_error_code_msg, i,
                             getResources().getString(R.string.player_error_4501)));
-                } else if (i == AliyunErrorCode.ALIVC_ERR_QEQUEST_SAAS_SERVER_ERROR.getCode()) {
+                }else if(i == AliyunErrorCode.ALIVC_ERR_QEQUEST_SAAS_SERVER_ERROR.getCode()){
                     mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
                             R.string.player_load_status_view_text_error_code_msg, i,
                             getResources().getString(R.string.player_error_4502)));
-                } else {
+                }else{
                     mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
                             R.string.player_load_status_view_text_error_code, i));
                 }
             }
-        } else {
+        }else{
             AliLogUtil.v(TAG, "---onError---no net");
             mLoadStatusView.setErrorOther(getResources().getString(R.string.player_load_status_view_text_error_no_net));
         }
+
         AliLogUtil.v(TAG, "---onError---end");
-        if (!TextUtils.isEmpty(mlocalPath)) {
+        /*if(!TextUtils.isEmpty(mlocalPath)){
             //本地播放
 
-        } else if (!TextUtils.isEmpty(mVid)) {
+        }else if(!TextUtils.isEmpty(mVid)){
             //vidsts播放
 
-        } else if (!TextUtils.isEmpty(mUrl)) {
+        }else if(!TextUtils.isEmpty(mUrl)){
             //在线url播放
 
-        }
-        resetState();
+        }*/
     }
 
     @Override
     public void onWifiTo4G() {
         AliLogUtil.v(TAG, "---onWifiTo4G---");
         //vidsts点播方式需要提醒，URL在线播放方式也需要提醒
-        if (!TextUtils.isEmpty(mVid) || !TextUtils.isEmpty(mUrl)) {
+        if(!TextUtils.isEmpty(mVid) || !TextUtils.isEmpty(mUrl)) {
             mAliyunVodPlayer.pause();
+            mBottomView.setPlayPauseStatus(false);
             mLoadStatusView.setMobileNet();
+            hideControlView();
         }
     }
 
     @Override
     public void on4GToWifi() {
         AliLogUtil.v(TAG, "---on4GToWifi---");
-        if (mLoadStatusView.getStatus() == PlayerLoadStatusViewBase.STATUS_MOBILE_NET) {
+        if(mLoadStatusView != null && mLoadStatusView.getStatus() == PlayerLoadStatusViewBase.STATUS_MOBILE_NET){
             mLoadStatusView.setHide();
             stopHideControlView();
             hideControlView();
@@ -1030,14 +1064,13 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     }
 
     //播放结束接听接口
-    public interface OnPlayCompleteListener {
+    public interface OnPlayCompleteListener{
         void onPlayCompleteListener();
     }
 
     //预处理界面按钮点击监听接口
     public interface OnPreprocessBtnListener {
         void onPreContinueBtnClick();
-
         void onPreCancelBtnClick();
     }
 

@@ -281,7 +281,7 @@ public class FileUtils {
         BufferedWriter out = null;
         try {
             out = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(file, true)));
+                    new FileOutputStream(file, true), "UTF-8"));
             out.write(content);
             out.flush();
         } catch (Exception e) {
@@ -437,51 +437,59 @@ public class FileUtils {
         return availableBlocks * blockSize;
     }
 
+    /**
+     * @param oldPath 支持文件夹和文件
+     * @param newPath 需要和oldPath对应。
+     */
     public static boolean copyAssetsToSD(Context context, String oldPath, String newPath) {
-        Log.e(TAG, "copyAssets: start.newPath = " + newPath);
+        Log.e(TAG, "copyAssets: newPath = " + newPath);
         // 获取assets目录下的所有文件及目录名
-        File file = new File(newPath);
-        if (file.isDirectory()) {
-            Log.e(TAG, "copyAssets: isDirectory.");
+        try {
+            String[] fileNames = context.getAssets().list(oldPath);
             // 如果是目录
-            if (!file.mkdirs()) {
-                return false;
-            }
-            // 如果文件夹不存在，则递归
-            String[] fileNames = file.list();
-            for (String fileName : fileNames) {
-                copyAssetsToSD(context, oldPath + "/" + fileName, newPath + "/" + fileName);
-            }
-        } else {
-            // 如果是文件
-            Log.e(TAG, "copyAssets: is file.");
-            InputStream is = null;
-            FileOutputStream fos = null;
-            try {
-                is = context.getAssets().open(oldPath);
-                if (!createOrExistsDir(file.getParentFile())) {
-                    Log.e(TAG, "copyAssets: fail. can not create dir, dir = " + file.getParent());
+            if (fileNames.length > 0) {
+                // 如果文件夹不存在，则递归
+                File newFile = new File(newPath);
+                if (!newFile.exists() && !newFile.mkdirs()) {
                     return false;
                 }
-                fos = new FileOutputStream(file);
-                byte[] buffer = new byte[1024];
-                int byteCount = 0;
-                while ((byteCount = is.read(buffer)) != -1) {
-                    // 循环从输入流读取
-                    // buffer字节
-                    fos.write(buffer, 0, byteCount);
-                    // 将读取的输入流写入到输出流
+                for (String fileName : fileNames) {
+                    copyAssetsToSD(context, oldPath + File.separator + fileName,
+                            newPath + File.separator + fileName);
                 }
-                // 刷新缓冲区
-                fos.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.e(TAG, "copyAssets: e: " + e.toString());
-                return false;
-            } finally {
-                closeIO(is);
-                closeIO(fos);
+            } else {
+                // 如果是文件
+                Log.e(TAG, "copyAssets: is file.");
+                InputStream is = null;
+                FileOutputStream fos = null;
+                File file = new File(newPath);
+                try {
+                    is = context.getAssets().open(oldPath);
+                    if (!createOrExistsDir(file.getParentFile())) {
+                        Log.e(TAG, "copyAssets: fail. can not create dir, dir = " + file.getParent());
+                        return false;
+                    }
+                    fos = new FileOutputStream(file);
+                    byte[] buffer = new byte[1024];
+                    int byteCount = 0;
+                    while ((byteCount = is.read(buffer)) != -1) {
+                        // 循环从输入流读取
+                        fos.write(buffer, 0, byteCount);
+                    }
+                    // 刷新缓冲区
+                    fos.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "copyAssets: e: " + e.toString());
+                    return false;
+                } finally {
+                    closeIO(is);
+                    closeIO(fos);
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
         }
         Log.e(TAG, "copyAssets: end.");
         return true;
@@ -494,6 +502,35 @@ public class FileUtils {
             return false;
         }
         return file.renameTo(new File(newPath));
+    }
+
+    /**
+     * 创建.nomedia文件在指定目录下,
+     * Android通过.nomedia文件禁止多媒体库扫描指定文件夹下的多媒体文件
+     */
+    public static boolean createNoMediaFile(String dir) {
+        String path = dir;
+        if (!TextUtils.isEmpty(path) && !path.endsWith(File.separator)) {
+            path += File.separator;
+        }
+        path += ".nomedia";
+        File file = new File(path);
+        if (!file.exists()) {
+            File parentFile = file.getParentFile();
+            if (!parentFile.exists()) {
+                if (!parentFile.mkdirs()) {
+                    Log.e(TAG, "createNoMediaFile: create dir fail. dir = " + parentFile.getAbsolutePath());
+                    return false;
+                }
+            }
+            try {
+                return file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return true;
     }
 
 }

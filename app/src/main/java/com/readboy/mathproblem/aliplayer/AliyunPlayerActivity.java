@@ -16,7 +16,6 @@ import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.RemoteControlClient;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
@@ -29,7 +28,7 @@ import android.os.RemoteException;
 import android.provider.MediaStore.Video;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.telephony.PhoneStateListener;
@@ -44,6 +43,7 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -52,8 +52,8 @@ import android.widget.Toast;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.readboy.aliyunplayerlib.view.AliPlayerView;
 import com.readboy.aliyunplayerlib.view.PlayerCompleteViewDefault;
-import com.readboy.aliyunplayerlib.view.PlayerIdleViewBase;
 import com.readboy.mathproblem.R;
+import com.readboy.mathproblem.activity.BaseActivity;
 import com.readboy.mathproblem.activity.StudyActivity;
 import com.readboy.mathproblem.application.MathApplication;
 import com.readboy.mathproblem.application.SubjectType;
@@ -61,13 +61,11 @@ import com.readboy.mathproblem.bean.ProjectParcelable;
 import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
 import com.readboy.mathproblem.http.response.VideoInfoEntity;
-import com.readboy.mathproblem.util.FileUtils;
 import com.readboy.mathproblem.util.Lists;
 import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.ToastUtils;
 import com.readboy.mathproblem.video.db.VideoDatabaseInfo;
 import com.readboy.mathproblem.video.db.VideoInfoDatabaseProxy;
-import com.readboy.mathproblem.video.dreamplayer.RequestPermissionsActivity;
 import com.readboy.mathproblem.video.movie.MediaButtonIntentReceiver;
 import com.readboy.mathproblem.video.movie.VideoExtraNames;
 import com.readboy.mathproblem.video.movie.VideoMessage;
@@ -87,12 +85,14 @@ import com.readboy.recyclerview.base.ViewHolder;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static com.readboy.mathproblem.video.proxy.MovieFile.saveVideoInfo;
 import static com.readboy.mathproblem.video.tools.NetWorkAnalyst.getNetworkType;
 
-public class AliyunPlayerActivity extends FragmentActivity implements VideoExtraNames, OnClickListener,
+/**
+ * TODO: 退到后台，关闭权限，怎么保存数据，恢复数据，待处理，解决。
+ */
+public class AliyunPlayerActivity extends BaseActivity implements VideoExtraNames, OnClickListener,
         PlayerLoadStatusView.OnCompletedListener {
 
     public static final String ACTION_APPSWITCH = "com.readboy.switchapp";
@@ -105,12 +105,10 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
 
     public static boolean onStopped = false;
 
-    boolean isInit = false;
     private boolean mIsPlayUrl = true;
     private boolean mInHiding = false;
     private boolean mInShowing = false;
     private boolean mRmvbPauseByUser;
-    private boolean mPlayOnce = false;
     private boolean mPlayPrepared = false;
     private boolean mButtonCanClick = true;
     private boolean mUserThinkNetworkAvailable = true;
@@ -128,8 +126,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
     private boolean mNetWorkSpeedShow = true;
 
     private int mIndex = 0;
-    private static final int HIDE_CONTROLLER_DELAY_DURATION = 10_000;
-    private long mDuration = 0;
+    private static final int HIDE_CONTROLLER_DELAY_DURATION = 8_000;
     private int mNetworkType = ConnectivityManager.TYPE_WIFI;
     private int sScreenLeft = 0;
     private int sScreenRight = 0;
@@ -155,6 +152,10 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
      */
     private RecyclerView mVideoRv;
     private CommonAdapter mVideoAdapter;
+    /**
+     * 视频列表显隐开关, checked = true, 代表显示
+     */
+    private CheckBox mVideoListVisibilityCb;
 
     /**
      * 视频是否 正在重新缓存中
@@ -165,7 +166,8 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
     AlertDialog mNetworkDialog = null;
 
     private AudioManager audioManager;
-    private RemoteControlClient mRemoteControlClient = null;
+    private MediaSessionCompat mMediaSession;
+    private MediaSessionCallback mMediaSessionCallback;
 
     private MyTrafficStatus mTrafficStatus = null;
 
@@ -342,7 +344,11 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
             if (mInShowing) {
                 mTopView.setVisibility(View.VISIBLE);
                 mBottomView.setVisibility(View.VISIBLE);
-                mVideoRv.setVisibility(View.VISIBLE);
+                Log.e(TAG, "onAnimationStart: checked = " + mVideoListVisibilityCb.isChecked());
+                //可能mVideoRv已经被用户隐藏了。
+                if (mVideoListVisibilityCb.isChecked()) {
+                    mVideoRv.setVisibility(View.VISIBLE);
+                }
             }
         }
 
@@ -353,6 +359,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
                 mBottomView.setVisibility(View.GONE);
                 mVideoRv.setVisibility(View.GONE);
                 mInHiding = false;
+                Log.e(TAG, "onAnimationEnd: checked = " + mVideoListVisibilityCb.isChecked());
             }
             if (mInShowing) {
                 hideControllerDelayed();
@@ -370,38 +377,44 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
     public void onCreate(Bundle savedInstanceState) {
         Log.e(TAG, "---- onCreate start Build.VERSION.SDK_INT: " + Build.VERSION.SDK_INT);
         super.onCreate(savedInstanceState);
-        boolean permission = false;
-        if (RequestPermissionsActivity.requiredPermission(this)) {
-            Log.e(TAG, "onCreate: required permission.");
-            finish();
-        } else {
-            Log.e(TAG, "onCreate: permission true.");
-            permission = true;
-        }
+        Log.e(TAG, "onCreate() called with: savedInstanceState = " + savedInstanceState + "");
 
         initWindow();
-//		Vitamio.isInitialized(getApplicationContext());
-        isInit = true;
-
-        mRemoteControlClient = MediaButtonIntentReceiver.registerMediaButton(this);
 
         setContentView(R.layout.activity_aliyun_player);
         registerReceiver();
         assignView();
+
+        //播放控制相关的，已经集成到AliPlayerView里
 //        initClickEvent();
 
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        if (permission) {
-            if (!parseIntent(getIntent())) {
-                return;
-            }
-            initMovieActivity();
-            mHandler.sendEmptyMessage(VideoMessage.READY);
+        if (!parseIntent(getIntent())) {
+            return;
         }
 
         TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         tm.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
 
+//        initMediaSession();
+
+        parseBundle(savedInstanceState);
+
+        if (!needRequestPermissions()) {
+            updatePlay();
+        }
+
+    }
+
+    private void parseBundle(Bundle saveBundle) {
+        if (saveBundle != null) {
+            Log.e(TAG, "parseBundle: index = " + saveBundle.getInt(EXTRA_INDEX, mIndex) +
+                    ", position = " + saveBundle.getLong(EXTRA_SEEK_POSITION, mPosition));
+            mIndex = saveBundle.getInt(EXTRA_INDEX, mIndex);
+            mPosition = saveBundle.getLong(EXTRA_SEEK_POSITION, mPosition);
+        } else {
+            Log.e(TAG, "parseBundle: bundle = null.");
+        }
     }
 
     private void initWindow() {
@@ -464,7 +477,8 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         }
     }
 
-    private void assignView() {
+    @Override
+    protected void assignView() {
         mTopView = new PlayerTopView(this);
         mTopView.setUnitOnClickListener(this);
         mBottomView = new PlayerBottomView(this);
@@ -486,17 +500,11 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
 
         mGestureController = (ImageView) findViewById(R.id.voice_or_bright);
         percentTextView = (TextView) findViewById(R.id.percent);
-
+        mVideoListVisibilityCb = (CheckBox) findViewById(R.id.player_video_list_switch);
         initRecyclerView();
     }
 
     private void initRecyclerView() {
-//        mVideoListParent = (LinearLayout) findViewById(R.id.video_list_parent);
-//        LayoutTransition transition = new LayoutTransition();
-//        transition.setDuration(200);
-//        transition.setAnimator(LayoutTransition.APPEARING, null);
-//        transition.setAnimator(LayoutTransition.CHANGE_DISAPPEARING, null);
-//        mVideoListParent.setLayoutTransition(transition);
         mVideoRv = (RecyclerView) findViewById(R.id.small_player_video_list);
         mVideoRv.setLayoutManager(new LinearLayoutManager(this));
         mVideoRv.addItemDecoration(new LineItemDecoration(LinearLayout.VERTICAL, 1, Color.GRAY));
@@ -556,6 +564,21 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         }
     }
 
+    private void initMediaSession() {
+        mMediaSession = new MediaSessionCompat(this, TAG);
+        mMediaSessionCallback = new MediaSessionCallback();
+        mMediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
+                | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mMediaSession.setCallback(mMediaSessionCallback);
+    }
+
+    private void releaseMediaSession() {
+        mMediaSession.setActive(false);
+        mMediaSession.setCallback(null);
+        mMediaSessionCallback = null;
+        mMediaSession.release();
+    }
+
     /**
      * 读书郎定制系统无需这样，只需在AndroidManifest对应Activity
      * 添加<action android:name="android.readboy.FLAG_HIDE_SYSTEMBAR" />
@@ -576,7 +599,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         //TODO 关闭权限重新进入，需要重新初始化。
-        Log.d(TAG, "---- onNewIntent intent: " + intent);
+        Log.e(TAG, "---- onNewIntent intent: " + intent);
         if (intent != null) {
             String newPath = intent.getStringExtra("path");
             if (TextUtils.isEmpty(newPath)) {
@@ -608,7 +631,6 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
             if (!TextUtils.isEmpty(newPath)) {
                 Log.d(TAG, "---- onNewIntent newPath: " + newPath);
                 parseIntent(intent);
-                initMovieActivity();
                 mRmvbPauseByUser = false;
                 mHandler.sendEmptyMessage(VideoMessage.READY);
                 cancelAutoHide();
@@ -645,6 +667,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         Log.e(TAG, "onResume: ");
         onStopped = false;
 
+//        mMediaSession.setActive(true);
 //        keepScreenOn();
 
         hideControllerDelayed();
@@ -670,18 +693,21 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
 //                showProgressDialog();
         }
         Log.d(TAG, "-------- onResume ");
+
+        Log.e(TAG, "onResume: mIndex = " + getIntent().getIntExtra(EXTRA_INDEX, -1));
+        Log.e(TAG, "onResume: position = " + getIntent().getLongExtra(EXTRA_SEEK_POSITION, -1));
     }
 
     @Override
     public void onPause() {
         super.onPause();
         Log.e(TAG, "onPause: ");
+//        mMediaSession.setActive(false);
         cancelAutoHide();
         onStopped = true;
         if (isSaveState()) {
             mPosition = (int) Math.max(0, mPlayerView.getCurrentPosition() - 1200);
             Log.e(TAG, "onPause: mPosition = " + mPosition);
-            mDuration = mPlayerView.getDuration();
         }
 
         videoViewPause();
@@ -701,6 +727,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         if (mIsPlayUrl) {
             mTrafficStatus = null;
         }
+//        saveData();
     }
 
     @Override
@@ -709,21 +736,17 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
 
         Log.e(TAG, "-------- onDestroy");
 
-        if (isInit) {
-            Log.e(TAG, "-------- unregisterReceiver(mReceiver)");
-            unregisterReceiver();
-        }
+        Log.e(TAG, "-------- unregisterReceiver(mReceiver)");
+        unregisterReceiver();
 
         dismissProgressDialog();
         cancelAutoHide();
 
+//        releaseMediaSession();
+
         if (mNetworkDialog != null) {
             mNetworkDialog.dismiss();
             mNetworkDialog = null;
-        }
-
-        if (mRemoteControlClient != null) {
-            MediaButtonIntentReceiver.unregisterMediaButton(this, mRemoteControlClient);
         }
 
         TelephonyManager manager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
@@ -764,6 +787,20 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         Log.e(TAG, "onSaveInstanceState: ");
+        Log.e(TAG, "onSaveInstanceState: seekPosition = " + mPlayerView.getCurrentPosition() + ", index = " + mIndex);
+        outState.putInt(EXTRA_INDEX, mIndex);
+        outState.putLong(EXTRA_SEEK_POSITION, mPlayerView.getCurrentPosition());
+    }
+
+    @Override
+    protected void onRequestPermissionsSuccess() {
+        super.onRequestPermissionsSuccess();
+        updatePlay();
+    }
+
+    @Override
+    protected void onRequestPermissionsFail() {
+        super.onRequestPermissionsFail();
     }
 
     private void keepScreenOn() {
@@ -865,6 +902,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
                 replay();
                 break;
             case R.id.player_video_list_switch:
+                Log.e(TAG, "onClick: video switch checked = " + mVideoListVisibilityCb.isChecked());
                 if (mVideoRv.getVisibility() == View.VISIBLE) {
                     hideVideoList();
                 } else {
@@ -970,25 +1008,30 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
                 //显示
                 Animation ani1 = AnimationUtils.loadAnimation(this, R.anim.push_down);
                 Animation ani2 = AnimationUtils.loadAnimation(this, R.anim.push_up);
-                Animation ani3 = AnimationUtils.loadAnimation(this, R.anim.push_right);
                 ani1.setAnimationListener(mDismissAnimListener);
                 mInShowing = true;
                 mTopView.startAnimation(ani1);
                 mBottomView.startAnimation(ani2);
-                mVideoRv.startAnimation(ani3);
+                Log.e(TAG, "showController: checked = " + mVideoListVisibilityCb.isChecked());
+                if (mVideoListVisibilityCb.isChecked()) {
+                    Animation ani3 = AnimationUtils.loadAnimation(this, R.anim.push_right);
+                    mVideoRv.startAnimation(ani3);
+                }
             }
         } else {
             if (!mInShowing && !mInHiding && isControllerShowing()) {
                 //隐藏
-                mVideoRv.setVisibility(View.GONE);
+//                mVideoRv.setVisibility(View.GONE);
                 Animation ani1 = AnimationUtils.loadAnimation(this, R.anim.pull_up);
                 Animation ani2 = AnimationUtils.loadAnimation(this, R.anim.pull_down);
-                Animation animation3 = AnimationUtils.loadAnimation(this, R.anim.pull_right);
                 ani1.setAnimationListener(mDismissAnimListener);
                 mInHiding = true;
                 mTopView.startAnimation(ani1);
                 mBottomView.startAnimation(ani2);
-                mVideoRv.startAnimation(animation3);
+                if (mVideoRv.getVisibility() == View.VISIBLE) {
+                    Animation animation3 = AnimationUtils.loadAnimation(this, R.anim.pull_right);
+                    mVideoRv.startAnimation(animation3);
+                }
 
             }
         }
@@ -1347,7 +1390,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         }
         mPosition = intent.getLongExtra(VideoExtraNames.EXTRA_SEEK_POSITION, 0);
         mIndex = intent.getIntExtra(VideoExtraNames.EXTRA_INDEX, 0);
-
+        Log.e(TAG, "parseIntent: position = " + mPosition + ", index = " + mIndex);
         parseVideoInfoList(intent);
         parsePathList(intent);
 
@@ -1401,7 +1444,6 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
             }
             pathList.add(mPath);
             Log.e(TAG, "mPath1=" + mPath);
-            mPlayOnce = true;
             result = true;
         }
         Log.e(TAG, "parsePathList: " + pathList.size());
@@ -1585,11 +1627,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
      * 其他则暂停。
      */
     private void videoViewPauseOrStop() {
-        if (mPlayerView.isPreparing()) {
-            videoViewStop();
-        } else {
-            videoViewPause();
-        }
+        videoViewPause();
     }
 
     private void videoViewPause() {
@@ -1604,7 +1642,7 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         Log.e(TAG, "videoViewPause: ");
         mRmvbPauseByUser = true;
 
-        mPlayerView.onStop();
+        mPlayerView.onPause();
         hideControllerDelayed();
         abandonAudioFocus();
     }
@@ -1629,11 +1667,9 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         if (!onStopped) {
             Log.e(TAG, "finishMyself: mPosition = " + mPosition + ", getCurrentPosition = " + mPlayerView.getCurrentPosition());
             mPosition = (int) mPlayerView.getCurrentPosition();
-            mDuration = mPlayerView.getDuration();
             Log.e(TAG, "finishMyself: position = " + mPosition + ", mIndex = " + mIndex);
             intent.putExtra(EXTRA_VIDEO_RESOURCE, mVideoResource);
             intent.putExtra(EXTRA_SEEK_POSITION, mPosition);
-            intent.putExtra(EXTRA_DURATION, mDuration);
             intent.putExtra(EXTRA_INDEX, mIndex);
         }
         setResult(RESULT_OK, intent);
@@ -1664,9 +1700,6 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
         Log.e(TAG, "gotoStudyActivity: parcelable = " + parcelable.toString());
         startActivity(intent);
         finish();
-    }
-
-    private void initMovieActivity() {
     }
 
     private void gotoExerciseActivity() {
@@ -1761,7 +1794,6 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
 
     private void updatePosition() {
         mPosition = (int) mPlayerView.getCurrentPosition();
-        mDuration = mPlayerView.getDuration();
     }
 
     /**
@@ -1784,5 +1816,31 @@ public class AliyunPlayerActivity extends FragmentActivity implements VideoExtra
                 && state != IAliyunVodPlayer.PlayerState.Error;
     }
 
+    private class MediaSessionCallback extends MediaSessionCompat.Callback {
+
+        @Override
+        public void onPause() {
+            super.onPause();
+            Log.e(TAG, "onPause: ");
+        }
+
+        @Override
+        public void onPlay() {
+            super.onPlay();
+            Log.e(TAG, "onPlay: ");
+        }
+
+        @Override
+        public void onSkipToPrevious() {
+            super.onSkipToPrevious();
+            Log.e(TAG, "onSkipToPrevious() called");
+        }
+
+        @Override
+        public void onSkipToNext() {
+            super.onSkipToNext();
+            Log.e(TAG, "onSkipToNext: ");
+        }
+    }
 
 }

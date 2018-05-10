@@ -221,8 +221,7 @@ public class LogUtil {
         if (isWriteFile) {
             try {
                 StringBuilder builder = new StringBuilder();
-                builder
-                        .append(System.currentTimeMillis())
+                builder.append(System.currentTimeMillis())
                         .append("\n")
                         .append(tag)
                         .append("-")

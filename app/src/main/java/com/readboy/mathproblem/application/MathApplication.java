@@ -6,13 +6,14 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.multidex.MultiDex;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.alivc.player.AliVcMediaPlayer;
 
-import com.alivc.player.TBMPlayer;
 import com.aliyun.vodplayer.downloader.AliyunDownloadConfig;
 import com.aliyun.vodplayer.downloader.AliyunDownloadManager;
+import com.readboy.aliyunplayerlib.utils.AliLogUtil;
 import com.readboy.aliyunplayerlib.utils.AppUtil;
 import com.readboy.aliyunplayerlib.utils.DataSnUtil;
 import com.readboy.auth.Auth;
@@ -29,6 +30,7 @@ import com.squareup.picasso.Picasso;
 import com.tencent.bugly.crashreport.CrashReport;
 
 import java.io.File;
+import java.io.IOException;
 
 import okhttp3.OkHttpClient;
 
@@ -74,10 +76,11 @@ public class MathApplication extends MyApplication {
         String uri = "test";
 //        initAuthManager(uri);
 
-        File file = new File(Constants.VIDEO_PATH);
-        if (file.exists()){
-            asyncDeleteOldVideo();
-        }
+        //不对旧视频处理，4.1.17版本之前的视频无法使用阿里云播放器播放
+//        File file = new File(Constants.VIDEO_PATH);
+//        if (file.exists()){
+//            asyncDeleteOldVideo();
+//        }
 
     }
 
@@ -85,7 +88,7 @@ public class MathApplication extends MyApplication {
         AliVcMediaPlayer.init(getApplicationContext());
 //        VcPlayerLog.enableLog();
 //        AVMPlayer.enableNativeLog();
-//        AliLogUtil.enableLog();
+        AliLogUtil.enableLog();
         //设置AppSecret，签名用，跟大数据部申请。必须
         DataSnUtil.setAppSecret("be916db6f0771c9053e5f44106c358b4");
         //名师辅导班的AppSecret，其他应用一定要改成自己的
@@ -93,7 +96,6 @@ public class MathApplication extends MyApplication {
         //设置测试包名，此处只为了方便demo测试才进行设置，其他应用不需设置，因为默认会找到应用的包名。不需
         AppUtil.setTestPackageName("com.readboy.mathproblem");
 //        AppUtil.setTestPackageName("com.dream.tutorsplan");
-
 
     }
 
@@ -149,26 +151,39 @@ public class MathApplication extends MyApplication {
 //        copySecretFile(this);
         //设置保存密码。此密码如果更换，则之前保存的视频无法播放
         AliyunDownloadConfig config = new AliyunDownloadConfig();
-        config.setSecretImagePath(Constants.ALIYUN_SECRET_IMAGE_PATH);
+        config.setSecretImagePath(Constants.getSecretImagePath(this));
 //        config.setDownloadPassword("123456789");
         //设置保存路径。请确保有SD卡访问权限。
-        config.setDownloadDir(Constants.ALIYUN_DOWNLOAD_DIR);
+        config.setDownloadDir(Constants.getDownloadPath(this));
         //设置同时下载个数
         config.setMaxNums(3);
 
         AliyunDownloadManager.getInstance(this).setDownloadConfig(config);
     }
 
+    public static void initFile(Context context) {
+        copySecretFile(context);
+        createNoMediaFile(context);
+    }
+
     public static void copySecretFile(Context context) {
-        File file = new File(Constants.ALIYUN_SECRET_IMAGE_PATH);
+        File file = new File(Constants.getSecretImagePath(context));
         if (!file.exists()) {
-            boolean result = FileUtils.copyAssetsToSD(context, "encryptedApp.dat", file.getAbsolutePath());
+            boolean result = FileUtils.copyAssetsToSD(context, Constants.ALIYUN_SECRET_IMAGE_NAME,
+                    file.getAbsolutePath());
             Log.e(TAG, "copySecretFile: result = " + result);
         }
     }
 
-    private void asyncDeleteOldVideo(){
-        new AsyncTask<Void, Void, Boolean>(){
+    public static void createNoMediaFile(Context context) {
+        File file = new File(Constants.getDownloadPath(context), ".nomedia");
+        if (!file.exists()) {
+            FileUtils.createNoMediaFile(file.getParent());
+        }
+    }
+
+    private void asyncDeleteOldVideo() {
+        new AsyncTask<Void, Void, Boolean>() {
 
             @Override
             protected Boolean doInBackground(Void... params) {
@@ -190,7 +205,6 @@ public class MathApplication extends MyApplication {
                 .downloader(new OkHttp3Downloader(client));
         Picasso.setSingletonInstance(builder.build());
     }
-
 
     public static boolean shouldUpdateCache(Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);

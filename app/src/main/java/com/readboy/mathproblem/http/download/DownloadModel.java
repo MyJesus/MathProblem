@@ -1,5 +1,7 @@
 package com.readboy.mathproblem.http.download;
 
+import android.util.Log;
+
 import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
 
 /**
@@ -8,6 +10,8 @@ import com.aliyun.vodplayer.downloader.AliyunDownloadMediaInfo;
  */
 
 public class DownloadModel {
+    private static final String TAG = "DownloadModel";
+
     private int taskId;
     private int videoId;
     private String fileName;
@@ -20,7 +24,7 @@ public class DownloadModel {
     public DownloadModel() {
     }
 
-    public DownloadModel(AliyunDownloadMediaInfo mediaInfo){
+    public DownloadModel(AliyunDownloadMediaInfo mediaInfo) {
         this.mediaInfo = mediaInfo;
         thumbnailUrl = mediaInfo.getCoverUrl();
         fileName = mediaInfo.getTitle();
@@ -83,7 +87,11 @@ public class DownloadModel {
     }
 
     public long getSoFar() {
-        return mediaInfo != null ? mediaInfo.getSize() * mediaInfo.getProgress() : 0;
+        if (mediaInfo == null || mediaInfo.getProgress() <= 0) {
+            return 0;
+        }
+        Log.e(TAG, "getSoFar: progress = " + mediaInfo.getProgress());
+        return (long) (mediaInfo.getSize() * 0.01F * mediaInfo.getProgress());
     }
 
     public String getThumbnailUrl() {
@@ -102,7 +110,7 @@ public class DownloadModel {
         this.mediaInfo = mediaInfo;
     }
 
-    public String getVid(){
+    public String getVid() {
         return mediaInfo.getVid();
     }
 

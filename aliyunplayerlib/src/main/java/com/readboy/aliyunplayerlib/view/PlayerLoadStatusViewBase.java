@@ -271,7 +271,7 @@ public abstract class PlayerLoadStatusViewBase extends FrameLayout implements Vi
         }
         if(mContinueBtnView != null) {
             mContinueBtnView.setVisibility(VISIBLE);
-            mContinueBtnView.setText(getResources().getString(R.string.player_load_status_view_btn_load));
+            mContinueBtnView.setText(getResources().getString(R.string.player_load_status_view_btn_continue));
         }
         if(mCancelBtnView != null) {
             mCancelBtnView.setVisibility(VISIBLE);

@@ -2,16 +2,19 @@ package com.readboy.mathproblem.exercise;
 
 import android.content.Context;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 
+import retrofit2.http.DELETE;
+
 /**
  * Created by oubin on 2017/9/25.
  * 类似ViewPager，只显示一个ItemView。
- * 扩展next, previous两个方法。
+ * 扩展next, previous两个方法, 参考{@link android.support.v7.widget.PagerSnapHelper}
  */
 
 public class PagerLayoutManager extends LinearLayoutManager {
@@ -19,12 +22,15 @@ public class PagerLayoutManager extends LinearLayoutManager {
 
     private int mCentralPosition = 0;
 
+    private OrientationHelper orientationHelper;
+
     public PagerLayoutManager(Context context) {
         super(context);
     }
 
     public PagerLayoutManager(Context context, int orientation, boolean reverseLayout) {
         super(context, orientation, reverseLayout);
+        orientationHelper = OrientationHelper.createOrientationHelper(this, orientation);
     }
 
     public PagerLayoutManager(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
@@ -106,20 +112,51 @@ public class PagerLayoutManager extends LinearLayoutManager {
     }
 
     private int findCentralPosition() {
-        View view = findCentralView();
+        View view = findCenterView();
         if (view == null) {
             return 0;
         } else {
-            return getPosition(findCentralView());
+            return getPosition(view);
         }
     }
 
+    @Deprecated
     private View findCentralView() {
         if (getOrientation() == LinearLayout.HORIZONTAL) {
             return findHorizontalCentralView();
         } else {
             return findVerticalCentralView();
         }
+    }
+
+    private View findCenterView(){
+        int childCount = getChildCount();
+        if (childCount == 0) {
+            return null;
+        }
+
+        View closestChild = null;
+        final int center;
+        if (getClipToPadding()) {
+            center = orientationHelper.getStartAfterPadding() + orientationHelper.getTotalSpace() / 2;
+        } else {
+            center = orientationHelper.getEnd() / 2;
+        }
+        int absClosest = Integer.MAX_VALUE;
+
+        for (int i = 0; i < childCount; i++) {
+            final View child = getChildAt(i);
+            int childCenter = orientationHelper.getDecoratedStart(child)
+                    + (orientationHelper.getDecoratedMeasurement(child) / 2);
+            int absDistance = Math.abs(childCenter - center);
+
+            /** if child center is closer than previous closest, set it as closest  **/
+            if (absDistance < absClosest) {
+                absClosest = absDistance;
+                closestChild = child;
+            }
+        }
+        return closestChild;
     }
 
     private View findHorizontalCentralView() {
@@ -132,8 +169,8 @@ public class PagerLayoutManager extends LinearLayoutManager {
             view = getChildAt(0);
         } else {
             view = getChildAt(count / 2 - 1);
-            int centralY = getHeight() / 2;
-            if (view != null && (view.getRight() > centralY)) {
+            int centralX = getWidth() / 2;
+            if (view != null && (view.getRight() > centralX)) {
                 return view;
             }
             view = getChildAt(count / 2);
@@ -159,6 +196,13 @@ public class PagerLayoutManager extends LinearLayoutManager {
             return view;
         }
         return getChildAt(count / 2);
+    }
+
+    private OrientationHelper getOrientationHelper() {
+        if (orientationHelper == null) {
+            orientationHelper = OrientationHelper.createOrientationHelper(this, getOrientation());
+        }
+        return orientationHelper;
     }
 
     private OnPositionChangeListener mPositionListener;
