@@ -89,7 +89,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     private View mMethodSelectedParent;
 
     /**
-     * 从0开始，但是数据请求时需要+1
+     * 从0开始，但是数据请求时需要+1，0代表一年级
      */
     private int mCurGrade;
     private ProjectEntityWrapper mProjectWrapper;
@@ -319,12 +319,14 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 //                AliyunDownloadManagerWrapper.getInstance().prepareDownload("7d4193bdcc5c467696bd7ea04ded4d91");
                 break;
             case R.id.problem_guide_normal:
-                changeSubjectType();
+//                changeSubjectType();
+                mSubjectType = SubjectType.guide;
                 updateSelectedBtn();
                 updateDataList();
                 break;
             case R.id.problem_method_normal:
-                changeSubjectType();
+//                changeSubjectType();
+                mSubjectType = SubjectType.method;
                 updateSelectedBtn();
                 updateDataList();
                 break;
@@ -344,14 +346,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         } else {
             mGuideSelectedParent.setVisibility(View.VISIBLE);
             mMethodSelectedParent.setVisibility(View.GONE);
-        }
-    }
-
-    private void changeSubjectType() {
-        if (mSubjectType == SubjectType.guide) {
-            mSubjectType = SubjectType.method;
-        } else {
-            mSubjectType = SubjectType.guide;
         }
     }
 

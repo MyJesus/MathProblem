@@ -186,6 +186,7 @@ public class DownloadDbController implements DownloadContract.DownloadColumns {
         values.put(NAME, mediaInfo.getTitle());
         values.put(URL, mediaInfo.getVid());
         values.put(PATH, mediaInfo.getSavePath());
+        values.put(SIZE, mediaInfo.getSize());
         return values;
     }
 

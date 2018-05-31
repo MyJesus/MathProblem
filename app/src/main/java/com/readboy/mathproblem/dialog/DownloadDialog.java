@@ -193,6 +193,7 @@ public class DownloadDialog extends BaseVideoDialog {
     }
 
     private void updateLocationVideoList() {
+        Log.e(TAG, "updateLocationVideoList() called");
         mLocationVideoList.clear();
         File parent = new File(Constants.getDownloadPath(MathApplication.getInstance()));
         if (!parent.exists() && !parent.mkdirs()) {
@@ -201,6 +202,7 @@ public class DownloadDialog extends BaseVideoDialog {
         }
         File[] files = parent.listFiles(FileUtils::isVideo);
         if (files != null) {
+            Log.e(TAG, "updateLocationVideoList: count = " + files.length);
             for (File file : files) {
                 VideoInfo videoInfo = new VideoInfo(false, file.getAbsolutePath(),
                         FileUtils.getFileNameWithoutExtension(file.getName()), SizeUtils.formatMemorySize(file.length()));
@@ -208,6 +210,16 @@ public class DownloadDialog extends BaseVideoDialog {
             }
         }
         notifyLocationDataChange();
+    }
+
+    private void updateLocationVideo() {
+        updateLocationVideoList();
+        updateCountView();
+        if (isLocationPanel()) {
+            Log.e(TAG, "updateLocationVideo: ");
+            mAllCheckedBox.setChecked(false);
+        }
+
     }
 
     private void updateLocationListFaker() {
@@ -234,16 +246,13 @@ public class DownloadDialog extends BaseVideoDialog {
 
     private void updateCountView() {
         int count;
-        if (mLocationBtn.isSelected()) {
+        if (isLocationPanel()) {
             count = mLocationVideoList.size();
             mVideoCount.setText(getContext().getString(R.string.downloaded_video_count, count));
         } else {
             count = mDownloadArray.size();
-//            Log.e(TAG, "updateCountView: count = " + count + ", mLastDownloadSize = " + mLastDownloadSize);
-            if (count != mLastDownloadSize) {
-//                Log.e(TAG, "updateCountView: ");
-                mAllCheckedBox.setChecked(false);
-            }
+            Log.e(TAG, "updateCountView: count = " + count + ", mLastDownloadSize = " + mLastDownloadSize);
+            updateCheckedBox();
             mLastDownloadSize = count;
             mVideoCount.setText(getContext().getString(R.string.downloading_video_count, count));
         }
@@ -279,6 +288,16 @@ public class DownloadDialog extends BaseVideoDialog {
         }
     }
 
+    private void updateCheckedBox() {
+        if (isLocationPanel()) {
+            Log.e(TAG, "updateCheckedBox: location " + mLocationAdapter.isAllChecked());
+            mAllCheckedBox.setChecked(mLocationAdapter.isAllChecked());
+        } else {
+            Log.e(TAG, "updateCheckedBox: download = " + mDownloadAdapter.isAllChecked());
+            mAllCheckedBox.setChecked(mDownloadAdapter.isAllChecked());
+        }
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -288,7 +307,7 @@ public class DownloadDialog extends BaseVideoDialog {
                 mLocationBtn.setSelected(true);
                 mDownloadBtn.setSelected(false);
                 //TODO 效率低，应该监听下载目录，是否下载成功。
-                updateLocationVideoList();
+//                updateLocationVideoList();
                 showLocationList();
                 updateCountView();
                 mAllCheckedBox.setChecked(false);
@@ -309,12 +328,13 @@ public class DownloadDialog extends BaseVideoDialog {
     }
 
     private void switchPanel(boolean isLocationPanel) {
+        Log.e(TAG, "switchPanel() called with: isLocationPanel = " + isLocationPanel + "");
         if (isLocationPanel) {
             mLocationBtnParent.setVisibility(View.VISIBLE);
             mDownloadBtnParent.setVisibility(View.GONE);
             mLocationBtn.setSelected(true);
             mDownloadBtn.setSelected(false);
-            updateLocationVideoList();
+//            updateLocationVideoList();
             showLocationList();
         } else {
             mLocationBtnParent.setVisibility(View.GONE);
@@ -324,8 +344,11 @@ public class DownloadDialog extends BaseVideoDialog {
             showDownloadList();
         }
         updateCountView();
-        Log.e(TAG, "switchPanel: ");
         mAllCheckedBox.setChecked(false);
+    }
+
+    private boolean isLocationPanel() {
+        return mLocationBtn.isSelected();
     }
 
     private void notifyLocationDataChange() {
@@ -460,7 +483,6 @@ public class DownloadDialog extends BaseVideoDialog {
     }
 
 
-
     @Override
     protected void showEmptyContentView() {
         super.showEmptyContentView();
@@ -503,7 +525,7 @@ public class DownloadDialog extends BaseVideoDialog {
             int count = mDownloadAdapter.getItemCount();
 //            Log.e(TAG, "onChanged: count = " + count + ", mLastDownloadSize = " + mLastDownloadSize);
             if (count < mLastDownloadSize) {
-                updateLocationVideoList();
+//                updateLocationVideoList();
                 mLastDownloadSize = count;
             }
             mLastDownloadSize = count;
@@ -550,7 +572,10 @@ public class DownloadDialog extends BaseVideoDialog {
             if (position >= 0) {
                 mDownloadArray.remove(position);
                 mDownloadAdapter.notifyItemRemoved(position);
+                mDownloadAdapter.notifyItemChanged(position);
+                mDownloadAdapter.setAllChecked(false);
             }
+            updateLocationVideo();
         }
 
         @Override

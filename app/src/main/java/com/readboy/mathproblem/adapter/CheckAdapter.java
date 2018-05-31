@@ -18,7 +18,7 @@ import java.util.List;
 
 public abstract class CheckAdapter<D, VH extends CheckViewHolder<D>> extends BaseAdapter<D, VH> implements
         View.OnClickListener {
-    private static final String TAG = "CheckAdapter";
+    private static final String TAG = "DownloadCheckAdapter";
 
     //是不是效率更高，不用拆箱，装箱
     boolean[] mSelectedArray;
@@ -33,7 +33,7 @@ public abstract class CheckAdapter<D, VH extends CheckViewHolder<D>> extends Bas
             @Override
             public void onChanged() {
                 super.onChanged();
-//                Log.e(TAG, "onChanged: isUpdateCheckBox = " + isUpdateCheckBox);
+                Log.e(TAG, "onChanged: isUpdateCheckBox = " + isUpdateCheckBox);
                 if (!isUpdateCheckBox) {
                     initSelectedArray();
                 }
@@ -54,6 +54,18 @@ public abstract class CheckAdapter<D, VH extends CheckViewHolder<D>> extends Bas
                 Log.e(TAG, "onItemRangeRemoved() called with: positionStart = " + positionStart
                         + ", itemCount = " + itemCount + "");
                 initSelectedArray();
+            }
+
+            @Override
+            public void onItemRangeChanged(int positionStart, int itemCount) {
+                super.onItemRangeChanged(positionStart, itemCount);
+                Log.e(TAG, "onItemRangeChanged() called with: positionStart = " + positionStart + ", itemCount = " + itemCount + "");
+            }
+
+            @Override
+            public void onItemRangeChanged(int positionStart, int itemCount, Object payload) {
+                super.onItemRangeChanged(positionStart, itemCount, payload);
+                Log.e(TAG, "onItemRangeChanged() called with: positionStart = " + positionStart + ", itemCount = " + itemCount + ", payload = " + payload + "");
             }
         };
     }
@@ -141,7 +153,11 @@ public abstract class CheckAdapter<D, VH extends CheckViewHolder<D>> extends Bas
         return false;
     }
 
-    private boolean isAllChecked() {
+    public boolean isAllChecked() {
+        if (mSelectedArray == null || mSelectedArray.length == 0){
+            return false;
+        }
+        Log.e(TAG, "isAllChecked: size = " + mSelectedArray.length);
         for (boolean b : mSelectedArray) {
             if (!b) {
                 return false;

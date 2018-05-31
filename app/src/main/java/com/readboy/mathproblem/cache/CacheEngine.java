@@ -47,12 +47,14 @@ public final class CacheEngine implements CacheConfig {
 
     /**
      * TODO: 集合类型待测试，评估。可使用LruCache等Collection，有同步锁，数据访问安全
+     * key: 为0-5，0代表一年级。
      */
     private static SparseArrayCompat<ProjectEntityWrapper> mGuideArray = new SparseArrayCompat<>();
     private static SparseArrayCompat<ProjectEntityWrapper> mMethodArray = new SparseArrayCompat<>();
 
     /**
      * 当前选中ProjectWrapper
+     * TODO, 可能数据会丢失，不可靠，建议通过Intent在Activity直接传递
      */
     private static ProjectEntityWrapper mProjectWrapper;
     /**
@@ -338,6 +340,9 @@ public final class CacheEngine implements CacheConfig {
         return call;
     }
 
+    /**
+     * 不可靠，可能会丢失数据，比如关闭权限
+     */
     public static ProjectEntityWrapper getCurrentProjectWrapper() {
         return mProjectWrapper;
     }
@@ -354,6 +359,7 @@ public final class CacheEngine implements CacheConfig {
     public static void setCurrentIndex(int projectIndex) {
         if (mProjectWrapper == null) {
             Log.e(TAG, "setCurrentIndex: projectWrapper = null");
+            return;
         }
         //TODO: 数据防御，是否需要处理，
         // 否，测试期间直接抛出异常处理。

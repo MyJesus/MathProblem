@@ -27,12 +27,13 @@ public abstract class PlayerLoadStatusViewBase extends FrameLayout implements Vi
     public static final int STATUS_ERROR_NO_VIDSTS = 2;//鉴权失败
     public static final int STATUS_ERROR_OTHER = 3;//错误
     public static final int STATUS_MOBILE_NET = 4;//当前流量网络
+    public static final int STATUS_CONTINUE = 9;//继续播放
     public static final int STATUS_FINISH = 5;//结束
     public static final int STATUS_HIDE = 6;//隐藏
     public static final int STATUS_PREPROCESS = 7;//预处理，有些应用播放器需要获取vid才能进行播放
     public static final int STATUS_PREPROCESS_ERROR = 8;//预处理失败
 
-    private int mCurStatus = STATUS_IDLE;
+    private int mCurStatus = -1;//默认-1初始化才能正常设置为IDLE状态
 
     private View mParentView;
     private ProgressBar mAnimView;
@@ -86,7 +87,6 @@ public abstract class PlayerLoadStatusViewBase extends FrameLayout implements Vi
             mCancelBtnView.setOnClickListener(this);
         }
         initViews();
-        setIdle();
     }
 
     protected abstract int getLayoutXml();
@@ -125,6 +125,10 @@ public abstract class PlayerLoadStatusViewBase extends FrameLayout implements Vi
     }
 
     public void setIdle(){
+        if(mCurStatus == STATUS_IDLE){
+            return;
+        }
+        mCurStatus = STATUS_IDLE;
         setBgBlack(true);
         setVisibility(View.VISIBLE);
         if(mIdleView != null){
@@ -268,6 +272,34 @@ public abstract class PlayerLoadStatusViewBase extends FrameLayout implements Vi
         if(mTextView != null) {
             mTextView.setVisibility(VISIBLE);
             mTextView.setText(getResources().getString(R.string.player_load_status_view_text_mobile_net));
+        }
+        if(mContinueBtnView != null) {
+            mContinueBtnView.setVisibility(VISIBLE);
+            mContinueBtnView.setText(getResources().getString(R.string.player_load_status_view_btn_continue));
+        }
+        if(mCancelBtnView != null) {
+            mCancelBtnView.setVisibility(VISIBLE);
+        }
+        if(mCompleteView != null){
+            mCompleteView.setVisibility(GONE);
+        }
+        if(mIdleView != null) {
+            mIdleView.setVisibility(GONE);
+        }
+    }
+
+    public void setContinue(){
+        if(mCurStatus == STATUS_CONTINUE){
+            return;
+        }
+        mCurStatus = STATUS_CONTINUE;
+        setVisibility(View.VISIBLE);
+        if(mAnimView != null) {
+            mAnimView.setVisibility(GONE);
+        }
+        if(mTextView != null) {
+            mTextView.setVisibility(VISIBLE);
+            mTextView.setText(getResources().getString(R.string.player_load_status_view_text_continue));
         }
         if(mContinueBtnView != null) {
             mContinueBtnView.setVisibility(VISIBLE);

@@ -36,6 +36,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -201,20 +202,12 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "receiving an action:" + intent.getAction());
+            Log.d(TAG, "onReceive an action:" + intent.getAction());
             String action = intent.getAction();
-            if (action == null) {
-                return;
-            }
-
-            if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION) && mIsPlayUrl) {
-                handleNetwork();
-            }
-            if (action.equals(Intent.ACTION_USER_PRESENT)) {
-                mUserPresent = true;
-            }
-
             switch (action) {
+                case Intent.ACTION_USER_PRESENT:
+                    mUserPresent = true;
+                    break;
                 case Intent.ACTION_MEDIA_REMOVED:
                 case Intent.ACTION_MEDIA_EJECT:
                 case Intent.ACTION_MEDIA_UNMOUNTED:
@@ -234,8 +227,6 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                     break;
                 case Intent.ACTION_BATTERY_LOW:
                     Log.e(TAG, "battery low.");
-                    //finishOnce = true;
-                    //finish();
                     break;
                 case ACTION_APPSWITCH:
                     finishOnce = true;
@@ -247,7 +238,6 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                     Log.e(TAG, "camera come");
                     mPlayerView.onDestroy();
                     unregisterReceiver();
-//                        System.exit(0);
                     finishMyself();
                     break;
                 case Intent.ACTION_CLOSE_SYSTEM_DIALOGS:
@@ -281,7 +271,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                     }
                     break;
                 case ConnectivityManager.CONNECTIVITY_ACTION:
-                    Log.e(TAG, "onReceive: connectivity change.");
+                    handleNetwork();
                     break;
                 default:
                     Log.e(TAG, "handleMessage: default action = " + action);
@@ -396,7 +386,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         tm.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
 
-//        initMediaSession();
+        initMediaSession();
 
         parseBundle(savedInstanceState);
 
@@ -667,19 +657,11 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         Log.e(TAG, "onResume: ");
         onStopped = false;
 
-//        mMediaSession.setActive(true);
-//        keepScreenOn();
+        mMediaSession.setActive(true);
 
         hideControllerDelayed();
         WakeUtil.acquireCpuWakeLock(this);
-//        if (mHearThread != null) {
-        Log.e(TAG, "onResume: pause hear thread.");
-//            mHearThread.pause();
-//            mHearThread = null;
-//        }
-//        mHearThread = new HeartThread(mHandler);
-//        mHearThread.start();
-        if (!mUserThinkNetworkAvailable && mIsPlayUrl) {
+        if (!mUserThinkNetworkAvailable) {
             handleNetwork();
         }
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
@@ -689,20 +671,13 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
             mTrafficStatus = new MyTrafficStatus(this);
         }
         Log.e(TAG, "onResume: mButtonCanClick = " + mButtonCanClick + ", state = " + mPlayerView.getPlayerState());
-        if (!mButtonCanClick) {
-//                showProgressDialog();
-        }
-        Log.d(TAG, "-------- onResume ");
-
-        Log.e(TAG, "onResume: mIndex = " + getIntent().getIntExtra(EXTRA_INDEX, -1));
-        Log.e(TAG, "onResume: position = " + getIntent().getLongExtra(EXTRA_SEEK_POSITION, -1));
     }
 
     @Override
     public void onPause() {
         super.onPause();
         Log.e(TAG, "onPause: ");
-//        mMediaSession.setActive(false);
+        mMediaSession.setActive(false);
         cancelAutoHide();
         onStopped = true;
         if (isSaveState()) {
@@ -716,8 +691,6 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         dismissProgressDialog();
         mButtonCanClick = true;
 
-//        mHearThread.pause();
-//        mHearThread = null;
         Log.d(TAG, "-------- onPause mPosition: " + mPosition + ", string: " + Utils.formatTime(mPosition));
 
         WakeUtil.releaseCpuLock();
@@ -742,7 +715,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         dismissProgressDialog();
         cancelAutoHide();
 
-//        releaseMediaSession();
+        releaseMediaSession();
 
         if (mNetworkDialog != null) {
             mNetworkDialog.dismiss();
@@ -1205,11 +1178,13 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         int networkType = getNetworkType(this);
         Log.e(TAG, "handleNetwork: networkType = " + networkType);
         mUserThinkNetworkAvailable = networkType == ConnectivityManager.TYPE_WIFI;
-        if (mNetworkType == networkType) {
+        if (mNetworkType == networkType || !mIsPlayUrl) {
+            mNetworkType = networkType;
             return;
         }
 
         if (mNetworkDialog != null && mNetworkDialog.isShowing()) {
+            Log.e(TAG, "handleNetwork: dismiss networkDialog.");
             mNetworkDialog.dismiss();
         }
         switch (networkType) {
@@ -1225,7 +1200,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                 }
                 break;
             case ConnectivityManager.TYPE_WIFI:
-                Log.e(TAG, "handleNetwork: ");
+                Log.e(TAG, "handleNetwork: wifi type/ ");
                 ToastUtils.showShort(this, "已连接上wifi网络了！");
 //                videoViewStart();
                 mRmvbPauseByUser = false;
@@ -1501,7 +1476,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
 
         Log.e(TAG, "updatePlay: mButtonCanClick = false.");
         mButtonCanClick = false;
-
+        mIsPlayUrl = !mVideoResource.isDownloaded();
         if (mIsPlayUrl) {
             if (!onStopped) {
                 showProgressDialog();
@@ -1511,7 +1486,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         mTopView.setVideoName(mVideoResource.getVideoName());
 
         if (mVideoResource instanceof VidVideoResource) {
-            if (checkNetwork()) {
+            if (mVideoResource.isDownloaded() || checkNetwork()) {
                 mVideoResource.play(mPlayerView, mPosition);
                 mBottomView.setFavoriteVisibility(View.VISIBLE);
                 mBottomView.setDownloadVisibility(View.VISIBLE);
@@ -1534,6 +1509,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
      * @return 是否有网络。无网返回false
      */
     private boolean checkNetwork() {
+        Log.e(TAG, "checkNetwork: ");
         if (!NetworkUtils.isConnected(this)) {
             showNoNetworkWarningDialog();
             return false;
@@ -1618,7 +1594,11 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
      * 播放视频
      */
     private void playVideo() {
+        mPlayerView.onResume();
+    }
 
+    private void pauseVideo() {
+        mPlayerView.onPause();
     }
 
     /**
@@ -1817,29 +1797,25 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
     }
 
     private class MediaSessionCallback extends MediaSessionCompat.Callback {
-
         @Override
-        public void onPause() {
-            super.onPause();
-            Log.e(TAG, "onPause: ");
-        }
+        public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
+            if (Intent.ACTION_MEDIA_BUTTON.equals(mediaButtonEvent.getAction())) {
+                KeyEvent keyEvent = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                if (KeyEvent.ACTION_UP == keyEvent.getAction()) {
+                    if (KeyEvent.KEYCODE_HEADSETHOOK == keyEvent.getKeyCode()) {
+                        IAliyunVodPlayer.PlayerState state = mPlayerView.getPlayerState();
+                        Log.e(TAG, "onMediaButtonEvent: player state = " + state);
+                        if (state == IAliyunVodPlayer.PlayerState.Paused
+                                || state == IAliyunVodPlayer.PlayerState.Prepared) {
+                            playVideo();
+                        } else if (state == IAliyunVodPlayer.PlayerState.Started) {
+                            pauseVideo();
+                        }
+                    }
+                }
+            }
 
-        @Override
-        public void onPlay() {
-            super.onPlay();
-            Log.e(TAG, "onPlay: ");
-        }
-
-        @Override
-        public void onSkipToPrevious() {
-            super.onSkipToPrevious();
-            Log.e(TAG, "onSkipToPrevious() called");
-        }
-
-        @Override
-        public void onSkipToNext() {
-            super.onSkipToNext();
-            Log.e(TAG, "onSkipToNext: ");
+            return super.onMediaButtonEvent(mediaButtonEvent);
         }
     }
 

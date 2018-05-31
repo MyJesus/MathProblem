@@ -34,7 +34,11 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
     private DownloadStatus mDownloadStatus = DownloadStatus.WAIT;
     private VidTaskObserver mObserver;
     private DownloadSpeedMonitor mSpeedMonitor;
-    private DownloadModel model;
+    /**
+     * 切记，该对象是和DownloadDialog#mDownloadArray里DownloadModel是同一个对象,
+     * 修改对象内容，同步更新。
+     */
+    private DownloadModel mDownloadModel;
 
     public DownloadViewHolder(View itemView) {
         super(itemView);
@@ -54,7 +58,7 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
     @Override
     public void bindView(int position, boolean isChecked, DownloadModel model) {
         super.bindView(position, isChecked, model);
-        this.model = model;
+        this.mDownloadModel = model;
         mObserver.clearObserver();
         if (model.getMediaInfo() != null && !mObserver.isContains(model.getMediaInfo())) {
             mObserver.addObserver(model.getVid());
@@ -68,6 +72,7 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         mCheckBox.setChecked(isChecked);
         mVideoName.setText(model.getFileName());
         mDownloadStatus = model.getStatus();
+        mSpeedMonitor.start(model.getSoFar());
         updateDownloadStatusView();
 
         long soFar = model.getSoFar();
@@ -79,7 +84,6 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         mVideoMemory.setText(String.format("%s/%s",
                 SizeUtils.formatMemorySize(soFar), SizeUtils.formatMemorySize(total)));
     }
-
 
     @Override
     public void onClick(View v) {
@@ -116,17 +120,37 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
                 Log.e(TAG, "handlerStatusClickEvent: status = " + nextStatus);
                 return;
         }
-        AliyunDownloadManagerWrapper.getInstance().updateDownloadStatus(model.getVid(), nextStatus);
+        AliyunDownloadManagerWrapper.getInstance().updateDownloadStatus(mDownloadModel.getVid(), nextStatus);
     }
 
     private void updateDownloadStatusView() {
+        Log.e(TAG, "updateDownloadStatusView: downloadStatus = " + mDownloadStatus);
         mDownloadStatusIv.setImageResource(mDownloadStatus.getDrawableResId());
         if (mDownloadStatus == DownloadStatus.DOWNLOADING) {
 //            mDownloadStatusTv.setText(String.format("%dKB/s", mSpeedMonitor.getSpeed()));
-            mDownloadStatusTv.setText(mDownloadStatus.getDescribe());
+//            mDownloadStatusTv.setText(mDownloadStatus.getDescribe());
+            updateSpeedView();
         } else {
             mDownloadStatusTv.setText(mDownloadStatus.getDescribe());
         }
+    }
+
+    private void updateSpeedView() {
+        String speedStr;
+        int speed = mSpeedMonitor.getSpeed();
+        if (speed >= 1024) {
+            speedStr = String.format("%.2fMB", speed / 1024.0F);
+        } else {
+            speedStr = String.format("%dKB", speed);
+        }
+        Log.e(TAG, "updateSpeedView: speed = " + speedStr);
+        mDownloadStatusTv.setText(String.format("%s/s", speedStr));
+    }
+
+    private void updateDownloadStatus(DownloadStatus status) {
+        mDownloadStatus = status;
+        mDownloadModel.setStatus(status);
+        updateDownloadStatusView();
     }
 
     private class VidTaskObserver extends AliyunDownloadManagerWrapper.BaseDownloadTaskObserver<String> {
@@ -139,25 +163,22 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         @Override
         public void onTaskStarted(AliyunDownloadMediaInfo task) {
             super.onTaskStarted(task);
-            mDownloadStatus = DownloadStatus.STARTED;
-            updateDownloadStatusView();
+            updateDownloadStatus(DownloadStatus.STARTED);
             long start = task.getSize() * task.getProgress();
             mSpeedMonitor.start(start);
-            mSpeedMonitor.end(task.getSize());
         }
 
         @Override
         public void onTaskWait(AliyunDownloadMediaInfo info) {
             super.onTaskWait(info);
-            mDownloadStatus = DownloadStatus.WAIT;
-            updateDownloadStatusView();
+            updateDownloadStatus(DownloadStatus.WAIT);
         }
 
         @Override
         public void onTaskPause(AliyunDownloadMediaInfo task) {
             super.onTaskPause(task);
-            mDownloadStatus = DownloadStatus.PAUSE;
-            updateDownloadStatusView();
+            Log.e(TAG, "onTaskPause: ");
+            updateDownloadStatus(DownloadStatus.PAUSE);
         }
 
         @Override
@@ -165,15 +186,7 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
             super.onTaskProgress(task, soFarBytes, totalBytes);
             Log.e(TAG, "onTaskProgress() called with: soFarBytes = " + soFarBytes + ", totalBytes = " + totalBytes + "");
             mSpeedMonitor.update(soFarBytes);
-            String speedStr;
-            int speed = mSpeedMonitor.getSpeed();
-            if (speed >= 1024) {
-                speedStr = String.format("%.2fMB", speed / 1024.0F);
-            } else {
-                speedStr = String.format("%dKB", speed);
-            }
-            Log.e(TAG, "onTaskProgress: speed = " + speedStr);
-            mDownloadStatusTv.setText(String.format("%s/s", speedStr));
+            updateSpeedView();
             mVideoMemory.setText(String.format("%s/%s",
                     SizeUtils.formatMemorySize(soFarBytes), SizeUtils.formatMemorySize(totalBytes)));
 
@@ -182,14 +195,14 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
         @Override
         public void onTaskCompleted(AliyunDownloadMediaInfo info) {
             super.onTaskCompleted(info);
-            mDownloadStatus = DownloadStatus.COMPLETED;
-            updateDownloadStatusView();
+            mSpeedMonitor.end(info.getSize());
+            updateDownloadStatus(DownloadStatus.COMPLETED);
         }
 
         @Override
         public void onTaskError(AliyunDownloadMediaInfo info, String message) {
             super.onTaskError(info, message);
-            mDownloadStatus = DownloadStatus.ERROR;
+            updateDownloadStatus(DownloadStatus.ERROR);
         }
     }
 

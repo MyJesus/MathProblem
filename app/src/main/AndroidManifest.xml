@@ -32,8 +32,8 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation"
-            android:screenOrientation="sensorLandscape"
             android:launchMode="singleTask"
+            android:screenOrientation="sensorLandscape"
             android:theme="@style/MainTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -44,16 +44,16 @@
         <activity android:name=".activity.RequestPermissionsActivity" />
         <activity
             android:name=".activity.StudyActivity"
-            android:configChanges="orientation"
             android:allowTaskReparenting="true"
+            android:configChanges="orientation"
             android:launchMode="singleTop"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/MainTheme" />
         <activity
             android:name=".exercise.ExerciseActivity"
-            android:screenOrientation="sensorLandscape"
             android:allowTaskReparenting="true"
             android:launchMode="singleTop"
+            android:screenOrientation="sensorLandscape"
             android:theme="@style/MainTheme" />
 
         <provider
@@ -83,7 +83,8 @@
                 <!-- <action android:name="dream.dreamplayer.MEDIAPLAYER" /> -->
                 <!-- <action android:name="android.intent.action.MAIN" /> -->
                 <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.readboy.APPLICATION.FLAG"/>
+                <action android:name="android.readboy.APPLICATION.FLAG" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <!-- 隐藏系统条, 系统定制过，需要加该action -->
                 <action android:name="android.readboy.FLAG_HIDE_SYSTEMBAR" />
@@ -92,13 +93,15 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".test.AliPlayerViewActivity"
-            android:screenOrientation="sensorLandscape"
-            android:configChanges="keyboard|keyboardHidden|orientation">
+        <activity
+            android:name=".test.AliPlayerViewActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.readboy.FLAG_HIDE_SYSTEMBAR" />
                 <action android:name="android.intent.action.View" />
-                <action android:name="android.readboy.APPLICATION.FLAG"/>
+                <action android:name="android.readboy.APPLICATION.FLAG" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

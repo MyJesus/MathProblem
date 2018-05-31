@@ -1,24 +1,18 @@
 package com.readboy.mathproblem.activity;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkRequest;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.RequiresApi;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.DividerItemDecoration;
@@ -57,6 +51,7 @@ import com.readboy.mathproblem.note.DraftPaperView;
 import com.readboy.mathproblem.notetool.Note;
 import com.readboy.mathproblem.notetool.NoteScrollView;
 import com.readboy.mathproblem.util.Lists;
+import com.readboy.mathproblem.util.NetworkCompat;
 import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.SizeUtils;
 import com.readboy.mathproblem.util.ToastUtils;
@@ -110,7 +105,6 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
     private View mExerciseBtn;
     private RecyclerView mExampleRv;
     private PagerLayoutManager mExampleLayoutManager;
-    //    private LinearLayoutManager mExampleLayoutManager;
     private ExampleAdapter mExampleAdapter;
 
     /**
@@ -143,14 +137,11 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
     private ContentObserver mScoreObserver;
     private AnimationDrawable mVoiceAnimation;
 
+
     /**
-     * sdk < 23, 网络监听方式
+     * 监听网络变化
      */
-    private BroadcastReceiver mReceiver;
-    /**
-     * sdk >= 23, 网络监听方式
-     */
-    private NetworkCallback mNetworkCallback;
+    private NetworkCompat mNetworkCompat;
     private NoNetworkDialog mNoNetWorkDialog;
 
     private int mCurrentPosition;
@@ -172,8 +163,9 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         assignView();
         initView();
         initAnimation();
+        init();
         registerObserver();
-        checkNetWork();
+//        checkNetWork();
         if (savedInstanceState != null) {
             mCurrentPosition = savedInstanceState.getInt(KEY_POSITION, mCurrentPosition);
             boolean isTeacherPanel = savedInstanceState.getBoolean(KEY_IS_TEACHER_PANEL);
@@ -185,6 +177,21 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         if (!needRequestPermissions()) {
             initData();
         }
+    }
+
+    private void init(){
+        mNetworkCompat = new NetworkCompat();
+        mNetworkCompat.setNetworkListener(new NetworkCompat.NetworkListener() {
+            @Override
+            public void onAvailable() {
+                handleNetWorkChange(true);
+            }
+
+            @Override
+            public void onLost() {
+                handleNetWorkChange(false);
+            }
+        });
     }
 
     private boolean recoveryData(Bundle savedInstanceState) {
@@ -215,7 +222,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         super.onResume();
         Log.e(TAG, "onResume: ");
         startAnimation();
-        registerReceiver();
+        mNetworkCompat.start(this);
 
         if (mPlayerView.hasData() && mExampleSelectedParent.getVisibility() == View.VISIBLE) {
             mPlayerView.setVisibility(View.VISIBLE);
@@ -239,7 +246,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
             mPlayerView.setVisibility(View.GONE);
         }
 
-        unregisterReceiver();
+        mNetworkCompat.stop(this);
     }
 
     @Override
@@ -499,7 +506,6 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
                     Log.e(TAG, "onItemClick: same position, position = " + position);
                     return;
                 }
-
                 CacheEngine.setCurrentIndex(position);
                 mCurrentPosition = position;
 //                mExplainWebView.loadUrl(Constants.EMPTY_URL);
@@ -521,6 +527,8 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
     }
 
     private void updateData(ProjectEntityWrapper wrapper) {
+        //校准CacheEngine中的数据，可能已经丢失，比如关闭权限，重新进入应用。
+        CacheEngine.setCurrentProjectWrapper(mCurrentPosition, wrapper);
         mProjectList.clear();
         mProjectList.addAll(wrapper.getProjectList());
         mCatalogueAdapter.notifyDataSetChanged();
@@ -949,40 +957,12 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         ToastUtils.show(StudyActivity.this, "暂无数据");
     }
 
-    //监听网络变化广播
-    private void registerReceiver() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-            mReceiver = new NetworkChangeReceiver();
-            registerReceiver(mReceiver, filter);
-        } else {
-            ConnectivityManager manager =
-                    (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            mNetworkCallback = new NetworkCallback();
-            manager.requestNetwork(new NetworkRequest.Builder().build(), mNetworkCallback);
-        }
-    }
-
-    private void unregisterReceiver() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            unregisterReceiver(mReceiver);
-        } else {
-            ConnectivityManager manager =
-                    (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            manager.unregisterNetworkCallback(mNetworkCallback);
-        }
-    }
-
-    private void checkNetWork() {
-        handleNetWorkChange(NetworkUtils.isConnected(this));
-    }
-
     private void handleNetWorkChange(boolean isAvailable) {
         Log.e(TAG, "handleNetWorkChange() called with: isAvailable = " + isAvailable + "");
         runOnUiThread(() -> {
             if (isAvailable) {
                 dismissNoNotworkDialog();
-                mPlayerView.enablePlayerController(true);
+                mPlayerView.setPlayerControllerEnabled(true);
 //                mVoice.setEnabled(true);
                 mVoice.setActivated(true);
             } else {
@@ -1012,40 +992,6 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
             }
         });
 
-    }
-
-    /**
-     * 网络连接广播
-     */
-    private class NetworkChangeReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.e(TAG, "onReceive: action = " + intent.getAction());
-            if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
-                if (NetworkUtils.isConnected(StudyActivity.this)) {
-                    handleNetWorkChange(true);
-                } else {
-                    handleNetWorkChange(false);
-                }
-            }
-        }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private class NetworkCallback extends ConnectivityManager.NetworkCallback {
-        @Override
-        public void onAvailable(Network network) {
-            super.onAvailable(network);
-            Log.e(TAG, "onAvailable: ");
-            handleNetWorkChange(true);
-        }
-
-        @Override
-        public void onLost(Network network) {
-            super.onLost(network);
-            Log.e(TAG, "onLost: ");
-            handleNetWorkChange(false);
-        }
     }
 
     private int requestAudioFocusTransient() {

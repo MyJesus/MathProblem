@@ -20,6 +20,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.aliyun.vodplayer.media.AliyunLocalSource;
 import com.aliyun.vodplayer.media.AliyunVidSts;
 import com.aliyun.vodplayer.media.AliyunVodPlayer;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
@@ -28,6 +29,7 @@ import com.aliyun.vodplayerview.utils.NetWatchdog;
 import com.readboy.aliyunplayerlib.helper.VidStsHelper;
 import com.readboy.aliyunplayerlib.utils.AliLogUtil;
 import com.readboy.mathproblem.R;
+import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.application.SubjectType;
 import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
@@ -125,8 +127,10 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mCurrentVideoNameTv = (TextView) findViewById(R.id.small_player_video_name);
         mVideoController = findViewById(R.id.small_player_controller);
         mVideoController.setOnClickListener(this);
+        mVideoController.setActivated(true);
         mFullscreenBtn = findViewById(R.id.small_player_full_screen);
         mFullscreenBtn.setOnClickListener(this);
+        mFullscreenBtn.setActivated(true);
         mGestureView = (GestureView) findViewById(R.id.gesture_view);
         mGestureView.setOnClickListener(this);
 //        mVideoProgressBar = (ProgressBar) findViewById(R.id.video_progress_bar);
@@ -190,7 +194,11 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mVidStsHelper = new VidStsHelper();
     }
 
-    private void initVideoData(final long seekPosition, VideoInfo videoInfo) {
+    private void initVideoData(final long seekPosition, VideoInfo videoInfo){
+        initVideoData(seekPosition, videoInfo, true);
+    }
+
+    private void initVideoData(final long seekPosition, VideoInfo videoInfo, boolean playVideo) {
         this.mSeekPosition = seekPosition;
 //        stopVideo();
 //        showProgressBar();
@@ -200,7 +208,12 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
 //        String fileName = FileUtils.getFileName(videoInfo.getVideoUri());
         mCurrentVideoNameTv.setText(videoInfo.getName());
         mCurrentVideoResource = new VidVideoResource(videoInfo);
-        playVideo(mCurrentVideoResource);
+
+        if (playVideo) {
+            playVideo(mCurrentVideoResource);
+        } else {
+            updateViewCausePause();
+        }
     }
 
     /**
@@ -232,7 +245,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mVideoInfoList.addAll(videoList);
         mVideoAdapter.notifyDataSetChanged();
         mVideoRv.smoothScrollToPosition(videoIndex);
-        initVideoData(seekPosition, videoList.get(videoIndex));
+        initVideoData(seekPosition, videoList.get(videoIndex), playVideo);
     }
 
     public void initVideoList(int projectPosition, List<VideoInfo> videoList, boolean playVideo) {
@@ -240,9 +253,22 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     }
 
     private void playVideo(IVideoResource resource) {
+        sendPlayBeforeEvent();
         mTargetState = PlayerState.Started;
         onInit();
-        playWithVid(resource.getVideoUri().getAuthority());
+        if (resource.isDownloaded()) {
+            playWithLocalPath(Constants.getVideoPath(resource.getVideoName()));
+        }else {
+            playWithVid(resource.getVideoUri().getAuthority());
+        }
+    }
+
+    private void playWithLocalPath(String path){
+        setPlayerControllerEnabled(true);
+        AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
+        asb.setSource(path);
+        AliyunLocalSource localSource = asb.build();
+        mAliyunVodPlayer.prepareAsync(localSource);
     }
 
     /**
@@ -321,13 +347,14 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         } else if (state == PlayerState.Paused
                 || state == PlayerState.Prepared) {
             resumePlay();
-        } else if (state == PlayerState.Started){
+        } else if (state == PlayerState.Started) {
             updateViewCausePlaying();
         }
     }
 
-    public void resumePlay() {
+    private void resumePlay() {
         Log.e(TAG, "resumePlay: ");
+        sendPlayBeforeEvent();
         mTargetState = PlayerState.Started;
 //        sendPlayBeforeEvent();
         updateViewCausePlaying();
@@ -375,14 +402,16 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         Log.e(TAG, "updateViewCausePlaying: ");
         mVideoController.setSelected(true);
         hidePlayerControllerDelayed();
-        sendPlayBeforeEvent();
+        setKeepScreenOn(true);
     }
 
     private void updateViewCausePause() {
         Log.e(TAG, "updateViewCausePause: ");
+        hideProgressBar();
         mVideoController.setSelected(false);
         mVideoHandler.removeMessages(VideoHandler.MESSAGE_HIDE_CONTROLLER);
         showPlayerController();
+        setKeepScreenOn(false);
     }
 
     /**
@@ -393,10 +422,10 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
             showNoNetworkDialog();
             hideProgressBar();
             isPreparing = false;
-            enablePlayerController(false);
+            setPlayerControllerEnabled(false);
             return false;
         } else {
-            enablePlayerController(true);
+            setPlayerControllerEnabled(true);
         }
         return true;
     }
@@ -460,13 +489,12 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     //TODO: 视频播放出错，禁用播放控制。
 
     /**
-     *
      * @param enable false 代表不可用状态
      */
-    public void enablePlayerController(boolean enable) {
-        Log.e(TAG, "enablePlayerController() called with: enable = " + enable + "");
-        mVideoController.setEnabled(enable);
-        mFullscreenBtn.setEnabled(enable);
+    public void setPlayerControllerEnabled(boolean enable) {
+        Log.e(TAG, "setPlayerControllerEnabled() called with: enable = " + enable + "");
+//        mVideoController.setEnabled(enable);
+//        mFullscreenBtn.setEnabled(enable);
         if (!enable) {
             showPlayerController();
         }
@@ -547,6 +575,10 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         return isPreparing;
     }
 
+    private boolean needNewwork(){
+        return !mCurrentVideoResource.isDownloaded();
+    }
+
     public void smoothScrollToPosition(int videoPosition) {
         mVideoRv.smoothScrollToPosition(videoPosition);
     }
@@ -566,10 +598,13 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         if (visibility == GONE) {
             Log.e(TAG, "setVisibility: video view gone.");
             //解决再例题讲解界面有残影问题。
-//            mVideoView.setVisibility(INVISIBLE);
+            mSurfaceView.setVisibility(GONE);
         } else if (visibility == VISIBLE) {
             Log.e(TAG, "setVisibility: video view visible.");
+            mSurfaceView.setVisibility(VISIBLE);
         } else {
+            mSurfaceView.setVisibility(visibility);
+
         }
     }
 
@@ -586,7 +621,6 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         hideProgressBar();
         showPlayerController();
         hidePlayerControllerDelayed();
-        setKeepScreenOn(true);
 //        if (isFirstPlay) {
 //            pauseVideo();
 //            isFirstPlay = false;
@@ -596,20 +630,17 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     private void onPaused() {
         Log.e(TAG, "onPaused: ");
         isFirstPlay = false;
-        hideProgressBar();
         updateViewCausePause();
         showPlayerController();
-        setKeepScreenOn(false);
     }
 
     private void handleError(String error) {
-        hideProgressBar();
         updateViewCausePause();
         if (!checkNetwork()) {
             ToastUtils.showLong(mContext, "视频播放出错：" + error);
-        }else {
+        } else {
             ToastUtils.showLong(mContext, "未知错误:" + error);
-            enablePlayerController(true);
+            setPlayerControllerEnabled(true);
         }
     }
 
@@ -647,6 +678,8 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         }
         if (mTargetState == PlayerState.Started) {
             mAliyunVodPlayer.start();
+        } else {
+            updateViewCausePause();
         }
         isPreparing = false;
 //        }
@@ -657,7 +690,6 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         Log.e(TAG, "onStopped: state = " + mAliyunVodPlayer.getPlayerState() + ", isPreparing = " + isPreparing);
         if (!isPreparing) {
             resetData();
-            hideProgressBar();
             updateViewCausePause();
         }
     }
@@ -665,8 +697,6 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     @Override
     public void onCompletion() {
         Log.e(TAG, "onCompletion: ");
-        hideProgressBar();
-        showPlayerController();
         updateViewCausePause();
         resetData();
     }

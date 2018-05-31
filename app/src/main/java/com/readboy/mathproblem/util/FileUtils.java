@@ -27,6 +27,7 @@ import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.annotation.Retention;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -428,6 +429,9 @@ public class FileUtils {
      * @return 空闲内存大小，单位：Byte
      */
     public static long getAvailableSize(String dir) {
+        if (new File(dir).exists()){
+            return 0L;
+        }
         StatFs stat = new StatFs(dir);
         // 获取block数量
         long totalBlocks = stat.getBlockCountLong();

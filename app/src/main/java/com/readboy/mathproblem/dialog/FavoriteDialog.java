@@ -151,8 +151,4 @@ public class FavoriteDialog extends BaseVideoDialog implements LoaderManager.Loa
         }
     }
 
-    @Override
-    public void onAllChecked(boolean isChecked) {
-        mAllCheckedBox.setChecked(isChecked);
-    }
 }

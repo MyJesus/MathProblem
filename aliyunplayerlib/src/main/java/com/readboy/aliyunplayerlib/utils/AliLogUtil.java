@@ -20,6 +20,10 @@ public class AliLogUtil {
         LOG_ENABLE = false;
     }
 
+    public static boolean isEnable(){
+        return LOG_ENABLE;
+    }
+
     public static void v(String tag, String msg){
         if(LOG_ENABLE){
             Log.v(tag, msg);

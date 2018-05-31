@@ -42,11 +42,14 @@ public class VidVideoResource implements IVideoResource {
     @Override
     public void play(AliPlayerView aliPlayerView, long position) {
         Log.e(TAG, "play: position = " + position);
-        if (VideoUtils.videoIsExist(mVideoInfo.getName())){
+        if (isDownloaded()){
             Log.e(TAG, "play: video is downloaded.");
+            aliPlayerView.playWithPath(getDownloadedPath());
+            aliPlayerView.seekTo(position);
+        }else {
+            aliPlayerView.playWithVid(mVideoInfo.getVid());
+            aliPlayerView.seekTo(position);
         }
-        aliPlayerView.playWithVid(mVideoInfo.getVid());
-        aliPlayerView.seekTo(position);
     }
 
     @Override
@@ -66,7 +69,7 @@ public class VidVideoResource implements IVideoResource {
     public boolean isDownloaded() {
 //        File file = new File(Constants.ALIYUN_DOWNLOAD_DIR + File.separator
 //                + FileUtils.getFileName(mVideoInfo.getVideoUri()));
-        File file = new File(Constants.getVideoPath(mVideoInfo.getName()));
+        File file = new File(getDownloadedPath());
         Log.e(TAG, "isDownloaded: file exits = " + file.exists());
         return file.exists();
     }
@@ -104,6 +107,10 @@ public class VidVideoResource implements IVideoResource {
             return false;
         }
         return Favorite.delete(resolver, mFavoriteName);
+    }
+
+    private String getDownloadedPath(){
+        return Constants.getVideoPath(mVideoInfo.getName());
     }
 
     @Override

@@ -7,8 +7,8 @@ android {
         applicationId "com.readboy.mathproblem"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 180509001
-        versionName "4.1.20"
+        versionCode 180531001
+        versionName "4.2.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         jackOptions.enabled = true
         multiDexEnabled true

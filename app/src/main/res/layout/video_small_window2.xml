@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="345dp"
+    android:layout_height="253dp"
+    android:background="@drawable/bg_small_player_window">
+
+    <FrameLayout
+        android:layout_width="334dp"
+        android:layout_height="210dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="6dp">
+
+        <com.readboy.aliyunplayerlib.view.AliPlayerView
+            android:id="@+id/ali_player_view"
+            android:layout_width="334dp"
+            android:layout_height="210dp" />
+
+        <com.readboy.mathproblem.widget.GestureView
+            android:id="@+id/gesture_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!--false:当前状态为pause，显示play图标-->
+        <!--true:当前状态为playing，显示pause图标-->
+        <ImageView
+            android:id="@+id/small_player_controller"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/btn_small_player_controller_selector"
+            android:checked="false"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/small_player_full_screen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|right"
+            android:layout_marginBottom="5dp"
+            android:layout_marginRight="5dp"
+            android:background="@drawable/ic_video_fullscreen_selector"
+            android:visibility="gone" />
+
+        <!--<ProgressBar-->
+            <!--android:id="@+id/video_progress_bar"-->
+            <!--android:layout_width="64dp"-->
+            <!--android:layout_height="64dp"-->
+            <!--android:layout_gravity="center"-->
+            <!--android:clickable="true"-->
+            <!--android:indeterminateDrawable="@drawable/progress_rotate_big"-->
+            <!--android:max="10000" />-->
+
+        <ImageView
+            android:id="@+id/video_progress_bar"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:src="@drawable/loading_circle_big"
+            android:clickable="true" />
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/small_player_video_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#393939"
+        android:textSize="18sp"
+        tools:text="长方体和正方体的表面积" />
+
+</FrameLayout>

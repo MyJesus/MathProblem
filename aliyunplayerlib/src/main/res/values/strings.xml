@@ -12,6 +12,7 @@
     <string name="player_load_status_view_text_error_code_msg">错误码：%1$d，%2$s</string>
     <string name="player_load_status_view_text_error_no_net">请检查网络正常后，再点击重新加载</string>
     <string name="player_load_status_view_text_finish">播放结束</string>
+    <string name="player_load_status_view_text_continue">是否继续播放？</string>
     <string name="player_load_status_view_btn_play">开始播放</string>
     <string name="player_load_status_view_btn_load">重新加载</string>
     <string name="player_load_status_view_btn_continue">继续播放</string>
