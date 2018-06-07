@@ -137,7 +137,6 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
     private ContentObserver mScoreObserver;
     private AnimationDrawable mVoiceAnimation;
 
-
     /**
      * 监听网络变化
      */
@@ -256,7 +255,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         unregisterObserver();
 
         stopAudio();
-        stopVideo();
+//        stopVideo();
         releaseMedia();
 
         mExplainWebView.removeJavascriptInterface(JS_INTERFACE_NAME);

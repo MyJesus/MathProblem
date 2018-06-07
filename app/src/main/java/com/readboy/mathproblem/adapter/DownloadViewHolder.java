@@ -121,6 +121,7 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
                 return;
         }
         AliyunDownloadManagerWrapper.getInstance().updateDownloadStatus(mDownloadModel.getVid(), nextStatus);
+        updateDownloadStatus(nextStatus);
     }
 
     private void updateDownloadStatusView() {
@@ -148,6 +149,7 @@ public class DownloadViewHolder extends CheckViewHolder<DownloadModel> implement
     }
 
     private void updateDownloadStatus(DownloadStatus status) {
+        Log.d(TAG, "updateDownloadStatus() called with: status = " + status + "");
         mDownloadStatus = status;
         mDownloadModel.setStatus(status);
         updateDownloadStatusView();

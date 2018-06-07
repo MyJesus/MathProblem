@@ -663,7 +663,7 @@ public class SmallPlayerView2 extends LinearLayout implements View.OnClickListen
 
     @Override
     public void onLoadProgress(int i) {
-        Log.e(TAG, "onLoadProgress() called with: i = " + i + "");
+//        Log.e(TAG, "onLoadProgress() called with: i = " + i + "");
 
     }
 

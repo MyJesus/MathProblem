@@ -2,6 +2,7 @@ package com.readboy.aliyunplayerlib.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
@@ -47,7 +48,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     private static final String TAG = "oubin_AliPlayerView";
 
     //版本号
-    private static final String VERSION = "V1.0.180531001";
+    private static final String VERSION = "V1.0.180607001";
 
     //常量
     private static final int MSG_HEART = 1;
@@ -190,7 +191,12 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
         mAliyunVodPlayer = new AliyunVodPlayer(getContext());
         // /mnt/sdcard/Android/data/com.dway/cache/aliyun_player_cache
-        String cacheDir = getContext().getExternalCacheDir().getPath() + "/aliyun_player_cache";
+
+        String cacheDir = null;
+        if(getContext().getExternalCacheDir() != null){
+            cacheDir = getContext().getExternalCacheDir().getPath() + "/aliyun_player_cache";
+        }
+        //String cacheDir = getContext().getExternalCacheDir().getPath() + "/aliyun_player_cache";
         mAliyunVodPlayer.setPlayingCache(false, cacheDir, 60 * 60 /*时长, s */, 300 /*大小，MB*/);
         //mAliyunVodPlayer.setCirclePlay(true);
 
@@ -269,7 +275,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
      * 打开阿里的打印
      */
     public void enableNativeLog(){
-        mAliyunVodPlayer.enableNativeLog();
+//        mAliyunVodPlayer.enableNativeLog();
     }
 
     /**
@@ -337,6 +343,8 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mAutoCount = 0;
         mCurrentPosition = 0;
         prepareAsync(false);
+
+        //requestAudioFocus();
     }
 
     /**
@@ -368,6 +376,8 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mAutoCount = 0;
         mCurrentPosition = 0;
         prepareAsync(false);
+
+//        requestAudioFocus();
     }
 
     /**
@@ -399,6 +409,8 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mAutoCount = 0;
         mCurrentPosition = 0;
         prepareAsync(false);
+
+//        requestAudioFocus();
     }
 
     private boolean isVidPlay(){
@@ -411,6 +423,26 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     private boolean isUrlPlay(){
         return !TextUtils.isEmpty(mUrl);
+    }
+
+    /**
+     * 请求audio焦点，让其他音乐播放器停止播放
+     */
+    private void requestAudioFocus(){
+        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        if (am != null) {
+            am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        }
+    }
+
+    /**
+     * 施放焦点
+     */
+    private void abandonAudioFocus(){
+        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        if (am != null) {
+            am.abandonAudioFocus(null);
+        }
     }
 
     /**
@@ -492,6 +524,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         }
         stopHeart();
         stopHideControlView();
+//        abandonAudioFocus();
     }
 
     /**
@@ -664,6 +697,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         stopHideControlView();
         mNetWatchdog = null;
         mAliyunVodPlayer = null;
+//		abandonAudioFocus();
     }
 
     public long getDuration() {
@@ -731,12 +765,12 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     }
 
     private void heartProcess(){
-        AliLogUtil.v(TAG, "---heartProcess--- PlayerState = " + mAliyunVodPlayer.getPlayerState()
-                + ", " + mAliyunVodPlayer.getCurrentPosition()
-                + ", " + mAliyunVodPlayer.getBufferingPosition()
-                + ", " + mAliyunVodPlayer.getDuration()
-                + ", " + mIsSeekBarTouching
-                + ", " + mIsSeekComplete);
+//        AliLogUtil.v(TAG, "---heartProcess--- PlayerState = " + mAliyunVodPlayer.getPlayerState()
+//                + ", " + mAliyunVodPlayer.getCurrentPosition()
+//                + ", " + mAliyunVodPlayer.getBufferingPosition()
+//                + ", " + mAliyunVodPlayer.getDuration()
+//                + ", " + mIsSeekBarTouching
+//                + ", " + mIsSeekComplete);
         //设置播放进度和缓存进度
         if(!mIsSeekBarTouching && mIsSeekComplete){
             setPlayProgressInfo();

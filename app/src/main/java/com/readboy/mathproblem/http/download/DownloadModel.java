@@ -15,6 +15,9 @@ public class DownloadModel {
     private int taskId;
     private int videoId;
     private String fileName;
+    /**
+     * 也用于存储vid
+     */
     private String url;
     private String path;
     private DownloadStatus status = DownloadStatus.PAUSE;
@@ -111,7 +114,7 @@ public class DownloadModel {
     }
 
     public String getVid() {
-        return mediaInfo.getVid();
+        return mediaInfo != null ? mediaInfo.getVid() : url;
     }
 
     @Override

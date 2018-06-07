@@ -486,7 +486,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         mPlayerView.setKeepScreenOn(true);
 
         //打开阿里打印，即阿里播放器底层相关的打印，前期测试阶段建议打开。已改到Application中设置了。选用
-        mPlayerView.enableNativeLog();
+//        mPlayerView.enableNativeLog();
 
         mGestureController = (ImageView) findViewById(R.id.voice_or_bright);
         percentTextView = (TextView) findViewById(R.id.percent);
@@ -1647,9 +1647,10 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         if (!onStopped) {
             Log.e(TAG, "finishMyself: mPosition = " + mPosition + ", getCurrentPosition = " + mPlayerView.getCurrentPosition());
             mPosition = (int) mPlayerView.getCurrentPosition();
-            Log.e(TAG, "finishMyself: position = " + mPosition + ", mIndex = " + mIndex);
+            long seekPosition = Math.max(0, mPosition - 3000);
+            Log.e(TAG, "finishMyself: seekPosition = " + seekPosition + ", mIndex = " + mIndex);
             intent.putExtra(EXTRA_VIDEO_RESOURCE, mVideoResource);
-            intent.putExtra(EXTRA_SEEK_POSITION, mPosition);
+            intent.putExtra(EXTRA_SEEK_POSITION, seekPosition);
             intent.putExtra(EXTRA_INDEX, mIndex);
         }
         setResult(RESULT_OK, intent);
@@ -1673,7 +1674,10 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                 wrapper.getGrade());
         updatePosition();
         parcelable.setVideoIndex(mIndex);
-        parcelable.setSeekPosition((int) mPosition);
+        long seekPosition = mPlayerView.getCurrentPosition();
+        seekPosition = Math.max(0, seekPosition - 3000);
+        Log.i(TAG, "gotoStudyActivity: seekPosition = " + seekPosition + ", mPosition = " + mPosition);
+        parcelable.setSeekPosition((int) seekPosition);
         intent.putExtra(ProjectParcelable.EXTRA_PROJECT_PARCELABLE, parcelable);
         intent.putExtra(EXTRA_FINISH_TYPE, TYPE_GOTO);
 

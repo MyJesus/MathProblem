@@ -298,6 +298,7 @@ public class FileUtils {
 
     public static boolean writeString(String content, File file) {
         if (file == null || file.isDirectory()) {
+            Log.w(TAG, "writeString: is Directory.");
             return false;
         }
         createNewFile(file);
@@ -311,13 +312,14 @@ public class FileUtils {
             fw.flush();
         } catch (IOException | IllegalStateException e) {
             e.printStackTrace();
+            Log.e(TAG, "writeString: e = " + e.toString(), e);
             CrashReport.postCatchedException(e);
             return false;
         } finally {
             closeIO(fw);
             closeIO(bw);
         }
-        return false;
+        return true;
     }
 
     public static String readString(String filePath) {
@@ -429,8 +431,8 @@ public class FileUtils {
      * @return 空闲内存大小，单位：Byte
      */
     public static long getAvailableSize(String dir) {
-        if (new File(dir).exists()){
-            return 0L;
+        if (!new File(dir).exists()){
+            return -1L;
         }
         StatFs stat = new StatFs(dir);
         // 获取block数量

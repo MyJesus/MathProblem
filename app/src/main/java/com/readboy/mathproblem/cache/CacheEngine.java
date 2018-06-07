@@ -8,8 +8,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 
-import com.readboy.aliyunplayerlib.utils.FileUtil;
-import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.application.MathApplication;
 import com.readboy.mathproblem.application.SubjectType;
 import com.readboy.mathproblem.http.HttpRequestImpl;
@@ -125,11 +123,10 @@ public final class CacheEngine implements CacheConfig {
                     if (FileUtils.writeString(jsonStr,
                             file)) {
                         appendLog(file + "更新成功");
-                    } else if (!TextUtils.isEmpty(jsonStr)
-                            && FileUtils.getAvailableSize(new File(file).getParent()) <
-                            jsonStr.getBytes().length * 1.2) {
+                    } else {
                         //TODO 内存不足，无法缓存数据。
-                        Log.e(TAG, "onResponse: 内存不足，无法缓存。");
+                        logWhyCanNotWriteFile(new File(file).getParent(),
+                                jsonStr == null ? 0 : jsonStr.getBytes().length);
                     }
 //                    if (entity.getData() != null && entity.getData().size() != 0){
                     ProjectEntityWrapper wrapper = new ProjectEntityWrapper(SubjectType.valueOf(type),
@@ -146,6 +143,12 @@ public final class CacheEngine implements CacheConfig {
                 appendLog(file + "更新失败，t = " + t.toString());
             }
         });
+    }
+
+    private static void logWhyCanNotWriteFile(String dir, long targetFileLength){
+        Log.e(TAG, "logWhyCanNotWriteFile() called with: dir = " + dir + ", targetFileLength = " + targetFileLength + "");
+        Log.e(TAG, "onResponse: 内存不足，无法缓存。");
+        Log.e(TAG, "logWhyCanNotWriteFile: getAvailableSize = " + FileUtils.getAvailableSize(dir));
     }
 
     /**
@@ -357,6 +360,7 @@ public final class CacheEngine implements CacheConfig {
     }
 
     public static void setCurrentIndex(int projectIndex) {
+        Log.d(TAG, "setCurrentIndex() called with: projectIndex = " + projectIndex + "");
         if (mProjectWrapper == null) {
             Log.e(TAG, "setCurrentIndex: projectWrapper = null");
             return;
@@ -428,12 +432,10 @@ public final class CacheEngine implements CacheConfig {
         String jsonStr = JsonMapper.toJson(entity);
         if (FileUtils.writeString(jsonStr, file)) {
             appendLog(file + " 更新成功");
-        } else if (!TextUtils.isEmpty(jsonStr)
-                && FileUtils.getAvailableSize(new File(file).getParent()) <
-                jsonStr.getBytes().length * 1.2) {
+        } else{
             //TODO 内存不足，无法缓存数据。
-            Log.e(TAG, "onResponse: 内存不足，无法缓存。");
-        } else {
+            logWhyCanNotWriteFile(new File(file).getParent(),
+                    jsonStr == null ? 0 : jsonStr.getBytes().length);
             appendLog(file + " 更新失败");
         }
     }

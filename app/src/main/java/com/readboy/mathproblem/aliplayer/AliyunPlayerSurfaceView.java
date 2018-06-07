@@ -11,6 +11,8 @@ import com.aliyun.vodplayer.media.AliyunVidSts;
 import com.aliyun.vodplayer.media.AliyunVodPlayer;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.readboy.aliyunplayerlib.helper.VidStsHelper;
+import com.readboy.mathproblem.util.NetworkUtils;
+import com.readboy.mathproblem.util.ToastUtils;
 import com.readboy.mathproblem.video.IVideoPlayer;
 
 import java.util.List;
@@ -105,8 +107,25 @@ public class AliyunPlayerSurfaceView extends SurfaceView implements IVideoPlayer
             public void onFail(int errno) {
                 Log.e(TAG, "onFail: errno = " + errno);
                 mVidSts = null;
+                checkNetwork();
             }
         });
+    }
+
+    /**
+     * 检查网络情况，并做统一处理
+     *
+     * @return 无网络，返回false;
+     * 有网络返回true。
+     */
+    private boolean checkNetwork() {
+        if (!NetworkUtils.isConnected(getContext())){
+            ToastUtils.show(getContext(), "网络不可用，请检查网络");
+            return false;
+        }else {
+            ToastUtils.show(getContext(), "视频出现了些问题");
+            return true;
+        }
     }
 
     private void prepareAsync() {

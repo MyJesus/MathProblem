@@ -1,6 +1,8 @@
 package com.readboy.mathproblem.widget;
 
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,15 +21,16 @@ import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import com.aliyun.vodplayer.media.AliyunLocalSource;
 import com.aliyun.vodplayer.media.AliyunVidSts;
 import com.aliyun.vodplayer.media.AliyunVodPlayer;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer.PlayerState;
-import com.aliyun.vodplayerview.utils.NetWatchdog;
 import com.readboy.aliyunplayerlib.helper.VidStsHelper;
 import com.readboy.aliyunplayerlib.utils.AliLogUtil;
+import com.readboy.aliyunplayerlib.utils.NetWatchdog;
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.application.SubjectType;
@@ -189,6 +192,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mAliyunVodPlayer.setOnCompletionListener(this);
         mAliyunVodPlayer.setOnSeekCompleteListener(this);
         mAliyunVodPlayer.setOnStoppedListner(this);
+        mAliyunVodPlayer.setOnLoadingListener(this);
 //        mAliyunVodPlayer.enableNativeLog();
 
         mVidStsHelper = new VidStsHelper();
@@ -200,7 +204,8 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
 
     private void initVideoData(final long seekPosition, VideoInfo videoInfo, boolean playVideo) {
         this.mSeekPosition = seekPosition;
-//        stopVideo();
+        //清除画面内容。
+        stopVideo();
 //        showProgressBar();
 //        if (!isFirstPlay) {
 //            sendPlayBeforeEvent();
@@ -294,7 +299,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         if (mVidSts == null) {
             getVidsts();
         } else {
-            if (!allowMobilePlay && NetWatchdog.is4GConnected(getContext())) {
+            if (!allowMobilePlay && NetworkUtils.is4G(getContext())) {
                 Log.e(TAG, "prepareAsync: do nothing.");
             } else {
                 Log.e(TAG, "prepareAsync: ");
@@ -331,6 +336,15 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
             public void onFail(int errno) {
                 Log.e(TAG, "onFail: errno = " + errno);
                 mVidSts = null;
+                if (checkNetwork()) {
+                    if (errno == VidStsHelper.ERRNO_SIGNATURE_INVALID) {
+                        ToastUtils.show(getResources().getString(com.readboy.aliyunplayerlib.R.string.player_load_status_view_text_error_signature_invalid));
+                    } else if (errno == VidStsHelper.ERRNO_DEVICE_UNAUTH) {
+                        ToastUtils.show(getResources().getString(com.readboy.aliyunplayerlib.R.string.player_load_status_view_text_error_device_unauth));
+                    } else {
+                        ToastUtils.show("未知错误");
+                    }
+                }
             }
         });
     }
@@ -390,6 +404,20 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
 //        }
         mAliyunVodPlayer.stop();
         onPaused();
+    }
+
+    public void clearSurfaceView() {
+        Canvas canvas = null;
+        try {
+            canvas = mSurfaceView.getHolder().lockCanvas(null);
+            canvas.drawColor(Color.BLACK);
+        }catch (Exception e) {
+            // TODO: handle exception
+        }finally {
+            if(canvas != null) {
+                mSurfaceView.getHolder().unlockCanvasAndPost(canvas);
+            }
+        }
     }
 
     private void resetData() {
@@ -506,6 +534,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         CacheEngine.setCurrentIndex(mProjectPosition);
         pauseVideo();
         long seekPosition = mAliyunVodPlayer.getCurrentPosition();
+        seekPosition = Math.max(0, seekPosition - 3000);
         Log.e(TAG, "gotoMovieActivity: index = " + mCurrentVideoIndex + ", seekPosition = " + seekPosition);
 //        VideoProxy.playWithCurrentProject(mCurrentVideoIndex, seekPosition, mContext);
         if (mSubjectType != null) {
@@ -705,10 +734,11 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     public void onError(int i, int i1, String s) {
         Log.e(TAG, "onError() called with: i = " + i + ", i1 = " + i1 + ", s = " + s + "");
         handleError(s);
-        if (i == 4502) {
+        if (i == 4502 || i == 4002) {
             //请求saas服务器错误，可能是AliyunVidSts参数无效
-            mVidSts = null;
         }
+        //防止是鉴权过期问题。
+        mVidSts = null;
         isPreparing = false;
     }
 
@@ -737,7 +767,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
 
     @Override
     public void onLoadProgress(int i) {
-        Log.e(TAG, "onLoadProgress() called with: i = " + i + "");
+//        Log.e(TAG, "onLoadProgress() called with: i = " + i + "");
 
     }
 

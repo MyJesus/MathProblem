@@ -202,7 +202,7 @@ public class AliPlayerViewActivity extends Activity implements View.OnClickListe
         mAliPlayerView.setKeepScreenOn(true);
 
         //打开阿里打印，即阿里播放器底层相关的打印，前期测试阶段建议打开。已改到Application中设置了。选用
-        mAliPlayerView.enableNativeLog();
+//        mAliPlayerView.enableNativeLog();
 
         //自定义界面，不需要自定义可以置null。选用
         mPlayerTopView = new PlayerTopViewDefault(this);

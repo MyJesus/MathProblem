@@ -147,7 +147,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     protected void onPause() {
         super.onPause();
         //保存喜欢，方便下次打开应用初始化数据
-        Log.e(TAG, "onDestroy: currentGrade = " + mCurGrade + ", subjectType = " + mSubjectType);
+        Log.e(TAG, "onPause: currentGrade = " + mCurGrade + ", subjectType = " + mSubjectType);
         PreferencesUtils.saveGrade(mCurGrade);
         PreferencesUtils.saveSubject(mSubjectType);
     }

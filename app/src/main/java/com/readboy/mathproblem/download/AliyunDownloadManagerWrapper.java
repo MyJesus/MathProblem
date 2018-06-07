@@ -1,5 +1,6 @@
 package com.readboy.mathproblem.download;
 
+import android.content.Context;
 import android.database.Observable;
 import android.os.Handler;
 import android.os.Looper;
@@ -20,8 +21,11 @@ import com.readboy.mathproblem.http.download.DownloadModel;
 import com.readboy.mathproblem.http.download.DownloadStatus;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
 import com.readboy.mathproblem.util.FileUtils;
+import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.ToastUtils;
 import com.readboy.mathproblem.util.VideoUtils;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,6 +48,7 @@ import static com.readboy.mathproblem.http.download.DownloadContract.SUPPORT_BAC
 public class AliyunDownloadManagerWrapper {
     private static final String TAG = "oubin_AliyunDownloader";
 
+    @Deprecated
     private final List<DownloadModel> mDownloadModelVector = new Vector<>();
 
     /**
@@ -159,16 +164,20 @@ public class AliyunDownloadManagerWrapper {
         }
     }
 
-    private DownloadModel valueAt(final int index) {
-        return mDownloadModelVector.get(index);
-    }
+//    private DownloadModel valueAt(final int index) {
+//        return mDownloadModelVector.get(index);
+//    }
 
     private void addDownloadMode(DownloadModel model) {
         Log.e(TAG, "addDownloadMode: model = " + model.getFileName());
-        mDownloadModelVector.add(model);
-        mDownloadMap.put(model.getUrl(), model);
+//        mDownloadModelVector.add(model);
+        mDownloadMap.put(model.getVid(), model);
     }
 
+    /**
+     * 删除缓存数据，界面显示的数据
+     * @param key vid
+     */
     private void removeDownloadMode(String key){
         mDownloadMap.remove(key);
     }
@@ -231,8 +240,42 @@ public class AliyunDownloadManagerWrapper {
                 @Override
                 public void onFail(int errno) {
                     Log.e(TAG, "onFail() called with: errno = " + errno + "");
+                    checkNetwork(errno);
                 }
             });
+        }
+    }
+
+    /**
+     * 检查网络情况，并做统一处理
+     *
+     * @return 无网络，返回false;
+     * 有网络返回true。
+     */
+    private boolean checkNetwork(int errno) {
+        Context context = MathApplication.getInstance();
+        if (!NetworkUtils.isConnected(context)){
+            ToastUtils.show(context, "下载失败：网络不可用，请检查网络");
+            return false;
+        }else {
+            if (errno == VidStsHelper.ERRNO_SIGNATURE_INVALID) {
+                ToastUtils.show("下载失败：请确保系统时间正常，再点击重新加载");
+            } else if (errno == VidStsHelper.ERRNO_DEVICE_UNAUTH) {
+                ToastUtils.show("下载失败：机器未授权，暂时无法播放");
+            } else {
+                ToastUtils.show("下载失败：未知错误");
+            }
+            return true;
+        }
+    }
+
+    private boolean checkNetwork(){
+        Context context = MathApplication.getInstance();
+        if (!NetworkUtils.isConnected(context)){
+            ToastUtils.show(context, "下载失败：网络不可用，请检查网络");
+            return false;
+        }else {
+            return true;
         }
     }
 
@@ -277,6 +320,7 @@ public class AliyunDownloadManagerWrapper {
                 public void onFail(int errno) {
                     Log.e(TAG, "onFail() called with: errno = " + errno + "");
                     mAliyunVidSts = null;
+                    checkNetwork(errno);
                 }
             });
         }
@@ -311,6 +355,10 @@ public class AliyunDownloadManagerWrapper {
      * @param status 想要改变的状态
      */
     public void updateDownloadStatus(String vid, DownloadStatus status) {
+        DownloadModel downloadModel = getDownloadMode(vid);
+        if (downloadModel != null){
+            downloadModel.setStatus(status);
+        }
         switch (status) {
             case PAUSE:
                 stopDownload(vid);
@@ -356,8 +404,25 @@ public class AliyunDownloadManagerWrapper {
 
     public void removeMediaInfo(AliyunDownloadMediaInfo mediaInfo) {
 //        stopDownload(mediaInfo);
-        mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
+
+        if (isCompleteMediaInfo(mediaInfo)) {
+            //该方法会删除之前下载的文件
+            mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
+        }else {
+            Log.d(TAG, "removeMediaInfo: not complete media info.");
+        }
+        mDbController.deleteTask(mediaInfo.getVid());
         removeDownloadMode(mediaInfo.getVid());
+    }
+
+    /**
+     * 判断是否是完整的mediaInfo，不判断可能会导致AliyunDownloadManager.removeDownloadMedia()内部出错，
+     * 或者该mediaInfo根本都没加入到AliyunDownloadManager中
+     */
+    private boolean isCompleteMediaInfo(AliyunDownloadMediaInfo mediaInfo){
+        return !TextUtils.isEmpty(mediaInfo.getVid())
+                && !TextUtils.isEmpty(mediaInfo.getQuality())
+                && !TextUtils.isEmpty(mediaInfo.getFormat());
     }
 
     public void registerDownloadTaskObserver(BaseDownloadTaskObserver observer) {
@@ -374,9 +439,9 @@ public class AliyunDownloadManagerWrapper {
                 || status == AliyunDownloadMediaInfo.Status.Wait;
     }
 
-    private void logArray() {
-        logArray(mDownloadModelVector);
-    }
+//    private void logArray() {
+//        logArray(mDownloadModelVector);
+//    }
 
     private void logArray(List<DownloadModel> modelList) {
         int size = modelList.size();
@@ -524,11 +589,17 @@ public class AliyunDownloadManagerWrapper {
                 Log.e(TAG, "onPrepared: mediaInfo = null. why?");
                 return;
             }
-            mAliyunDownloadManager.addDownloadMedia(mediaInfo);
-            startDownload(mediaInfo);
-            DownloadModel model = mDownloadMap.get(mediaInfo.getVid());
+            DownloadModel model = getDownloadMode(mediaInfo.getVid());
             if (model == null) {
+                //可能用户已经执行了删除操作等。
+                return;
             }else {
+                mAliyunDownloadManager.addDownloadMedia(mediaInfo);
+                Log.d(TAG, "onPrepared: model status = " + model.getStatus());
+                //开始到这里，可能用户已经暂停了。
+                if (model.getStatus() != DownloadStatus.PAUSE) {
+                    startDownload(mediaInfo);
+                }
                 model.setMediaInfo(mediaInfo);
             }
             mDownloadMap.put(mediaInfo.getVid(), model);
@@ -567,12 +638,11 @@ public class AliyunDownloadManagerWrapper {
 
             String oldPath = mediaInfo.getSavePath();
             String newPath = Constants.getVideoPath(mediaInfo.getTitle());
-//            FileUtils.renameTo(oldPath, newPath);
+            FileUtils.renameTo(oldPath, newPath);
 
+            //可以去掉吗？
             notifyItemChanged(DownloadStatus.COMPLETED, mediaInfo);
-            mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
-            mDbController.deleteTask(mediaInfo.getVid());
-            removeDownloadMode(mediaInfo.getVid());
+            removeMediaInfo(mediaInfo);
             mTaskObservable.onTaskCompleted(mediaInfo);
 
         }
@@ -583,7 +653,9 @@ public class AliyunDownloadManagerWrapper {
             notifyItemChanged(DownloadStatus.ERROR, mediaInfo);
             mTaskObservable.onTaskError(mediaInfo, s);
             mAliyunVidSts = null;
-            ToastUtils.show("下载出错：" + mediaInfo.getTitle() + ":" + s);
+            if (checkNetwork()) {
+                ToastUtils.show("下载出错：" + mediaInfo.getTitle() + ":" + s);
+            }
             //TODO 如果是租期过期，应自动重新获取，对用户不可见
         }
 

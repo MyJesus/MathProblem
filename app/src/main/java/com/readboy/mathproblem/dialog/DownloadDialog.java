@@ -204,9 +204,13 @@ public class DownloadDialog extends BaseVideoDialog {
         if (files != null) {
             Log.e(TAG, "updateLocationVideoList: count = " + files.length);
             for (File file : files) {
-                VideoInfo videoInfo = new VideoInfo(false, file.getAbsolutePath(),
-                        FileUtils.getFileNameWithoutExtension(file.getName()), SizeUtils.formatMemorySize(file.length()));
-                mLocationVideoList.add(videoInfo);
+                //过滤掉未重命名的视频文件。
+                Log.d(TAG, "updateLocationVideoList: file name= " + file.getName());
+                if (!file.getName().endsWith("m3u8.mp4")) {
+                    VideoInfo videoInfo = new VideoInfo(false, file.getAbsolutePath(),
+                            FileUtils.getFileNameWithoutExtension(file.getName()), SizeUtils.formatMemorySize(file.length()));
+                    mLocationVideoList.add(videoInfo);
+                }
             }
         }
         notifyLocationDataChange();
@@ -310,6 +314,7 @@ public class DownloadDialog extends BaseVideoDialog {
 //                updateLocationVideoList();
                 showLocationList();
                 updateCountView();
+                unCheckAll();
                 mAllCheckedBox.setChecked(false);
                 break;
             case R.id.download_btn_unselected:

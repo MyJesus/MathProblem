@@ -7,6 +7,8 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 
+import com.readboy.textbook.chapter.Content;
+
 /**
  * <pre>
  *     time  : 2016/8/2
@@ -257,6 +259,21 @@ public class NetworkUtils {
         int simState = manager.getSimState();
         return simState != TelephonyManager.SIM_STATE_ABSENT
                 && simState != TelephonyManager.SIM_STATE_UNKNOWN;
+    }
+
+    /**
+     * 检查网络情况，并做统一处理
+     *
+     * @return 无网络，返回false;
+     * 有网络返回true。
+     */
+    public static boolean checkNetworkAndToast(Context context) {
+        if (!NetworkUtils.isConnected(context)) {
+            ToastUtils.show(context, "网络不可用，请检查网络");
+            return false;
+        } else {
+            return true;
+        }
     }
 
 }
