@@ -255,7 +255,7 @@ public final class CacheEngine implements CacheConfig {
 //                            videoInfo.setUrl(AuthManager.auth(videoInfo.getVideoUri()));
                             temp.put(videoInfo.getId(), videoInfo);
                         }
-                        Log.e(TAG, "onResponse: uri = " + AuthManager.auth("/download/qm/test.mp4"));
+//                        Log.e(TAG, "onResponse: uri = " + AuthManager.auth("/download/qm/test.mp4"));
                         for (ProjectEntity.Project project : projectList) {
                             if (!Lists.isEmpty(project.getVideo2())) {
                                 List<VideoInfo> video2List = new ArrayList<>();
@@ -386,8 +386,9 @@ public final class CacheEngine implements CacheConfig {
     public static void setCurrentProjectWrapper(int index, ProjectEntityWrapper wrapper) {
         Log.e(TAG, "setCurrentProjectWrapper: index = " + index + ", wrapper = " + wrapper);
         if (wrapper == null) {
+            Log.w(TAG, "setCurrentProjectWrapper: wrapper = null.");
             mProjectWrapper = null;
-            mIndex = -1;
+            mIndex = 0;
             return;
         }
         mProjectWrapper = wrapper;

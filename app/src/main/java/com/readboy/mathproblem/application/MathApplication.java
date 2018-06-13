@@ -31,7 +31,6 @@ import com.squareup.picasso.Picasso;
 import com.tencent.bugly.crashreport.CrashReport;
 
 import java.io.File;
-import java.io.IOException;
 
 import okhttp3.OkHttpClient;
 

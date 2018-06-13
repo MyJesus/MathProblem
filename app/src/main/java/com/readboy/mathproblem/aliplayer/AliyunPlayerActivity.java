@@ -50,9 +50,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.alivc.player.logreport.PauseEvent;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.readboy.aliyunplayerlib.view.AliPlayerView;
 import com.readboy.aliyunplayerlib.view.PlayerCompleteViewDefault;
+import com.readboy.aliyunplayerlib.view.PlayerLoadStatusViewBase;
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.activity.BaseActivity;
 import com.readboy.mathproblem.activity.StudyActivity;
@@ -170,7 +172,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
     private MediaSessionCompat mMediaSession;
     private MediaSessionCallback mMediaSessionCallback;
 
-    private MyTrafficStatus mTrafficStatus = null;
+//    private MyTrafficStatus mTrafficStatus = null;
 
     private final ArrayList<IVideoResource> mVideoResourceList = new ArrayList<>();
     private boolean hasRequestAudioFocus = false;
@@ -295,15 +297,15 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                     }
                     break;
                 case VideoMessage.HEART:
-                    if (mNetWorkSpeedShow && mTrafficStatus != null) {
-                        if (mPD != null) {
-                            String speeds = mTrafficStatus.getRxSpeed(AliyunPlayerActivity.this);
-//                            Log.e(TAG, "handleMessage: speeds = " + speeds);
-                            if (speeds != null) {
-                                mPD.setMessage(speeds);
-                            }
-                        }
-                    }
+//                    if (mNetWorkSpeedShow && mTrafficStatus != null) {
+//                        if (mPD != null) {
+//                            String speeds = mTrafficStatus.getRxSpeed(AliyunPlayerActivity.this);
+////                            Log.e(TAG, "handleMessage: speeds = " + speeds);
+//                            if (speeds != null) {
+//                                mPD.setMessage(speeds);
+//                            }
+//                        }
+//                    }
                     break;
                 case VideoMessage.NOOP:
                     if (mPlayerView.isPlaying()) {
@@ -478,7 +480,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         mCompleteView.getCancelView().setOnClickListener(this);
         mLoadingView = new PlayerLoadStatusView(this);
         mLoadingView.setOnCompletedListener(this);
-        mLoadingView.setUnitOnClickListener(this);
+//        mLoadingView.setUnitOnClickListener(this);
 //        mLoadingView = new PlayerLoadStatusViewDefault(this);
         mPlayerView = (AliPlayerView) findViewById(R.id.ali_player_view);
         mPlayerView.init(mTopView, mBottomView, mLoadingView, null, mCompleteView);
@@ -667,9 +669,11 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
         mUserPresent = !keyguardManager.inKeyguardRestrictedInputMode();
 
-        if (mIsPlayUrl) {
-            mTrafficStatus = new MyTrafficStatus(this);
-        }
+//        if (mIsPlayUrl) {
+//            mTrafficStatus = new MyTrafficStatus(this);
+//        }
+
+        mPlayerView.onResume();
         Log.e(TAG, "onResume: mButtonCanClick = " + mButtonCanClick + ", state = " + mPlayerView.getPlayerState());
     }
 
@@ -697,9 +701,9 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         saveCurrentPosition();
 
         disappearView();
-        if (mIsPlayUrl) {
-            mTrafficStatus = null;
-        }
+//        if (mIsPlayUrl) {
+//            mTrafficStatus = null;
+//        }
 //        saveData();
     }
 
@@ -872,6 +876,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                 finishMyself();
                 break;
             case R.id.player_complete_btn_continue:
+                Log.d(TAG, "onClick: player complete btn continue.");
                 replay();
                 break;
             case R.id.player_video_list_switch:
@@ -883,10 +888,30 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                 }
                 break;
             case R.id.load_status_view_btn_continue:
-
+//                onContinueOnClick();
                 break;
             default:
                 Log.e(TAG, "onClick: other view click = " + v.getId());
+                break;
+        }
+    }
+
+    private void onContinueOnClick(){
+        Log.d(TAG, "onContinueOnClick: status = " + mLoadingView.getStatus());
+        switch (mLoadingView.getStatus()){
+            case PlayerLoadStatusViewBase.STATUS_CONTINUE:
+                Log.d(TAG, "onContinueOnClick: player state = " + mPlayerView.getPlayerState());
+                if(mPlayerView.getPlayerState() == IAliyunVodPlayer.PlayerState.Prepared
+                        || mPlayerView.getPlayerState() == IAliyunVodPlayer.PlayerState.Paused){
+                    mPlayerView.onResume();
+                    mBottomView.setPlayPauseStatus(true);
+                }else{
+                    mBottomView.setPlayPauseStatus(true);
+                    updatePlay();
+                }
+                break;
+            default:
+                replay();
                 break;
         }
     }
@@ -951,6 +976,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
      * 重新播放
      */
     private void replay() {
+        Log.d(TAG, "replay: ");
         mIndex = 0;
         mPosition = 0;
         updateCurrentVideoResource(mVideoResourceList.get(0));
@@ -1519,14 +1545,14 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
     }
 
     private void updateStatusCauseUri() {
-        Log.e(TAG, "updateStatusCauseUri: mIsPlayUrl = " + mIsPlayUrl + ", mTrafficStatus = " + mTrafficStatus);
-        if (mIsPlayUrl) {
-            if (mTrafficStatus == null) {
-                mTrafficStatus = new MyTrafficStatus(this);
-            }
-        } else {
-            mTrafficStatus = null;
-        }
+        Log.e(TAG, "updateStatusCauseUri: mIsPlayUrl = " + mIsPlayUrl);
+//        if (mIsPlayUrl) {
+//            if (mTrafficStatus == null) {
+//                mTrafficStatus = new MyTrafficStatus(this);
+//            }
+//        } else {
+//            mTrafficStatus = null;
+//        }
     }
 
     private void createProgressDialog() {

@@ -581,6 +581,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         //保存喜欢，方便下次打开应用初始化数据
         PreferencesUtils.saveGrade(mCurGrade);
         PreferencesUtils.saveSubject(mSubjectType);
+        Log.d(TAG, "gotoStudyActivity: parcelable = " + parcelable.toString());
         startActivity(intent);
         CacheEngine.setCurrentProjectWrapper(position, mProjectWrapper);
     }
