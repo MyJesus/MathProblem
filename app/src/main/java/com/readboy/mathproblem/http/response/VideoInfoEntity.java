@@ -7,6 +7,7 @@ import java.util.List;
 
 /**
  * Created by oubin on 2017/10/23.
+ * {"msg": {"reason": "签名过期", "serverTimestamp": 1532391485}, "errno": 6005, "ok": 0}
  */
 
 public class VideoInfoEntity {
@@ -28,6 +29,7 @@ public class VideoInfoEntity {
      */
 
     private String msg;
+    private int errno;
     private int ok;
     private List<VideoInfo> data;
 

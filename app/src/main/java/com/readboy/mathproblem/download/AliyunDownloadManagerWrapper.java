@@ -121,9 +121,10 @@ public class AliyunDownloadManagerWrapper {
 
         mAliyunDownloadManager.setRefreshStsCallback(null);
         mRefreshStsCallback = null;
+        mDownloadMap.clear();
+
 
         unregisterServiceConnectionListener();
-
         unregisterAllDownloadTaskObserver();
 
     }
@@ -176,13 +177,14 @@ public class AliyunDownloadManagerWrapper {
 
     /**
      * 删除缓存数据，界面显示的数据
+     *
      * @param key vid
      */
-    private void removeDownloadMode(String key){
+    private void removeDownloadMode(String key) {
         mDownloadMap.remove(key);
     }
 
-    private DownloadModel getDownloadMode(String key){
+    private DownloadModel getDownloadMode(String key) {
         return mDownloadMap.get(key);
     }
 
@@ -254,10 +256,10 @@ public class AliyunDownloadManagerWrapper {
      */
     private boolean checkNetwork(int errno) {
         Context context = MathApplication.getInstance();
-        if (!NetworkUtils.isConnected(context)){
+        if (!NetworkUtils.isConnected(context)) {
             ToastUtils.show(context, "下载失败：网络不可用，请检查网络");
             return false;
-        }else {
+        } else {
             if (errno == VidStsHelper.ERRNO_SIGNATURE_INVALID) {
                 ToastUtils.show("下载失败：请确保系统时间正常，再点击重新加载");
             } else if (errno == VidStsHelper.ERRNO_DEVICE_UNAUTH) {
@@ -269,12 +271,12 @@ public class AliyunDownloadManagerWrapper {
         }
     }
 
-    private boolean checkNetwork(){
+    private boolean checkNetwork() {
         Context context = MathApplication.getInstance();
-        if (!NetworkUtils.isConnected(context)){
+        if (!NetworkUtils.isConnected(context)) {
             ToastUtils.show(context, "下载失败：网络不可用，请检查网络");
             return false;
-        }else {
+        } else {
             return true;
         }
     }
@@ -287,7 +289,7 @@ public class AliyunDownloadManagerWrapper {
             startDownload(mediaInfo);
             return;
         }
-        if (getDownloadMode(videoInfo.getVid()) != null){
+        if (getDownloadMode(videoInfo.getVid()) != null) {
             Log.e(TAG, "prepareDownload: is preparing. name = " + videoInfo.getName());
             return;
         }
@@ -332,10 +334,10 @@ public class AliyunDownloadManagerWrapper {
             return;
         }
         DownloadModel downloadMode = getDownloadMode(info.getVid());
-        if (downloadMode != null){
+        if (downloadMode != null) {
             downloadMode.setMediaInfo(info);
             downloadMode.setStatus(status);
-        }else {
+        } else {
             Log.e(TAG, "notifyItemChanged: downloadMode = null.");
             return;
         }
@@ -356,7 +358,7 @@ public class AliyunDownloadManagerWrapper {
      */
     public void updateDownloadStatus(String vid, DownloadStatus status) {
         DownloadModel downloadModel = getDownloadMode(vid);
-        if (downloadModel != null){
+        if (downloadModel != null) {
             downloadModel.setStatus(status);
         }
         switch (status) {
@@ -408,7 +410,7 @@ public class AliyunDownloadManagerWrapper {
         if (isCompleteMediaInfo(mediaInfo)) {
             //该方法会删除之前下载的文件
             mAliyunDownloadManager.removeDownloadMedia(mediaInfo);
-        }else {
+        } else {
             Log.d(TAG, "removeMediaInfo: not complete media info.");
         }
         mDbController.deleteTask(mediaInfo.getVid());
@@ -419,8 +421,9 @@ public class AliyunDownloadManagerWrapper {
      * 判断是否是完整的mediaInfo，不判断可能会导致AliyunDownloadManager.removeDownloadMedia()内部出错，
      * 或者该mediaInfo根本都没加入到AliyunDownloadManager中
      */
-    private boolean isCompleteMediaInfo(AliyunDownloadMediaInfo mediaInfo){
-        return !TextUtils.isEmpty(mediaInfo.getVid())
+    private boolean isCompleteMediaInfo(AliyunDownloadMediaInfo mediaInfo) {
+        return mediaInfo != null
+                && !TextUtils.isEmpty(mediaInfo.getVid())
                 && !TextUtils.isEmpty(mediaInfo.getQuality())
                 && !TextUtils.isEmpty(mediaInfo.getFormat());
     }
@@ -593,7 +596,7 @@ public class AliyunDownloadManagerWrapper {
             if (model == null) {
                 //可能用户已经执行了删除操作等。
                 return;
-            }else {
+            } else {
                 mAliyunDownloadManager.addDownloadMedia(mediaInfo);
                 Log.d(TAG, "onPrepared: model status = " + model.getStatus());
                 //开始到这里，可能用户已经暂停了。

@@ -21,7 +21,6 @@ import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.VideoView;
 
 import com.aliyun.vodplayer.media.AliyunLocalSource;
 import com.aliyun.vodplayer.media.AliyunVidSts;
@@ -30,7 +29,6 @@ import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer.PlayerState;
 import com.readboy.aliyunplayerlib.helper.VidStsHelper;
 import com.readboy.aliyunplayerlib.utils.AliLogUtil;
-import com.readboy.aliyunplayerlib.utils.NetWatchdog;
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.application.SubjectType;
@@ -71,6 +69,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     private static final String TAG = "oubin_SmallPlayerView";
     //毫秒
     private static final int DELAY_SEND_HIDE_MESSAGE = 4_000;
+    private static final int MAX_RETRY_TIME = 2;
 
     private Context mContext;
 
@@ -100,6 +99,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     private boolean isFirstPlay = true;
     private boolean isPaused = false;
     private boolean isPreparing = false;
+    private int retryTimes = 0;
     private PlayerState mTargetState = PlayerState.Idle;
 
     private final List<VideoInfo> mVideoInfoList = new ArrayList<>();
@@ -198,7 +198,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         mVidStsHelper = new VidStsHelper();
     }
 
-    private void initVideoData(final long seekPosition, VideoInfo videoInfo){
+    private void initVideoData(final long seekPosition, VideoInfo videoInfo) {
         initVideoData(seekPosition, videoInfo, true);
     }
 
@@ -263,12 +263,12 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         onInit();
         if (resource.isDownloaded()) {
             playWithLocalPath(Constants.getVideoPath(resource.getVideoName()));
-        }else {
+        } else {
             playWithVid(resource.getVideoUri().getAuthority());
         }
     }
 
-    private void playWithLocalPath(String path){
+    private void playWithLocalPath(String path) {
         setPlayerControllerEnabled(true);
         AliyunLocalSource.AliyunLocalSourceBuilder asb = new AliyunLocalSource.AliyunLocalSourceBuilder();
         asb.setSource(path);
@@ -411,10 +411,10 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         try {
             canvas = mSurfaceView.getHolder().lockCanvas(null);
             canvas.drawColor(Color.BLACK);
-        }catch (Exception e) {
+        } catch (Exception e) {
             // TODO: handle exception
-        }finally {
-            if(canvas != null) {
+        } finally {
+            if (canvas != null) {
                 mSurfaceView.getHolder().unlockCanvasAndPost(canvas);
             }
         }
@@ -604,7 +604,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         return isPreparing;
     }
 
-    private boolean needNewwork(){
+    private boolean needNewwork() {
         return !mCurrentVideoResource.isDownloaded();
     }
 
@@ -640,6 +640,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     private void onInit() {
         Log.e(TAG, "onInit: ");
         isPreparing = true;
+        retryTimes = 0;
         showProgressBar();
         hidePlayerController();
     }
@@ -698,9 +699,6 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         Log.e(TAG, "onPrepared: seekPosition = " + mSeekPosition
                 + ", state = " + mAliyunVodPlayer.getPlayerState()
                 + ", mTargetState = " + mTargetState);
-//        if (isFirstPlay){
-//
-//        }else {
         if (mSeekPosition > 0) {
             mAliyunVodPlayer.seekTo((int) mSeekPosition);
         } else {
@@ -733,12 +731,17 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     @Override
     public void onError(int i, int i1, String s) {
         Log.e(TAG, "onError() called with: i = " + i + ", i1 = " + i1 + ", s = " + s + "");
-        handleError(s);
-        if (i == 4502 || i == 4002) {
-            //请求saas服务器错误，可能是AliyunVidSts参数无效
-        }
         //防止是鉴权过期问题。
         mVidSts = null;
+        if (i == 4502 || i == 4002) {
+            //请求saas服务器错误，可能是AliyunVidSts参数无效
+            //需要重新请求，刷新mVidSts，对用户不可见
+            if (retryTimes < MAX_RETRY_TIME) {
+                retryTimes ++;
+                prepareAsync(true);
+            }
+        }
+        handleError(s);
         isPreparing = false;
     }
 

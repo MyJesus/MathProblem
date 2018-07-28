@@ -7,12 +7,12 @@
     android:background="@drawable/study_bg2"
     tools:context="com.readboy.mathproblem.activity.StudyActivity">
 
-    <View
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="102dp"
-        android:background="@drawable/study_bg"
-        android:visibility="gone" />
+    <!--<View-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_marginTop="102dp"-->
+        <!--android:background="@drawable/study_bg"-->
+        <!--android:visibility="gone" />-->
 
     <!-- The main content view -->
     <FrameLayout

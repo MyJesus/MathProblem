@@ -266,6 +266,9 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
             mNote = null;
         }
 
+        mExampleList.clear();
+        mProjectList.clear();
+
         MathApplication.refWatch(this);
     }
 
@@ -467,8 +470,8 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
 
         mCatalogueRv.setLayoutManager(new LinearLayoutManager(this));
         mCatalogueRv.addItemDecoration(new LineItemDecoration(LinearLayout.VERTICAL, 1, 0x55000000));
-        DividerItemDecoration itemDecoration = new DividerItemDecoration(this, LinearLayout.VERTICAL);
-        itemDecoration.setDrawable(new ColorDrawable(0xffff0000));
+//        DividerItemDecoration itemDecoration = new DividerItemDecoration(this, LinearLayout.VERTICAL);
+//        itemDecoration.setDrawable(new ColorDrawable(0xffff0000));
 //        mCatalogueRv.addItemDecoration(itemDecoration);
         mCatalogueAdapter = new CommonAdapter<ProjectEntity.Project>(this, R.layout.item_catalogue, mProjectList) {
             @Override
@@ -808,7 +811,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
 
     private void pauseOrStopVideo() {
 //        if (mPlayerView.isPlaying()) {
-        Log.e(TAG, "pauseOrStopVideo: isPlaying = " + mPlayerView.isPlaying());
+//        Log.e(TAG, "pauseOrStopVideo: isPlaying = " + mPlayerView.isPlaying());
             pauseVideo();
 //        } else {
 //            stopVideo();

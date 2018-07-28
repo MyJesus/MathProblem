@@ -72,6 +72,7 @@ public class ProjectViewHolder extends BaseViewHolder<ProjectHolder> implements 
         String temp = HtmlRegexUtils.filterHtml(data.getExplain());
         //去掉空行，数据防御
         temp = temp.replaceAll("(?m)^\\s*$"+System.lineSeparator(), "");
+        temp = temp.substring(0, 60);
 //        Log.e(TAG, "bindView: temp = " + temp);
 //        html = html.replaceAll("<p>", "");
 //        html = html.replaceAll("</p>", "<br />");

@@ -101,7 +101,7 @@ public class Favorite implements ProjectContract.FavoriteColumns {
         String selection = NAME + "=?";
         try (Cursor cursor = resolver.query(CONTENT_URI, QUERY_COLUMNS, selection,
                 new String[]{favorite.mName}, null)) {
-            if (cursor != null && cursor.getCount() > 0) {
+            if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
                 Log.e(TAG, "insert: 已收藏，favorite = " + favorite.mName);
                 long id = cursor.getInt(cursor.getColumnIndex(_ID));
                 return getUri(id);
@@ -114,8 +114,7 @@ public class Favorite implements ProjectContract.FavoriteColumns {
         String selection = NAME + "=?";
         try (Cursor cursor = resolver.query(CONTENT_URI, QUERY_COLUMNS, selection,
                 new String[]{name}, null)) {
-            if (cursor != null && cursor.getCount() > 0) {
-                cursor.moveToFirst();
+            if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
                 long id = cursor.getLong(_ID_INDEX);
                 return getUri(id);
             }

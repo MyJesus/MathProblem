@@ -29,6 +29,7 @@ import android.provider.MediaStore.Video;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.widget.TextViewCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.telephony.PhoneStateListener;
@@ -478,6 +479,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         mCompleteView = new PlayerCompleteViewDefault(this);
         mCompleteView.getContinueView().setOnClickListener(this);
         mCompleteView.getCancelView().setOnClickListener(this);
+        mCompleteView.getBackView().setOnClickListener(this);
         mLoadingView = new PlayerLoadStatusView(this);
         mLoadingView.setOnCompletedListener(this);
 //        mLoadingView.setUnitOnClickListener(this);
@@ -872,6 +874,7 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                     finishMyself();
                 }
                 break;
+            case R.id.player_complete_back:
             case R.id.player_complete_btn_cancel:
                 finishMyself();
                 break;
@@ -1249,20 +1252,16 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
         builder.setOnCancelListener(dialog -> finishMyself());
         final int preNetworkType = mNetworkType;
         builder.setMessage("当前为非wifi情况下, 要继续播放吗？");
-        builder.setNegativeButton("继续", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("继续", (dialog, which) -> {
+            mUserThinkNetworkAvailable = true;
+            if (preNetworkType == -1) {
+                playVideo();
+                Log.e(TAG, "DialogInterface onClick: seek to " + mPosition);
+            }
+            if (!mPlayPrepared) {
+                mHandler.sendEmptyMessage(VideoMessage.READY);
+            } else {
 
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mUserThinkNetworkAvailable = true;
-                if (preNetworkType == -1) {
-                    playVideo();
-                    Log.e(TAG, "DialogInterface onClick: seek to " + mPosition);
-                }
-                if (!mPlayPrepared) {
-                    mHandler.sendEmptyMessage(VideoMessage.READY);
-                } else {
-
-                }
             }
         });
         mNetworkDialog = builder.create();

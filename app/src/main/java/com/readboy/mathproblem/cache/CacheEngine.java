@@ -70,6 +70,13 @@ public final class CacheEngine implements CacheConfig {
     public static void intiCacheEngine() {
     }
 
+    public static void release(){
+        cancelHttpRequest();
+        mProjectWrapper = null;
+        mGuideArray.clear();
+        mMethodArray.clear();
+    }
+
     /**
      * 并且把上次更新的时间缓存到运行内存里，加速读取，而不是每次都读取Preferences,
      * 获取可以通过File.lastModified()获取上次文件修改时间。
@@ -463,6 +470,7 @@ public final class CacheEngine implements CacheConfig {
         if (mProjectCall != null && !mProjectCall.isCanceled()) {
             Log.e(TAG, "cancelHttpRequest: ");
             mProjectCall.cancel();
+            mProjectCall = null;
         }
     }
 

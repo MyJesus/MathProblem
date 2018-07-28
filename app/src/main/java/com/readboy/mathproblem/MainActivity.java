@@ -53,6 +53,7 @@ import com.readboy.mathproblem.widget.ZoomLayoutManager;
 import com.readboy.recyclerview.CommonAdapter;
 import com.tencent.bugly.crashreport.CrashReport;
 
+import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -166,7 +167,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             mGradeListDialog.cancel();
         }
 
-        CacheEngine.cancelHttpRequest();
+//        CacheEngine.cancelHttpRequest();
+        CacheEngine.release();
 
         MathApplication.refWatch(this);
         AliyunDownloadManagerWrapper.getInstance().onDestroy();
@@ -409,6 +411,12 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     public void onResponse(ProjectEntityWrapper entity) {
         super.onResponse(entity);
         Log.e(TAG, "onResponse() called with: entity = " + entity + "");
+        //可能已经切换了标签
+        if (entity != null && entity.getType() != mSubjectType){
+            Log.e(TAG, "onResponse: current subject type is change. current = " + mSubjectType
+                    + ", response = " + entity.getType());
+            return;
+        }
         if (entity == null) {
             mTryAgainBtn.setVisibility(View.VISIBLE);
         } else {
@@ -435,7 +443,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             checkNetwork();
         } else if (e instanceof SocketTimeoutException) {
             ToastUtils.showShort(this, "网络不稳定, 网络连接超时");
-        } else {
+        } else if (e instanceof ConnectException){
+            ToastUtils.showShort(this, "无法连接，请检查网络");
+        } else{
             ToastUtils.show(this, message);
         }
         updateProjectWrapper(null);

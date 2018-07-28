@@ -69,7 +69,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     private OnIdleBtnListener mOnIdleBtnListener = null;
 
     //播放器回调
-    private OnPlayCompleteListener mOnPlayCompleteListener = null;//播放完成回调
+    private OnPlayCompleteListener mOnPlayCompleteListener = null;
 
     //预处理点击监听器
     private OnPreprocessBtnListener mOnPreprocessBtnListener = null;

@@ -132,6 +132,7 @@ public class ExerciseActivity extends BaseActivity implements View.OnClickListen
     protected void onDestroy() {
         super.onDestroy();
         Log.e(TAG, "onDestroy: ");
+        mQuestionItemList.clear();
         MathApplication.refWatch(this);
     }
 

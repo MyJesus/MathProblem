@@ -6,18 +6,21 @@ import android.content.Context;
 import android.graphics.drawable.AnimationDrawable;
 import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 
 import com.readboy.mathproblem.R;
 import com.readboy.mathproblem.util.SizeUtils;
 
+import java.nio.channels.NotYetBoundException;
+
 /**
  * Created by oubin on 2017/10/18.
  */
 
 public class Dog extends AppCompatImageView {
-    private static final String TAG = "Dog";
+    private static final String TAG = "oubin_Dog";
 
     private AnimationDrawable mDogLeftAnimation;
     private AnimationDrawable mDogRightAnimation;
@@ -27,6 +30,7 @@ public class Dog extends AppCompatImageView {
     private TranslateAnimation mAnimation1;
     private TranslateAnimation mAnimation2;
     private boolean isDogLeft = false;
+    private boolean isRelease = false;
 
     public Dog(Context context) {
         this(context, null);
@@ -128,8 +132,25 @@ public class Dog extends AppCompatImageView {
 //        mDogAnimator1.pause();
 //        mDogAnimator2.pause();
         mAnimation1.cancel();
-
         mAnimation2.cancel();
+    }
+
+    private void release(){
+        setBackground(null);
+        clearAnimation();
+        mDogLeftAnimation = null;
+        mDogRightAnimation = null;
+        mAnimation1.setAnimationListener(null);
+        mAnimation1 = null;
+        mAnimation2.setAnimationListener(null);
+        mAnimation2 = null;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        Log.d(TAG, "onDetachedFromWindow: ");
+        release();
     }
 
     private class CustomAnimatorListener implements Animator.AnimatorListener {
