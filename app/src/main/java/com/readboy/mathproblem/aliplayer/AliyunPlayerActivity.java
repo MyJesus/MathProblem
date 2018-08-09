@@ -386,8 +386,8 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
             return;
         }
 
-        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        tm.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+//        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+//        tm.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
 
         initMediaSession();
 
@@ -728,9 +728,9 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
             mNetworkDialog = null;
         }
 
-        TelephonyManager manager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-        manager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE);
-        mPhoneStateListener = null;
+//        TelephonyManager manager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+//        manager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE);
+//        mPhoneStateListener = null;
 
         if (mExit) {
 //            Log.e(TAG, "-------- System.exit(0) ");
@@ -1237,10 +1237,10 @@ public class AliyunPlayerActivity extends BaseActivity implements VideoExtraName
                 break;
             default:
                 //非wifi，使用流量提示
-                mPlayerView.onPause();
-                mPosition = (int) mPlayerView.getCurrentPosition();
-                showNotUseWifiWarningDialog();
-                break;
+//                mPlayerView.onPause();
+//                mPosition = (int) mPlayerView.getCurrentPosition();
+//                showNotUseWifiWarningDialog();
+                mUserThinkNetworkAvailable = true;
         }
         mNetworkType = networkType;
     }

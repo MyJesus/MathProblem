@@ -6,7 +6,6 @@ import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -15,7 +14,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PagerSnapHelper2;
 import android.support.v7.widget.RecyclerView;
@@ -178,7 +176,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         }
     }
 
-    private void init(){
+    private void init() {
         mNetworkCompat = new NetworkCompat();
         mNetworkCompat.setNetworkListener(new NetworkCompat.NetworkListener() {
             @Override
@@ -753,12 +751,13 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         if (mNoNetWorkDialog == null) {
             mNoNetWorkDialog = new NoNetworkDialog(this);
         }
+        mPlayerView.dismissUsingMobileNetDialog();
         if (!mPlayerView.noNetworkDialogIsShowing()) {
             mNoNetWorkDialog.show();
         }
     }
 
-    private void dismissNoNotworkDialog() {
+    private void dismissNoNetworkDialog() {
         mPlayerView.dismissNoNetworkDialog();
         if (mNoNetWorkDialog != null && mNoNetWorkDialog.isShowing()) {
             mNoNetWorkDialog.dismiss();
@@ -812,7 +811,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
     private void pauseOrStopVideo() {
 //        if (mPlayerView.isPlaying()) {
 //        Log.e(TAG, "pauseOrStopVideo: isPlaying = " + mPlayerView.isPlaying());
-            pauseVideo();
+        pauseVideo();
 //        } else {
 //            stopVideo();
 //        }
@@ -963,7 +962,7 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
         Log.e(TAG, "handleNetWorkChange() called with: isAvailable = " + isAvailable + "");
         runOnUiThread(() -> {
             if (isAvailable) {
-                dismissNoNotworkDialog();
+                dismissNoNetworkDialog();
                 mPlayerView.setPlayerControllerEnabled(true);
 //                mVoice.setEnabled(true);
                 mVoice.setActivated(true);
@@ -1170,5 +1169,4 @@ public class StudyActivity extends BaseActivity implements View.OnClickListener 
             });
         }
     }
-
 }

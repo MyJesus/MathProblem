@@ -2,9 +2,12 @@ package com.readboy.aliyunplayerlib.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -24,6 +27,8 @@ import com.aliyun.vodplayer.media.AliyunVodPlayer;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.readboy.aliyunplayerlib.R;
 import com.readboy.aliyunplayerlib.helper.VidStsHelper;
+import com.readboy.aliyunplayerlib.receiver.PhoneReceiver;
+import com.readboy.aliyunplayerlib.receiver.PhoneReceiverHelper;
 import com.readboy.aliyunplayerlib.utils.AliLogUtil;
 import com.readboy.aliyunplayerlib.utils.NetWatchdog;
 import com.readboy.aliyunplayerlib.utils.StringUtil;
@@ -48,7 +53,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     private static final String TAG = "oubin_AliPlayerView";
 
     //版本号
-    private static final String VERSION = "V1.0.180607001";
+    private static final String VERSION = "V1.0.180806001";
 
     //常量
     private static final int MSG_HEART = 1;
@@ -90,6 +95,9 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     //网络监听切换提示相关
     private NetWatchdog mNetWatchdog;
 
+    //电话监听
+    private PhoneReceiverHelper mPhoneReceiverHelper;
+
     //播放时间记录，只记录处于播放状态的时间，单位为秒
     private int mPlayTimeSec = 0;
 
@@ -101,25 +109,27 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     //失败重连
     private int mAutoCount = 0;//出错自动尝试播放次数计算
-    private static final int AUTO_COUNT_MAX = 3;//最多尝试重新播放3次
+    private static final int AUTO_COUNT_MAX = 3;//失败后最多尝试重新播放3次
 
     //辅助标志
     private boolean mIsPaused = false;//是否pause了
     private boolean mIsSeekBarTouching = false;//是否正在对SeekBar进行拖动
     private boolean mIsSeekComplete = true;//是否seek完成
     private IAliyunVodPlayer.PlayerState mPlayerState;//pause时播放状态，在onResume判断恢复
-    private boolean mIsPauseWhileGetVidsts = false;
+    private boolean mIsPauseWhileGetVidsts = false;//获取鉴权期间进入了onPause
+    private boolean mIsCallWhileGetVidstsOrPrepareAsync = false;//获取鉴权或者准备播放信息期间电话铃声响起
     private boolean mIsPrepareAsyncSuccess = false;//是否prepareAsync成功
+    private boolean mIsSpecialError = false;//特殊错误码处理，例如4003/4013
 
     //播放清晰度选择顺序
     /*private String[] QUALITYS = {
+            IAliyunVodPlayer.QualityValue.QUALITY_ORIGINAL
+            IAliyunVodPlayer.QualityValue.QUALITY_4K,
+            IAliyunVodPlayer.QualityValue.QUALITY_2K,
+            IAliyunVodPlayer.QualityValue.QUALITY_HIGH,
+            IAliyunVodPlayer.QualityValue.QUALITY_STAND,
             IAliyunVodPlayer.QualityValue.QUALITY_LOW,
             IAliyunVodPlayer.QualityValue.QUALITY_FLUENT,
-            IAliyunVodPlayer.QualityValue.QUALITY_STAND,
-            IAliyunVodPlayer.QualityValue.QUALITY_HIGH,
-            IAliyunVodPlayer.QualityValue.QUALITY_2K,
-            IAliyunVodPlayer.QualityValue.QUALITY_4K,
-            IAliyunVodPlayer.QualityValue.QUALITY_ORIGINAL
     };*/
 
 
@@ -150,6 +160,10 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mNetWatchdog.setNetChangeListener(this);
         mNetWatchdog.startWatch();
 
+        //电话监听
+        mPhoneReceiverHelper = new PhoneReceiverHelper(getContext());
+        mPhoneReceiverHelper.setOnListener(mOnPhoneListener);
+        mPhoneReceiverHelper.register();
     }
 
     private void initViews(){
@@ -275,7 +289,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
      * 打开阿里的打印
      */
     public void enableNativeLog(){
-//        mAliyunVodPlayer.enableNativeLog();
+        mAliyunVodPlayer.enableNativeLog();
     }
 
     /**
@@ -342,8 +356,10 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
         mAutoCount = 0;
         mCurrentPosition = 0;
-        prepareAsync(false);
+        resetPlayProgressInfo();
 
+        prepareAsync(false);
+		//oubin
         //requestAudioFocus();
     }
 
@@ -375,8 +391,10 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
         mAutoCount = 0;
         mCurrentPosition = 0;
-        prepareAsync(false);
+        resetPlayProgressInfo();
 
+        prepareAsync(false);
+//oubin
 //        requestAudioFocus();
     }
 
@@ -408,6 +426,8 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
         mAutoCount = 0;
         mCurrentPosition = 0;
+        resetPlayProgressInfo();
+
         prepareAsync(false);
 
 //        requestAudioFocus();
@@ -432,6 +452,13 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         if (am != null) {
             am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        }
+        //SDK版本为19或以下的，因为MP3播放器暂停需要通过广播
+        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+            //stop mp3
+            Intent intentMp3 = new Intent();
+            intentMp3.setAction("com.readboy.simplemp3.ACTION_PAUSE");
+            getContext().sendBroadcast(intentMp3);
         }
     }
 
@@ -693,10 +720,15 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         if(mNetWatchdog != null){
             mNetWatchdog.stopWatch();
         }
+        if(mPhoneReceiverHelper != null){
+            mPhoneReceiverHelper.unregister();
+            mPhoneReceiverHelper = null;
+        }
         stopHeart();
         stopHideControlView();
         mNetWatchdog = null;
         mAliyunVodPlayer = null;
+// oubin
 //		abandonAudioFocus();
     }
 
@@ -794,6 +826,14 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
         mBottomView.setCurrentText(mAliyunVodPlayer.getCurrentPosition());
         mBottomView.setDurationText(max);
     }
+	
+	private void resetPlayProgressInfo(){
+        mBottomView.setSeekBarMax(0);
+        mBottomView.setSeekBarProgress(0);
+        mBottomView.setSeekBarSecondaryProgress(0);
+        mBottomView.setCurrentText(0);
+        mBottomView.setDurationText(0);
+    }
 
     private void resetState() {
         mIsSeekComplete = true;
@@ -866,12 +906,20 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
                 break;
             case PlayerLoadStatusViewBase.STATUS_ERROR_OTHER:
                 mLoadStatusView.setLoading();
-                mAliyunVodPlayer.seekTo((int) mCurrentPosition);
-                IAliyunVodPlayer.PlayerState state = mAliyunVodPlayer.getPlayerState();
-                if(state == IAliyunVodPlayer.PlayerState.Prepared || state == IAliyunVodPlayer.PlayerState.Paused || state == IAliyunVodPlayer.PlayerState.Started){
-                    mAliyunVodPlayer.start();
+                if(mIsSpecialError){
+                    prepareAsync(false);
                 }else {
-                    mAliyunVodPlayer.replay();
+                    IAliyunVodPlayer.PlayerState state = mAliyunVodPlayer.getPlayerState();
+                    AliLogUtil.v(TAG, "---onContinueBtnClick---"+ mCurrentPosition+", "+state);
+                    if (state == IAliyunVodPlayer.PlayerState.Prepared || state == IAliyunVodPlayer.PlayerState.Paused || state == IAliyunVodPlayer.PlayerState.Started) {
+                        mAliyunVodPlayer.seekTo((int) mCurrentPosition);
+                        mAliyunVodPlayer.start();
+                    } else {
+                        //mAliyunVodPlayer.seekTo((int) mCurrentPosition);
+                        //mAliyunVodPlayer.replay();//3.4.6版本replay会把seekTo的位置清0，所以需要prepare再start
+                        mAutoCount = 0;
+                        prepareAsync(false);
+                    }
                 }
                 break;
             case PlayerLoadStatusViewBase.STATUS_MOBILE_NET:
@@ -997,20 +1045,25 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
             mAliyunVodPlayer.seekTo((int) mCurrentPosition);
         }
         //回调的时候可能已经进入onPause，所以需要暂停
-        if(!mIsPaused){
+        if(mIsPaused || mIsCallWhileGetVidstsOrPrepareAsync){
+            AliLogUtil.v(TAG, "---onPrepared---is pause or has call");
+            //mLoadStatusView.setHide();
+            //showControlView();
+            mLoadStatusView.setContinue();
+        }else{
             if( (isVidPlay() || isUrlPlay()) && !NetWatchdog.hasNet(getContext()) ){
                 AliLogUtil.v(TAG, "---onPrepared---no net");
                 mLoadStatusView.setErrorOther(getResources().getString(R.string.player_load_status_view_text_error_no_net));
             }else {
                 mAliyunVodPlayer.start();
             }
-        }else{
-            AliLogUtil.v(TAG, "---onPrepared---mIsPaused = true");
-            //mLoadStatusView.setHide();
-            //showControlView();
-            mLoadStatusView.setContinue();
         }
-        mAutoCount = 0;
+        /*if(mIsSpecialError) {
+            //特殊错误不进行多次自动加载，不然会连续多次失败，看起来界面一闪一闪的
+            mAutoCount = AUTO_COUNT_MAX;
+        }else{
+            mAutoCount = 0;
+        }*/
         mIsPrepareAsyncSuccess = true;
     }
 
@@ -1102,6 +1155,8 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     @Override
     public void onError(int i, int i1, String s) {
         AliLogUtil.v(TAG, "---onError---"+i+", "+i1+", "+s);
+        mIsSpecialError = false;
+        mIsSeekComplete = true;
         if(i == 4002){
             //4002是鉴权信息过期，跟onTimeExpiredError重复，所以不处理
             return;
@@ -1122,14 +1177,30 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
             mAutoCount++;
             if(mAutoCount <= AUTO_COUNT_MAX){
                 mLoadStatusView.setLoading();
-                if(mIsPrepareAsyncSuccess) {
-                    mAliyunVodPlayer.seekTo((int) mCurrentPosition);
-                    mAliyunVodPlayer.replay();
-                }else{
+                /*if(i == 4003){
+                    //出现4003错误的话，需要重新prepareAsync
+                    //原因：replay的时候，如果之前请求过地址信息，为了节省流量是不会再去请求的，
+                    //     可以通过调用stop，prepare实现replay功能。
+                    mIsSpecialError = true;
                     prepareAsync(false);
-                }
+                }else if(i == 4013){
+                    mIsSpecialError = true;
+                    prepareAsync(false);
+                }else {
+                    if (mIsPrepareAsyncSuccess) {
+                        mAliyunVodPlayer.seekTo((int) mCurrentPosition);
+                        mAliyunVodPlayer.replay();
+                        //prepareAsync(false);
+                    } else {
+                        prepareAsync(false);
+                    }
+                }*/
+                prepareAsync(false);
             }else {
                 mAutoCount = 0;
+                if(i == 4003 || i == 4013){
+                    mIsSpecialError = true;
+                }
                 if(isVidPlay() || isUrlPlay()) {
                     if (i == AliyunErrorCode.ALIVC_ERR_INVALID_INPUTFILE.getCode()) {
                         mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
@@ -1148,6 +1219,15 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
                                 R.string.player_load_status_view_text_error_code_msg, i,
                                 getResources().getString(R.string.player_error_4502)));
                     } else {
+                        mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
+                                R.string.player_load_status_view_text_error_code, i));
+                    }
+                }else if(isLocalPlay()){
+                    if(i == AliyunErrorCode.ALIVC_ERROR_DECODE_FAILED.getCode()){
+                        mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
+                                R.string.player_load_status_view_text_error_code_msg, i,
+                                getResources().getString(R.string.player_error_4013)));
+                    }else {
                         mLoadStatusView.setErrorOther(StringUtil.format(getContext(),
                                 R.string.player_load_status_view_text_error_code, i));
                     }
@@ -1192,6 +1272,39 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     public void onNetDisconnected() {
         AliLogUtil.v(TAG, "---onNetDisconnected---");
     }
+
+    private PhoneReceiver.OnPhoneListener mOnPhoneListener = new PhoneReceiver.OnPhoneListener() {
+        @Override
+        public void onPhoneOutCall() {
+            //打出电话监听
+            AliLogUtil.v(TAG, "---onPhoneOutCall---");
+        }
+
+        @Override
+        public void onPhoneStateChange(int state) {
+            AliLogUtil.v(TAG, "---onPhoneStateChange---state = " + state);
+            if(state == TelephonyManager.CALL_STATE_RINGING){
+                //响铃，机器仅仅弹出小框，Activity没进入onPause
+                mPlayerState = mAliyunVodPlayer.getPlayerState();
+                AliLogUtil.v(TAG, "---onPhoneStateChange---mPlayerState = " + mPlayerState);
+                if(mVidStsHelper.isGettingVidsts() || mPlayerState == IAliyunVodPlayer.PlayerState.Idle){
+                    //正在鉴权或者准备播放信息期间
+                    mIsCallWhileGetVidstsOrPrepareAsync = true;
+                }else if(mPlayerState == IAliyunVodPlayer.PlayerState.Started){
+                    AliLogUtil.v(TAG, "---onPhoneStateChange---pause");
+                    mAliyunVodPlayer.pause();
+                    mBottomView.setPlayPauseStatus(false);
+                    mLoadStatusView.setHide();
+                    showControlView();
+                }
+            }else if(state == TelephonyManager.CALL_STATE_OFFHOOK){
+                //接电话，进入接听电话界面，应用进入后台，不需要处理
+            }else if(state == TelephonyManager.CALL_STATE_IDLE){
+                //挂电话
+                mIsCallWhileGetVidstsOrPrepareAsync = false;
+            }
+        }
+    };
 
 
     //预处理界面按钮点击监听接口

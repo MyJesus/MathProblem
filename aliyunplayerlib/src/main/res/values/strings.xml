@@ -6,10 +6,10 @@
     <string name="player_load_status_view_text_error">请确保网络正常，再点击重新加载</string>
     <string name="player_load_status_view_text_error_signature_invalid">请确保系统时间正常，再点击重新加载</string>
     <string name="player_load_status_view_text_error_device_unauth">机器未授权，暂时无法播放</string>
-    <string name="player_load_status_view_text_error_vidsts_fail">鉴权失败，请重新加载试试</string>
+    <string name="player_load_status_view_text_error_vidsts_fail">加载失败，请重新加载试试</string>//不提示鉴权失败，用户好理解
     <string name="player_load_status_view_text_mobile_net">当前处于移动网络，是否继续播放</string>
-    <string name="player_load_status_view_text_error_code">错误码：%d</string>
-    <string name="player_load_status_view_text_error_code_msg">错误码：%1$d，%2$s</string>
+    <string name="player_load_status_view_text_error_code">错误%d</string>
+    <string name="player_load_status_view_text_error_code_msg">错误%1$d，%2$s</string>
     <string name="player_load_status_view_text_error_no_net">请检查网络正常后，再点击重新加载</string>
     <string name="player_load_status_view_text_finish">播放结束</string>
     <string name="player_load_status_view_text_continue">是否继续播放？</string>
@@ -24,8 +24,9 @@
     //错误码提示语
     <string name="player_error_4003">加载失败了，请确保有良好的网络</string>
     <string name="player_error_4008">加载超时了，请确保有良好的网络</string>
-    <string name="player_error_4501">服务器返回数据错误</string>
-    <string name="player_error_4502">请求saas服务器错误</string>
+    <string name="player_error_4501">加载失败了，请确保有良好的网络</string><!--服务器返回数据错误-->
+    <string name="player_error_4502">加载失败了，请确保有良好的网络</string><!--请求saas服务器错误-->
+    <string name="player_error_4013">若一直无法播放，可能文件已损坏</string>
     <string name="player_error_4023">内存不足</string>
 
 

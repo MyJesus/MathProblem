@@ -6,6 +6,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import com.readboy.textbook.chapter.Content;
 
@@ -52,7 +53,7 @@ public class NetworkUtils {
      * @param context 上下文
      * @return NetworkInfo
      */
-    private static NetworkInfo getActiveNetworkInfo(Context context) {
+    public static NetworkInfo getActiveNetworkInfo(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         return cm.getActiveNetworkInfo();
@@ -170,6 +171,10 @@ public class NetworkUtils {
     public static int getNetWorkType(Context context) {
         int netType = NETWORK_NO;
         NetworkInfo info = getActiveNetworkInfo(context);
+        Log.e("oubin-NetworkUtils", "getNetWorkType: inof = " + info);
+        if (info != null) {
+            Log.e("oubin-NetworkUtils", "getNetWorkType: type = " + info.getType());
+        }
         if (info != null && info.isAvailable()) {
 
             if (info.getType() == ConnectivityManager.TYPE_WIFI) {

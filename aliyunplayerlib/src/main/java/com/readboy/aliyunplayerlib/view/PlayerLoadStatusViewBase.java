@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,8 @@ import com.readboy.aliyunplayerlib.R;
  */
 
 public abstract class PlayerLoadStatusViewBase extends FrameLayout implements View.OnClickListener {
+    private static final String TAG = "PlayerLoadStatusViewBas";
+
 
     public static final int STATUS_IDLE = 0;//闲置状态
     public static final int STATUS_LOADING = 1;//加载中
@@ -445,6 +448,10 @@ public abstract class PlayerLoadStatusViewBase extends FrameLayout implements Vi
 
     @Override
     public void onClick(View v) {
+        if (getVisibility() != View.VISIBLE){
+            Log.w(TAG, "onClick: view not visible.");
+            return;
+        }
         if(v == mContinueBtnView){
             if(mOnBtnClickListener != null){
                 mOnBtnClickListener.onContinueBtnClick();

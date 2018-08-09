@@ -107,6 +107,7 @@ public class DownloadDialog extends BaseVideoDialog {
         if (mDownloadArray != null) {
             mLastDownloadSize = mDownloadArray.size();
         }
+        updateLocationVideo();
         updateDownloadList();
         mDownloadListener = new DownloadInfoListener();
         AliyunDownloadManager.getInstance(getContext()).addDownloadInfoListener(mDownloadListener);
@@ -167,7 +168,7 @@ public class DownloadDialog extends BaseVideoDialog {
                 ContextCompat.getColor(getContext(), R.color.video_divider_color)));
         mLocationRv.setAdapter(mLocationAdapter);
 //        updateLocationListFaker();
-        updateLocationVideoList();
+//        updateLocationVideoList();
         mLocationAdapter.setData(mLocationVideoList);
         updateCountView(mLocationVideoList.size());
 
@@ -178,7 +179,7 @@ public class DownloadDialog extends BaseVideoDialog {
         mDownloadAdapter = new DownloadAdapter(getContext());
         mDownloadRv.setAdapter(mDownloadAdapter);
         mDownloadAdapter.setAllCheckedChangeListener(this);
-        updateDownloadList();
+//        updateDownloadList();
         mDownloadAdapter.setData(mDownloadArray);
         mDownloadDataObserver = new DownloadDataObserver();
     }

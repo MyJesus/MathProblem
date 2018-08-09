@@ -85,10 +85,11 @@ public class MathApplication extends MyApplication {
     }
 
     private void initAliPayer() {
+        Log.e(TAG, "initAliPayer() called");
         AliVcMediaPlayer.init(getApplicationContext());
 //        VcPlayerLog.enableLog();
 //        AVMPlayer.enableNativeLog();
-        AliLogUtil.enableLog();
+//        AliLogUtil.enableLog();
         //设置AppSecret，签名用，跟大数据部申请。必须
         DataSnUtil.setAppSecret("be916db6f0771c9053e5f44106c358b4");
         //名师辅导班的AppSecret，其他应用一定要改成自己的

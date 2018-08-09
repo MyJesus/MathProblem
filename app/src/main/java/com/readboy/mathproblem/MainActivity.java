@@ -128,6 +128,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             MathApplication.initFile(this);
             initData();
         }
+        NetworkUtils.getNetWorkType(this);
 //        Log.e(TAG, "onCreate: " + AppUidUtil.getCertificateSHA1Fingerprint(this));
 
     }

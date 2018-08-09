@@ -3,6 +3,8 @@ package com.readboy.mathproblem.widget;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,7 +36,9 @@ import com.readboy.mathproblem.application.Constants;
 import com.readboy.mathproblem.application.SubjectType;
 import com.readboy.mathproblem.cache.CacheEngine;
 import com.readboy.mathproblem.cache.ProjectEntityWrapper;
+import com.readboy.mathproblem.dialog.BaseDialog;
 import com.readboy.mathproblem.dialog.NoNetworkDialog;
+import com.readboy.mathproblem.dialog.UsingMobileNetDialog;
 import com.readboy.mathproblem.http.response.VideoInfoEntity.VideoInfo;
 import com.readboy.mathproblem.util.NetworkUtils;
 import com.readboy.mathproblem.util.ToastUtils;
@@ -106,6 +110,9 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     private IVideoResource mCurrentVideoResource;
 
     private NoNetworkDialog mNoNetworkDialog;
+    private boolean isAgreeUsingMobileNet = true;
+    private UsingMobileNetDialog mUsingMobileNetDialog;
+    private String mTargetVid;
 
     public SmallPlayerView(Context context) {
         this(context, null);
@@ -282,7 +289,9 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
      * @param vid vid
      */
     public void playWithVid(String vid) {
+        mTargetVid = "";
         if (!checkNetwork()) {
+            mTargetVid = vid;
             return;
         }
         Log.e(TAG, "playWithVid() called with: vid = " + vid + "");
@@ -446,16 +455,28 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
      * @return true 网络可用，false 网络不可用。
      */
     private boolean checkNetwork() {
-        if (!NetworkUtils.isConnected(mContext)) {
-            showNoNetworkDialog();
-            hideProgressBar();
-            isPreparing = false;
-            setPlayerControllerEnabled(false);
-            return false;
-        } else {
-            setPlayerControllerEnabled(true);
+        NetworkInfo info = NetworkUtils.getActiveNetworkInfo(mContext);
+        int type = info == null ? -1 : info.getType();
+        boolean result = true;
+        switch (type) {
+            case -1:
+                showNoNetworkDialog();
+                hideProgressBar();
+                isPreparing = false;
+                setPlayerControllerEnabled(false);
+                result = false;
+                break;
+            case ConnectivityManager.TYPE_MOBILE:
+                if (!isAgreeUsingMobileNet) {
+                    showUsingMobileNetDialog();
+                    result = false;
+                }
+                break;
+            default:
+                setPlayerControllerEnabled(true);
+                break;
         }
-        return true;
+        return result;
     }
 
     private void hidePlayerControllerDelayed() {
@@ -501,6 +522,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
         if (mNoNetworkDialog == null) {
             mNoNetworkDialog = new NoNetworkDialog(mContext);
         }
+        dismissUsingMobileNetDialog();
         mNoNetworkDialog.show();
     }
 
@@ -511,6 +533,35 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
     public void dismissNoNetworkDialog() {
         if (mNoNetworkDialog != null && mNoNetworkDialog.isShowing()) {
             mNoNetworkDialog.dismiss();
+        }
+    }
+
+    private void showUsingMobileNetDialog() {
+        if (mUsingMobileNetDialog == null) {
+            mUsingMobileNetDialog = new UsingMobileNetDialog(getContext());
+            mUsingMobileNetDialog.setOnClickListener(new BaseDialog.OnClickListener() {
+                @Override
+                public void onLeftClick(BaseDialog dialog) {
+                    isAgreeUsingMobileNet = true;
+                    dialog.dismiss();
+                    setPlayerControllerEnabled(true);
+                    playWithVid(mTargetVid);
+                }
+
+                @Override
+                public void onRightClick(BaseDialog dialog) {
+//                    isAgreeUsingMobileNet = false;
+
+                }
+            });
+        }
+        dismissNoNetworkDialog();
+        mUsingMobileNetDialog.show();
+    }
+
+    public void dismissUsingMobileNetDialog() {
+        if (mUsingMobileNetDialog != null) {
+            mUsingMobileNetDialog.dismiss();
         }
     }
 
@@ -737,7 +788,7 @@ public class SmallPlayerView extends LinearLayout implements View.OnClickListene
             //请求saas服务器错误，可能是AliyunVidSts参数无效
             //需要重新请求，刷新mVidSts，对用户不可见
             if (retryTimes < MAX_RETRY_TIME) {
-                retryTimes ++;
+                retryTimes++;
                 prepareAsync(true);
             }
         }
