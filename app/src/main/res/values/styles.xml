@@ -115,7 +115,7 @@
     </style>
 
     <style name="problem_button_style.selected">
-        <item name="android:background">@drawable/problem_selector_bg_selected2</item>
+        <item name="android:background">@drawable/problem_selector_bg_selected</item>
         <item name="android:textColor">#ffefbc</item>
         <item name="strokeColor">#b35000</item>
     </style>

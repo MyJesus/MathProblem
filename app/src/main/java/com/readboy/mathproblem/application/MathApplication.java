@@ -11,10 +11,8 @@ import android.util.Log;
 
 import com.alivc.player.AliVcMediaPlayer;
 
-import com.aliyun.vodplayer.core.avmplayer.AVMPlayer;
 import com.aliyun.vodplayer.downloader.AliyunDownloadConfig;
 import com.aliyun.vodplayer.downloader.AliyunDownloadManager;
-import com.readboy.aliyunplayerlib.utils.AliLogUtil;
 import com.readboy.aliyunplayerlib.utils.AppUtil;
 import com.readboy.aliyunplayerlib.utils.DataSnUtil;
 import com.readboy.auth.Auth;

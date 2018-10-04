@@ -1,21 +1,19 @@
 apply plugin: 'com.android.application'
-apply plugin: 'bugly'
+//apply plugin: 'bugly'
 
-bugly {
-    appId = 'e1e55bf8e9' // 注册时分配的App ID
-    appKey = '94b5347d-956a-4122-8509-f895187e6750' // 注册时分配的App Key
-}
+//bugly {
+//    appId = 'e1e55bf8e9' // 注册时分配的App ID
+//    appKey = '94b5347d-956a-4122-8509-f895187e6750' // 注册时分配的App Key
+//}
 android {
-    compileSdkVersion 25
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 28
     defaultConfig {
         applicationId "com.readboy.mathproblem"
         minSdkVersion 19
-        targetSdkVersion 26
-        versionCode 180808001
-        versionName "4.2.9"
+        targetSdkVersion 28
+        versionCode 181004001
+        versionName "4.2.10"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        jackOptions.enabled = true
         multiDexEnabled true
         externalNativeBuild {
             cmake {
@@ -28,13 +26,6 @@ android {
             abiFilters "arm64-v8a", "armeabi-v7a"
         }
     }
-
-    // java.lang.OutOfMemoryError: GC app:transformClassesWithDexForDebug
-//    dexOptions {
-//        jumboMode = true
-//        incremental true
-//        javaMaxHeapSize "4g"
-//    }
 
     buildTypes {
         release {
@@ -54,18 +45,17 @@ android {
 //            zipAlignEnabled true
 //        }
     }
-    android.applicationVariants.all {
-        variant ->
-            variant.outputs.each { output ->
-                def outputFile = output.outputFile
-                if (outputFile != null && outputFile.name.endsWith('.apk')) {
+    android.applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
 //                    def fileName = "HgMountion${defaultConfig.versionName}_${releaseTime()}.apk"
-                    def fileName = "MathProblem.apk"
-                    output.outputFile = new File(outputFile.parent, fileName);
-//                + defaultConfig.versionCode + "_v"+defaultConfig.versionName + buildType.name
-                }
+                def fileName = "MathProblem.apk"
+                outputFileName = fileName;
             }
+        }
     }
+
     signingConfigs {
         debug {
 //            storeFile file('E:/apkKey/readboy.key')
@@ -102,15 +92,15 @@ android {
         }
     }
 
-    repositories {
+//    repositories {
 //        maven {
 //            url 'https://download.01.org/crosswalk/releases/crosswalk/android/maven2'
 //        }
 
-        flatDir {
-            dirs 'libs'
-        }
-    }
+//        flatDir {
+//            dirs 'libs'
+//        }
+//    }
 
     externalNativeBuild {
         cmake {
@@ -136,6 +126,10 @@ android {
         exclude 'META-INF/LGPL2.1'
         exclude 'META-INF/ASL2.0'
         exclude 'META-INF/libgnustl_shared.so'
+        pickFirst 'META-INF/*'
+        pickFirst 'lib/armeabi-v7a/libtbMPlayer.so'
+        pickFirst 'lib/armeabi-v7a/*.so'
+        pickFirst 'lib/arm64-v8a/*.so'
     }
 
 //    productFlavors {
@@ -152,74 +146,69 @@ android {
 //    }
 
     useLibrary 'org.apache.http.legacy'
-}
 
-repositories {
-    flatDir {
-        dirs project(':aliyunplayerlib').file('libs')
+    repositories {
+        flatDir { dirs 'libs' }
     }
+
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+//    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
+//        exclude group: 'com.android.support', module: 'support-annotations'
+//    })
     def okHttp3Version = '3.8.1'
-    compile('com.squareup.okhttp3:okhttp:' + okHttp3Version)
-    compile('com.squareup.okhttp3:logging-interceptor:' + okHttp3Version)
-    //    compile (name: 'videoView', ext: 'aar')
+    implementation('com.squareup.okhttp3:okhttp:' + okHttp3Version)
+    implementation('com.squareup.okhttp3:logging-interceptor:' + okHttp3Version)
 
-    //    compile 'com.tamic.fastdownloader:Android-FastDownloader:1.0.3'
-    compile project(':baseadapter-recyclerview')
-//    compile project(':video')
-    compile project(':auth')
-//    compile project(':volleylib')
-    compile 'com.squareup.picasso:picasso:2.5.2'
-    compile 'com.android.support:support-v4:25.3.1'
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:recyclerview-v7:25.3.1'
-    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha7'
-    compile 'com.android.support:support-annotations:26.0.0-alpha1'
-    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
-    compile 'io.reactivex.rxjava2:rxjava:2.1.6'
-    compile 'com.squareup.retrofit2:retrofit-converters:2.3.0'
-    compile 'com.squareup.retrofit2:retrofit:2.3.0'
-    compile 'com.squareup.retrofit2:retrofit-adapters:2.3.0'
-    compile 'com.squareup.retrofit2:converter-jackson:2.3.0'
-    compile 'com.squareup.retrofit2:adapter-rxjava2:2.3.0'
-    compile 'com.fasterxml.jackson.core:jackson-core:2.9.0.pr4'
-    compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.0.pr4'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
+    //    implementation 'com.tamic.fastdownloader:Android-FastDownloader:1.0.3'
+    implementation project(':baseadapter-recyclerview')
+//    implementation project(':video')
+    implementation project(':auth')
+    implementation project(':aliyunplayerlib')
+
+//    implementation project(':volleylib')
+    implementation 'com.squareup.picasso:picasso:2.5.2'
+    implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:recyclerview-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:2.0.0-alpha2'
+    implementation 'com.android.support:support-annotations:28.0.0'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.6'
+    implementation 'com.squareup.retrofit2:retrofit-converters:2.3.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
+    implementation 'com.squareup.retrofit2:retrofit-adapters:2.3.0'
+    implementation 'com.squareup.retrofit2:converter-jackson:2.3.0'
+    implementation 'com.squareup.retrofit2:adapter-rxjava2:2.3.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.9.0.pr4'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.9.0.pr4'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
     //文件下载框架
-//    compile 'com.liulishuo.filedownloader:library:1.6.5'
-//    compile 'cn.dreamtobe.filedownloader:filedownloader-okhttp3-connection:1.0.0'
-    compile 'com.android.support:design:25.3.1'
-    compile 'com.android.support:multidex:1.0.1'
-    //    compile ('org.xwalk:xwalk_core_library:23.53.589.4'){
-
-    //        exclude group: 'com.android.support', module: 'support-v4'
-
-    //        exclude group: 'com.google.code.findbugs', module: 'jsr305'
-
-    //        exclude module: 'jsr305:2.0.1'
-
-    //    }
-    testCompile 'junit:junit:4.12'
-    compile project(':textbook-webview')
+//    implementation 'com.liulishuo.filedownloader:library:1.6.5'
+//    implementation 'cn.dreamtobe.filedownloader:filedownloader-okhttp3-connection:1.0.0'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.android.support:multidex:1.0.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation project(':textbook-webview')
     //腾讯的bug检测。
 
     //其中latest.release指代最新Bugly SDK版本号，也可以指定明确的版本号，例如2.1.9
-    compile 'com.tencent.bugly:crashreport:latest.release'
+    implementation 'com.tencent.bugly:crashreport:2.6.6.1'
+//    implementation(name: 'crashreport-2.6.6.1', ext: 'aar')
     //其中latest.release指代最新Bugly NDK版本号，也可以指定明确的版本
-    compile 'com.tencent.bugly:nativecrashreport:latest.release'
-    //添加leakcanary相关的依赖
+    implementation 'com.tencent.bugly:nativecrashreport:3.3.1'
 
-    //在release和test版本中，使用的是LeakCanary的no-op版本，也就是没有实际代码和操作的Wrapper版本，只包含LeakCanary和RefWatcher类的空实现，这样不会对生成的APK包体积和应用性能造成影响
-    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.3'
-    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.3'
-    testCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.3'
-    compile project(':errorqstupload')
-    compile project(':aliyunplayerlib')
+    //添加leakcanary相关的依赖
+    // 在release和test版本中，使用的是LeakCanary的no-op版本，也就是没有实际代码和操作的Wrapper版本，
+    // 只包含LeakCanary和RefWatcher类的空实现，这样不会对生成的APK包体积和应用性能造成影响
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.1'
+    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.1'
+    // Optional, if you use support library fragments:
+    debugImplementation 'com.squareup.leakcanary:leakcanary-support-fragment:1.6.1'
+    implementation project(':errorqstupload')
 }
 
