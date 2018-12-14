@@ -6,8 +6,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
 
-import com.readboy.aliyunplayerlib.app.AliyunPlayerLibApp;
-
 /**
  * Created by ldw on 2016/11/22.
  */
@@ -50,11 +48,10 @@ public class AppUtil {
         TEST_PACKAGE_NAME = testPackageName;
     }
 
-    public static String getPackageName(){
+    public static String getPackageName(Context context){
         if(!TextUtils.isEmpty(TEST_PACKAGE_NAME)){
             return TEST_PACKAGE_NAME;
         }else {
-            Context context = AliyunPlayerLibApp.getContext();
             return context.getPackageName();
         }
     }
@@ -80,7 +77,7 @@ public class AppUtil {
      * @return
      */
     public static boolean isMyPackageProcess(Context context){
-        String packageName = getPackageName();
+        String packageName = getPackageName(context);
         String curProcessName = getCurProcessName(context);
         if(!TextUtils.isEmpty(packageName)
                 && !TextUtils.isEmpty(curProcessName)

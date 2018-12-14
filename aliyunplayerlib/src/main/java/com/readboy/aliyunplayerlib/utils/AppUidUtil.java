@@ -15,6 +15,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 /**
+ * 此工具类可以生成跟应用包名签名相关的字符串，再用该字符串到大数据部生成相应的安全文件。
+ * 下载需要配置安全文件路径，保证下载的文件只能在相同包名相同签名的应用使用。
  * Created by ldw on 2018/3/12.
  */
 

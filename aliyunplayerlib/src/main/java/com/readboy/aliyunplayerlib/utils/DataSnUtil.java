@@ -1,5 +1,7 @@
 package com.readboy.aliyunplayerlib.utils;
 
+import com.readboy.aliyunplayerlib.app.AliPlayerAppUtil;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Locale;
@@ -7,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * 弃用，改成auth.so方式 20180918
  * 大数据部接口签名等参数的工具类
  * Created by ldw on 2018/2/27.
  */
@@ -30,14 +33,14 @@ public class DataSnUtil {
      * 参数device_id
      */
     public static String getDeviceId(){
-        return DeviceUtil.getModel() + "//" + AppUtil.getPackageName() + "////////";
+        return DeviceUtil.getModel() + "//" + AppUtil.getPackageName(AliPlayerAppUtil.getContext()) + "////////";
     }
 
     /**
      * url编码的参数device_id
      */
     public static String getDeviceIdEncodeUrl(){
-        return encodeURIComponent(DeviceUtil.getModel() + "//" + AppUtil.getPackageName() + "////////");
+        return encodeURIComponent(DeviceUtil.getModel() + "//" + AppUtil.getPackageName(AliPlayerAppUtil.getContext()) + "////////");
     }
 
     /**

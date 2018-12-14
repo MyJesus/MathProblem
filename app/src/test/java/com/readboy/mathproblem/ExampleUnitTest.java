@@ -31,6 +31,9 @@ public class ExampleUnitTest {
         int i = Integer.MAX_VALUE;
         i++;
 
+        byte[] temp = new byte[1024];
+        temp[1] = 1;
+
     }
 
     @Test

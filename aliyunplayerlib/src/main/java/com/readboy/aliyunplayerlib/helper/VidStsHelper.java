@@ -5,9 +5,11 @@ import android.os.AsyncTask;
 import com.aliyun.vodplayer.media.AliyunVidSts;
 import com.aliyun.vodplayer.utils.HttpClientUtil;
 import com.readboy.aliyunplayerlib.utils.AliLogUtil;
-import com.readboy.aliyunplayerlib.utils.DataSnUtil;
+import com.readboy.auth.Auth;
 
 import org.json.JSONObject;
+
+import java.util.Properties;
 
 /**
  *
@@ -29,11 +31,13 @@ public class VidStsHelper {
         try {
             //获取临时鉴权add by dway 180312
             String url = "http://api.video.readboy.com/videoSts?";
-            url += "device_id=" + DataSnUtil.getDeviceIdEncodeUrl();
-            String t = DataSnUtil.getT();
-            url += "&t=" + t;
-            url += "&sn=" + DataSnUtil.getSn(t);
-            AliLogUtil.v(TAG, "---getVidSts---url = " + url);
+
+            Properties properties = Auth.getSignature();
+            url += "device_id=" + properties.getProperty("device_id");
+            url += "&t=" + properties.getProperty("t");
+            url += "&sn=" + properties.getProperty("sn");
+            AliLogUtil.v(TAG, "---getVidSts---url = "/* + url*/);
+
             String response = HttpClientUtil.doGet(url);
             AliLogUtil.v(TAG, "---getVidSts---response = " + response);
             JSONObject json = new JSONObject(response);
@@ -112,4 +116,5 @@ public class VidStsHelper {
         void onSuccess(String akid, String akSecret, String token);
         void onFail(int errno);
     }
+
 }

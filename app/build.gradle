@@ -11,8 +11,8 @@ android {
         applicationId "com.readboy.mathproblem"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 181004001
-        versionName "4.2.10"
+        versionCode 181214001
+        versionName "4.2.11"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         externalNativeBuild {
@@ -165,7 +165,7 @@ dependencies {
     //    implementation 'com.tamic.fastdownloader:Android-FastDownloader:1.0.3'
     implementation project(':baseadapter-recyclerview')
 //    implementation project(':video')
-    implementation project(':auth')
+//    implementation project(':auth')
     implementation project(':aliyunplayerlib')
 
 //    implementation project(':volleylib')

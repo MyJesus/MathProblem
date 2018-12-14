@@ -35,6 +35,11 @@ import com.readboy.recyclerview.CommonAdapter;
 import com.readboy.recyclerview.MultiItemTypeAdapter;
 import com.readboy.recyclerview.base.ViewHolder;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,6 +73,15 @@ public class TestActivity extends Activity {
         setContentView(R.layout.activity_test);
 
 //        seekBarTest();
+
+        try {
+            FileInputStream stream = new FileInputStream("");
+            stream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 //        ExampleLinearLayout exampleLinearLayout = (ExampleLinearLayout) findViewById(R.id.example_parent);
 //        exampleLinearLayout.addUnion(new Union("title1", "content1"));

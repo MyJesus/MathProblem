@@ -572,7 +572,7 @@ public class AliyunDownloadManagerWrapper {
             Log.e(TAG, "onPrepared: thread = " + Thread.currentThread());
             Log.e(TAG, "onPrepared: size = " + list.size());
             AliyunDownloadMediaInfo info = null;
-            int size = 0;
+            long size = 0;
             for (AliyunDownloadMediaInfo mediaInfo : list) {
                 Log.e(TAG, "onPrepared: mediaInfo = " + mediaInfo.getTitle() + ". size = " + mediaInfo.getSizeStr()
                         + ", " + mediaInfo.getCoverUrl() + ", " + mediaInfo.getVid() + ", " + mediaInfo.getDownloadIndex()

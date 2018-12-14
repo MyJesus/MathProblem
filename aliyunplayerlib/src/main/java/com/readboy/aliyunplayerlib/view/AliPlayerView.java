@@ -26,10 +26,12 @@ import com.aliyun.vodplayer.media.AliyunVidSts;
 import com.aliyun.vodplayer.media.AliyunVodPlayer;
 import com.aliyun.vodplayer.media.IAliyunVodPlayer;
 import com.readboy.aliyunplayerlib.R;
+import com.readboy.aliyunplayerlib.app.AliPlayerAppUtil;
 import com.readboy.aliyunplayerlib.helper.VidStsHelper;
 import com.readboy.aliyunplayerlib.receiver.PhoneReceiver;
 import com.readboy.aliyunplayerlib.receiver.PhoneReceiverHelper;
 import com.readboy.aliyunplayerlib.utils.AliLogUtil;
+import com.readboy.aliyunplayerlib.utils.FileUtil;
 import com.readboy.aliyunplayerlib.utils.NetWatchdog;
 import com.readboy.aliyunplayerlib.utils.StringUtil;
 
@@ -53,7 +55,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     private static final String TAG = "oubin_AliPlayerView";
 
     //版本号
-    private static final String VERSION = "V1.0.180806001";
+    private static final String VERSION = "V1.0.181123001";
 
     //常量
     private static final int MSG_HEART = 1;
@@ -208,10 +210,11 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
         String cacheDir = null;
         if(getContext().getExternalCacheDir() != null){
-            cacheDir = getContext().getExternalCacheDir().getPath() + "/aliyun_player_cache";
+            cacheDir = getContext().getExternalCacheDir().getPath() + "/ali_player_cache";
+            FileUtil.createNomediaFile(cacheDir);//隐藏缓存文件
         }
-        //String cacheDir = getContext().getExternalCacheDir().getPath() + "/aliyun_player_cache";
-        mAliyunVodPlayer.setPlayingCache(false, cacheDir, 60 * 60 /*时长, s */, 300 /*大小，MB*/);
+        //String cacheDir = getContext().getExternalCacheDir().getPath() + "/ali_player_cache";
+        mAliyunVodPlayer.setPlayingCache(true, cacheDir, 60 * 60 /*时长, s */, 500 /*大小，MB*/);
         //mAliyunVodPlayer.setCirclePlay(true);
 
         mAliyunVodPlayer.setOnPreparedListener(this);
@@ -337,6 +340,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
      */
     public void playWithVid(String vid){
         AliLogUtil.v(TAG, "---playWithVid---vid = " + vid);
+        // oubin
         resetState();
         if (mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle) {
             mAliyunVodPlayer.stop();
@@ -369,6 +373,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
      */
     public void playWithPath(String localPath){
         AliLogUtil.v(TAG, "---playWithPath---localPath = " + localPath);
+        // oubin
         resetState();
         if (mAliyunVodPlayer.getPlayerState() != IAliyunVodPlayer.PlayerState.Idle) {
             mAliyunVodPlayer.stop();
@@ -430,6 +435,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
         prepareAsync(false);
 
+        // oubin
 //        requestAudioFocus();
     }
 
@@ -463,7 +469,7 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
     }
 
     /**
-     * 施放焦点
+     * 释放焦点
      */
     private void abandonAudioFocus(){
         AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
@@ -988,6 +994,10 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
+        if(mAliyunVodPlayer == null){
+            AliLogUtil.v(TAG, "---onStopTrackingTouch---mAliyunVodPlayer is null");
+            return;
+        }
         AliLogUtil.v(TAG, "---onStopTrackingTouch---playerState = "+mAliyunVodPlayer.getPlayerState()
                 +", seekTo = "+seekBar.getProgress()+", mIsSeekComplete="+mIsSeekComplete);
         mIsSeekBarTouching = false;
@@ -1009,6 +1019,9 @@ public class AliPlayerView extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onPrepared() {
+        /*for(String q : mAliyunVodPlayer.getMediaInfo().getQualities()) {
+            AliLogUtil.v(TAG, "---onPrepared---q="+q);
+        }*/
         AliLogUtil.v(TAG, "---onPrepared---" + mAliyunVodPlayer.getCurrentQuality()+", "+mAliyunVodPlayer.getPlayerState());
         //可设置播放时期望的清晰度。阿里云默认从高到低选择清晰度
         //mAliyunVodPlayer.changeQuality(IAliyunVodPlayer.QualityValue.QUALITY_LOW);
